@@ -92,5 +92,5 @@ Read these before any game launch task:
 
 ## Skill Import Rule
 
-For Claude.ai, package and upload the master skill only: `skill-packages/tortoise-games-studio-skill.zip`.
+For Claude.ai, package and upload the master skill only: `skill-packages/tortoise-games-studio-claudeai.zip`.
 Do not require users to upload every specialized skill one by one. The master skill contains the complete knowledge base.

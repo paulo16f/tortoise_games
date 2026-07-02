@@ -46,10 +46,10 @@ For Claude Code, no manual import is needed after cloning the repo. Claude Code 
 For Claude.ai, import one skill package:
 
 ```txt
-skill-packages/tortoise-games-studio-skill.zip
+skill-packages/tortoise-games-studio-claudeai.zip
 ```
 
-That ZIP contains the master `tortoise-games-studio` skill and the full Tortoise Games knowledge base. The smaller skills in `.claude/skills/` are useful for Claude Code routing, but Claude.ai users do not need to upload them one by one.
+That ZIP contains the master `tortoise-games-studio` skill and the full Tortoise Games knowledge base using Claude.ai-safe paths only. The smaller skills in `.claude/skills/` are useful for Claude Code routing, but Claude.ai users do not need to upload them one by one.
 
 ## Creative Freedom
 
