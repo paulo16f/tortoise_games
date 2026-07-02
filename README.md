@@ -35,6 +35,22 @@ Do not tell Claude Fable that missing modules are already implemented. Tell it t
 4. Run the `web3-game-economy` guardrail agent before writing production code.
 5. Block public launch until `docs/PUMPFUN_LAUNCH.md` passes.
 
+## Easy Skill Import
+
+For Claude Code, no manual import is needed after cloning the repo. Claude Code auto-discovers project skills from:
+
+```txt
+.claude/skills/
+```
+
+For Claude.ai, import one skill package:
+
+```txt
+skill-packages/tortoise-games-studio-skill.zip
+```
+
+That ZIP contains the master `tortoise-games-studio` skill and the full Tortoise Games knowledge base. The smaller skills in `.claude/skills/` are useful for Claude Code routing, but Claude.ai users do not need to upload them one by one.
+
 ## Creative Freedom
 
 Fable is allowed to create any genre, theme, art direction, story, UX, mechanic, item system, quest system, social system, or retention loop.
@@ -61,4 +77,3 @@ These references were checked on 2026-07-02 and should be rechecked before produ
 - PumpPortal real-time data: https://pumpportal.fun/data-api/real-time/
 - Solana `getTransaction`: https://solana.com/docs/rpc/http/gettransaction
 - Vercel Cron Jobs: https://vercel.com/docs/cron-jobs
-

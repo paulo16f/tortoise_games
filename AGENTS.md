@@ -83,7 +83,14 @@ When generating a game, do not claim missing modules are wired. Either generate 
 
 Read these before any game launch task:
 
+- `.claude/skills/tortoise-games-studio/SKILL.md`
+- `.claude/skills/tortoise-games-studio/references/knowledge-base.md`
 - `docs/FABLE_GAME_LAUNCH_SPEC.md`
 - `docs/ECONOMY_LAWS.md`
 - `docs/CODEX_PATTERNS.md`
 - `docs/PUMPFUN_LAUNCH.md`
+
+## Skill Import Rule
+
+For Claude.ai, package and upload the master skill only: `skill-packages/tortoise-games-studio-skill.zip`.
+Do not require users to upload every specialized skill one by one. The master skill contains the complete knowledge base.
