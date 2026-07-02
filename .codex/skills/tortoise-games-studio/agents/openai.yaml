@@ -1,0 +1,5 @@
+interface:
+  display_name: "Tortoise Games Studio"
+  short_description: "Master skillset for Solana/Pump.fun game creation and launch."
+  default_prompt: "Use the Tortoise Games skillset to design, audit, or launch a Solana/Pump.fun game with creative freedom and production guardrails."
+

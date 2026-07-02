@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tortoise Fable Game Spec"
+  short_description: "Prepare flexible game specs for Tortoise Games."
+  default_prompt: "Create a Fable-ready Game Launch Spec for a new Tortoise Games title."
