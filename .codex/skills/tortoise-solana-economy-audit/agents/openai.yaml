@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tortoise Solana Economy Audit"
+  short_description: "Audit Solana/Pump.fun game economy guardrails."
+  default_prompt: "Audit this Tortoise game design or implementation for economy, Solana, payment, and payout safety."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tortoise Pump.fun Launch"
+  short_description: "Prepare and review Pump.fun Solana launches."
+  default_prompt: "Prepare a Tortoise Games Pump.fun launch checklist and identify launch blockers."
