@@ -1,0 +1,215 @@
+{
+  "spec": "GAME_MATH_SPEC.md §5 — RNG call order is normative",
+  "table": {
+    "dropChance": 0.4,
+    "rarityWeights": [
+      {
+        "rarity": "common",
+        "weight": 60
+      },
+      {
+        "rarity": "uncommon",
+        "weight": 25
+      },
+      {
+        "rarity": "rare",
+        "weight": 10
+      },
+      {
+        "rarity": "epic",
+        "weight": 4
+      },
+      {
+        "rarity": "legendary",
+        "weight": 1
+      }
+    ],
+    "items": [
+      {
+        "id": "rusty_blade",
+        "rarity": "common",
+        "statRanges": [
+          {
+            "stat": "attack",
+            "min": 1,
+            "max": 4
+          }
+        ]
+      },
+      {
+        "id": "cloth_hood",
+        "rarity": "common",
+        "statRanges": [
+          {
+            "stat": "armor",
+            "min": 1,
+            "max": 3
+          }
+        ]
+      },
+      {
+        "id": "soldier_axe",
+        "rarity": "uncommon",
+        "statRanges": [
+          {
+            "stat": "attack",
+            "min": 3,
+            "max": 7
+          },
+          {
+            "stat": "critChance",
+            "min": 1,
+            "max": 3
+          }
+        ]
+      },
+      {
+        "id": "runed_charm",
+        "rarity": "rare",
+        "statRanges": [
+          {
+            "stat": "attack",
+            "min": 5,
+            "max": 9
+          },
+          {
+            "stat": "hp",
+            "min": 10,
+            "max": 25
+          }
+        ]
+      },
+      {
+        "id": "sunforged_plate",
+        "rarity": "epic",
+        "statRanges": [
+          {
+            "stat": "armor",
+            "min": 12,
+            "max": 20
+          },
+          {
+            "stat": "hp",
+            "min": 20,
+            "max": 40
+          }
+        ]
+      }
+    ]
+  },
+  "sequences": [
+    {
+      "runSeed": 11,
+      "stream": "Loot",
+      "rolls": [
+        null,
+        {
+          "baseItemId": "cloth_hood",
+          "rarity": "common",
+          "stats": {
+            "armor": 3
+          }
+        },
+        {
+          "baseItemId": "rusty_blade",
+          "rarity": "common",
+          "stats": {
+            "attack": 2
+          }
+        },
+        {
+          "baseItemId": "runed_charm",
+          "rarity": "rare",
+          "stats": {
+            "attack": 7,
+            "hp": 10
+          }
+        },
+        null,
+        null,
+        null,
+        {
+          "baseItemId": "cloth_hood",
+          "rarity": "common",
+          "stats": {
+            "armor": 2
+          }
+        },
+        {
+          "baseItemId": "sunforged_plate",
+          "rarity": "epic",
+          "stats": {
+            "armor": 12,
+            "hp": 33
+          }
+        },
+        null
+      ]
+    },
+    {
+      "runSeed": 502,
+      "stream": "Loot",
+      "rolls": [
+        null,
+        null,
+        {
+          "baseItemId": "sunforged_plate",
+          "rarity": "epic",
+          "stats": {
+            "armor": 16,
+            "hp": 36
+          }
+        },
+        null,
+        null,
+        null,
+        null,
+        {
+          "baseItemId": "cloth_hood",
+          "rarity": "common",
+          "stats": {
+            "armor": 1
+          }
+        },
+        {
+          "baseItemId": "cloth_hood",
+          "rarity": "common",
+          "stats": {
+            "armor": 2
+          }
+        },
+        {
+          "baseItemId": "soldier_axe",
+          "rarity": "uncommon",
+          "stats": {
+            "attack": 3,
+            "critChance": 2
+          }
+        }
+      ]
+    },
+    {
+      "runSeed": 900913,
+      "stream": "Loot",
+      "rolls": [
+        null,
+        {
+          "baseItemId": "soldier_axe",
+          "rarity": "uncommon",
+          "stats": {
+            "attack": 4,
+            "critChance": 1
+          }
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  ]
+}

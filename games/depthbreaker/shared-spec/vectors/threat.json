@@ -1,0 +1,126 @@
+{
+  "spec": "GAME_MATH_SPEC.md §4",
+  "scenarios": [
+    {
+      "name": "melee needs 110%",
+      "melee": [
+        "tank",
+        "rogue"
+      ],
+      "events": [
+        {
+          "op": "damage",
+          "id": "tank",
+          "amount": 100
+        },
+        {
+          "op": "damage",
+          "id": "rogue",
+          "amount": 105
+        },
+        {
+          "op": "select",
+          "current": "tank",
+          "expectedTarget": "tank"
+        },
+        {
+          "op": "damage",
+          "id": "rogue",
+          "amount": 6
+        },
+        {
+          "op": "select",
+          "current": "tank",
+          "expectedTarget": "rogue"
+        }
+      ]
+    },
+    {
+      "name": "ranged needs 130%",
+      "melee": [
+        "tank"
+      ],
+      "events": [
+        {
+          "op": "damage",
+          "id": "tank",
+          "amount": 100
+        },
+        {
+          "op": "damage",
+          "id": "mage",
+          "amount": 125
+        },
+        {
+          "op": "select",
+          "current": "tank",
+          "expectedTarget": "tank"
+        },
+        {
+          "op": "damage",
+          "id": "mage",
+          "amount": 10
+        },
+        {
+          "op": "select",
+          "current": "tank",
+          "expectedTarget": "mage"
+        }
+      ]
+    },
+    {
+      "name": "melee 111% beats higher ranged 120%",
+      "melee": [
+        "rogue"
+      ],
+      "events": [
+        {
+          "op": "damage",
+          "id": "tank",
+          "amount": 100
+        },
+        {
+          "op": "damage",
+          "id": "mage",
+          "amount": 120
+        },
+        {
+          "op": "damage",
+          "id": "rogue",
+          "amount": 111
+        },
+        {
+          "op": "select",
+          "current": "tank",
+          "expectedTarget": "rogue"
+        }
+      ]
+    },
+    {
+      "name": "healing counts half",
+      "melee": [],
+      "events": [
+        {
+          "op": "damage",
+          "id": "mage",
+          "amount": 100
+        },
+        {
+          "op": "heal",
+          "id": "healer",
+          "amount": 300
+        },
+        {
+          "op": "select",
+          "current": "mage",
+          "expectedTarget": "healer"
+        },
+        {
+          "op": "select",
+          "current": null,
+          "expectedTarget": "healer"
+        }
+      ]
+    }
+  ]
+}

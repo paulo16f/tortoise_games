@@ -1,0 +1,28 @@
+{
+  "name": "depthbreaker-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Depthbreaker durable backend: auth, characters, runs, meta-progression. Zone servers are the runtime authority; this service owns accounts and persistence.",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "migrate": "tsx src/db/migrate.ts"
+  },
+  "dependencies": {
+    "@depthbreaker/sim": "*",
+    "@fastify/cookie": "^11.0.2",
+    "fastify": "^5.3.2",
+    "jose": "^6.0.11",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/pg": "^8.15.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}

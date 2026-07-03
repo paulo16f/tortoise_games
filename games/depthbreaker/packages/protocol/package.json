@@ -1,0 +1,23 @@
+{
+  "name": "@depthbreaker/protocol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared Colyseus schema, message types, and gameplay constants for the realtime server and the client.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@colyseus/schema": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

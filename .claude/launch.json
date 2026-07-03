@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "depthbreaker-backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "games/depthbreaker", "run", "dev:backend"],
+      "port": 3000
+    },
+    {
+      "name": "depthbreaker-realtime",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "games/depthbreaker", "run", "dev:realtime"],
+      "port": 2567
+    },
+    {
+      "name": "depthbreaker-client",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "games/depthbreaker", "run", "dev:client"],
+      "port": 5173
+    }
+  ]
+}

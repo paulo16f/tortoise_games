@@ -1,0 +1,31 @@
+# Dependencies (workspace + per-package)
+node_modules/
+
+# Env / secrets
+.env
+.env.local
+**/.env
+infra/certs/*.pem
+
+# Build / cache output
+dist/
+build/
+.vite/
+*.tsbuildinfo
+client/dist/
+
+# Unity (generated project files)
+unity/Build/
+unity/Library/
+unity/Temp/
+unity/Logs/
+unity/UserSettings/
+unity/obj/
+
+# Local Unity project created from unity/SETUP.md (has its own git repo).
+# Superseded by the web stack; not part of this repo.
+My project*/
+
+# OS / editor
+.DS_Store
+Thumbs.db

@@ -1,0 +1,330 @@
+{
+  "spec": "GAME_MATH_SPEC.md §6 — tree walk, boss BFS-farthest, treasure seeded dead-end",
+  "roomCountForDepth": [
+    {
+      "depth": 1,
+      "roomCount": 8
+    },
+    {
+      "depth": 2,
+      "roomCount": 10
+    },
+    {
+      "depth": 3,
+      "roomCount": 12
+    },
+    {
+      "depth": 5,
+      "roomCount": 16
+    }
+  ],
+  "graphs": [
+    {
+      "seed": 1,
+      "stream": "Layout",
+      "roomCount": 8,
+      "graph": {
+        "rooms": [
+          {
+            "index": 0,
+            "x": 0,
+            "y": 0,
+            "kind": "start",
+            "doors": [
+              1,
+              2
+            ]
+          },
+          {
+            "index": 1,
+            "x": 0,
+            "y": 1,
+            "kind": "combat",
+            "doors": [
+              0,
+              3
+            ]
+          },
+          {
+            "index": 2,
+            "x": 1,
+            "y": 0,
+            "kind": "combat",
+            "doors": [
+              0,
+              7
+            ]
+          },
+          {
+            "index": 3,
+            "x": -1,
+            "y": 1,
+            "kind": "combat",
+            "doors": [
+              1,
+              4,
+              5
+            ]
+          },
+          {
+            "index": 4,
+            "x": -1,
+            "y": 0,
+            "kind": "combat",
+            "doors": [
+              3
+            ]
+          },
+          {
+            "index": 5,
+            "x": -2,
+            "y": 1,
+            "kind": "combat",
+            "doors": [
+              3,
+              6
+            ]
+          },
+          {
+            "index": 6,
+            "x": -3,
+            "y": 1,
+            "kind": "boss",
+            "doors": [
+              5
+            ]
+          },
+          {
+            "index": 7,
+            "x": 1,
+            "y": -1,
+            "kind": "treasure",
+            "doors": [
+              2
+            ]
+          }
+        ],
+        "bossIndex": 6,
+        "treasureIndex": 7
+      }
+    },
+    {
+      "seed": 2,
+      "stream": "Layout",
+      "roomCount": 8,
+      "graph": {
+        "rooms": [
+          {
+            "index": 0,
+            "x": 0,
+            "y": 0,
+            "kind": "start",
+            "doors": [
+              1,
+              2,
+              4,
+              7
+            ]
+          },
+          {
+            "index": 1,
+            "x": -1,
+            "y": 0,
+            "kind": "combat",
+            "doors": [
+              0,
+              3
+            ]
+          },
+          {
+            "index": 2,
+            "x": 0,
+            "y": 1,
+            "kind": "combat",
+            "doors": [
+              0,
+              5,
+              6
+            ]
+          },
+          {
+            "index": 3,
+            "x": -1,
+            "y": -1,
+            "kind": "boss",
+            "doors": [
+              1
+            ]
+          },
+          {
+            "index": 4,
+            "x": 0,
+            "y": -1,
+            "kind": "combat",
+            "doors": [
+              0
+            ]
+          },
+          {
+            "index": 5,
+            "x": 0,
+            "y": 2,
+            "kind": "treasure",
+            "doors": [
+              2
+            ]
+          },
+          {
+            "index": 6,
+            "x": 1,
+            "y": 1,
+            "kind": "combat",
+            "doors": [
+              2
+            ]
+          },
+          {
+            "index": 7,
+            "x": 1,
+            "y": 0,
+            "kind": "combat",
+            "doors": [
+              0
+            ]
+          }
+        ],
+        "bossIndex": 3,
+        "treasureIndex": 5
+      }
+    },
+    {
+      "seed": 12345,
+      "stream": "Layout",
+      "roomCount": 12,
+      "graph": {
+        "rooms": [
+          {
+            "index": 0,
+            "x": 0,
+            "y": 0,
+            "kind": "start",
+            "doors": [
+              1,
+              3
+            ]
+          },
+          {
+            "index": 1,
+            "x": 1,
+            "y": 0,
+            "kind": "combat",
+            "doors": [
+              0,
+              2,
+              4
+            ]
+          },
+          {
+            "index": 2,
+            "x": 2,
+            "y": 0,
+            "kind": "combat",
+            "doors": [
+              1
+            ]
+          },
+          {
+            "index": 3,
+            "x": 0,
+            "y": 1,
+            "kind": "combat",
+            "doors": [
+              0,
+              6,
+              7,
+              10
+            ]
+          },
+          {
+            "index": 4,
+            "x": 1,
+            "y": -1,
+            "kind": "combat",
+            "doors": [
+              1,
+              5,
+              8
+            ]
+          },
+          {
+            "index": 5,
+            "x": 2,
+            "y": -1,
+            "kind": "combat",
+            "doors": [
+              4,
+              9,
+              11
+            ]
+          },
+          {
+            "index": 6,
+            "x": 0,
+            "y": 2,
+            "kind": "combat",
+            "doors": [
+              3
+            ]
+          },
+          {
+            "index": 7,
+            "x": -1,
+            "y": 1,
+            "kind": "combat",
+            "doors": [
+              3
+            ]
+          },
+          {
+            "index": 8,
+            "x": 0,
+            "y": -1,
+            "kind": "combat",
+            "doors": [
+              4
+            ]
+          },
+          {
+            "index": 9,
+            "x": 2,
+            "y": -2,
+            "kind": "boss",
+            "doors": [
+              5
+            ]
+          },
+          {
+            "index": 10,
+            "x": 1,
+            "y": 1,
+            "kind": "treasure",
+            "doors": [
+              3
+            ]
+          },
+          {
+            "index": 11,
+            "x": 3,
+            "y": -1,
+            "kind": "combat",
+            "doors": [
+              5
+            ]
+          }
+        ],
+        "bossIndex": 9,
+        "treasureIndex": 10
+      }
+    }
+  ]
+}
