@@ -8,6 +8,7 @@ node_modules/
 infra/certs/*.pem
 
 # Build / cache output
+Logs/
 dist/
 build/
 .vite/

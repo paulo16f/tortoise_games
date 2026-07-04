@@ -1,6 +1,5 @@
-// Colyseus connection + a tiny reactive store. Positions are read imperatively
-// in useFrame for smoothness; React state only tracks coarse, throttled facts
-// (player/enemy counts, local player stats, target) so the HUD re-renders.
+﻿// Colyseus connection + a tiny reactive store. Positions are read imperatively
+// in useFrame for smoothness; React state only tracks coarse, throttled facts.
 
 import { Client, Room } from "colyseus.js";
 import {
@@ -10,18 +9,16 @@ import {
   type ClassId,
   type PlayerView,
   type EnemyView,
+  type BossPortalView,
   type InputMessage,
   type SetTargetMessage,
   type UseSkillMessage,
   type CombatEventMessage,
   type WelcomeMessage,
 } from "@depthbreaker/protocol";
+import { combatBus } from "./combatBus";
+import { MAX_PROJECTILE_DELAY_MS, PROJECTILE_SPEED } from "../game/fx/fxConstants";
 
-/**
- * Minimal structural view of the decoded Colyseus state. room.state.players and
- * room.state.enemies are MapSchema instances at runtime — we only rely on the
- * MapSchema surface (forEach/get/size) plus the scalar top-level fields.
- */
 export interface MapLike<V> {
   forEach(cb: (value: V, key: string) => void): void;
   get(id: string): V | undefined;
@@ -33,6 +30,7 @@ export interface ZoneStateLike {
   enemies: MapLike<EnemyView>;
   seed: number;
   depth: number;
+  bossPortal: BossPortalView;
 }
 
 export interface ConnectOptions {
@@ -42,7 +40,6 @@ export interface ConnectOptions {
   classId: ClassId;
 }
 
-/** A floating combat number spawned from a ServerMessage.CombatEvent. */
 export interface CombatFloater {
   id: number;
   sourceId: string;
@@ -50,6 +47,7 @@ export interface CombatFloater {
   amount: number;
   kind: CombatEventMessage["kind"];
   bornAt: number;
+  delayMs: number;
 }
 
 export interface ZoneSnapshot {
@@ -61,15 +59,11 @@ export interface ZoneSnapshot {
   target: PlayerView | EnemyView | null;
   roomId: string;
   combat: CombatFloater[];
+  bossPortal: BossPortalView;
 }
 
 type Listener = () => void;
 
-/**
- * Module singleton store around one Colyseus Room. useSyncExternalStore reads a
- * cached immutable snapshot; the store is refreshed on state change (throttled)
- * and on combat events.
- */
 class ZoneStore {
   room: Room | null = null;
   selfId = "";
@@ -89,6 +83,7 @@ class ZoneStore {
       target: null,
       roomId: "",
       combat: [],
+      bossPortal: { active: false, x: 0, z: 0, countdown: 0 },
     };
   }
 
@@ -112,7 +107,6 @@ class ZoneStore {
     this.selfId = selfId;
 
     room.onStateChange(() => {
-      // Throttle HUD refresh to ~10 Hz; per-frame reads happen in useFrame.
       const now = performance.now();
       if (now - this.lastEmit < 100) return;
       this.lastEmit = now;
@@ -125,31 +119,39 @@ class ZoneStore {
     });
 
     room.onMessage(ServerMessage.CombatEvent, (msg: CombatEventMessage) => {
-      this.combat.push({
+      const floater: CombatFloater = {
         id: this.combatSeq++,
         sourceId: msg.sourceId,
         targetId: msg.targetId,
         amount: msg.amount,
         kind: msg.kind,
         bornAt: performance.now(),
-      });
-      // Keep only the last ~24 floaters and drop ones older than 1.5s.
-      const cutoff = performance.now() - 1500;
+        delayMs: this.projectileDelayMs(msg),
+      };
+      this.combat.push(floater);
+      const cutoff = performance.now() - 2000;
       this.combat = this.combat.filter((c) => c.bornAt >= cutoff).slice(-24);
+      combatBus.emit(floater);
       this.refresh();
     });
 
-    room.onLeave(() => {
-      this.detach();
-    });
-
+    room.onLeave(() => this.detach());
     this.refresh();
+  }
+
+  private projectileDelayMs(msg: CombatEventMessage): number {
+    if (msg.kind !== "hit" && msg.kind !== "crit" && msg.kind !== "skill") return 0;
+    const st = this.state;
+    const source = st?.players.get(msg.sourceId);
+    if (!source || source.classId !== "mage" || msg.amount <= 0) return 0;
+    const target = st?.enemies.get(msg.targetId) ?? st?.players.get(msg.targetId);
+    if (!target) return 0;
+    const dist = Math.hypot(target.x - source.x, target.z - source.z);
+    return Math.min(MAX_PROJECTILE_DELAY_MS, (dist / PROJECTILE_SPEED) * 1000);
   }
 
   private refresh(): void {
     const st = this.state;
-    // On join, room.state exists but its MapSchema children may not be decoded
-    // until the first state patch arrives — treat that as an empty zone.
     if (!st || !st.players || !st.enemies) {
       this.snapshot = ZoneStore.emptySnapshot();
       this.emit();
@@ -164,6 +166,7 @@ class ZoneStore {
       playerCount: st.players.size,
       enemyCount: st.enemies.size,
       depth: st.depth ?? 0,
+      bossPortal: st.bossPortal ?? { active: false, x: 0, z: 0, countdown: 0 },
       seed: st.seed ?? 0,
       self,
       target,
@@ -181,7 +184,6 @@ class ZoneStore {
     this.emit();
   }
 
-  // --- outbound messages -------------------------------------------------
   sendInput(msg: InputMessage): void {
     this.room?.send(ClientMessage.Input, msg);
   }
@@ -199,20 +201,11 @@ class ZoneStore {
 
 export const zoneStore = new ZoneStore();
 
-/**
- * Connect to the "zone" room. Passes a ticket if provided (dev servers accept
- * ticketless joins). Resolves once joined and the store is attached.
- */
 export async function connectToZone(opts: ConnectOptions): Promise<Room> {
   const client = new Client(opts.url);
-  const joinOpts: Record<string, unknown> = {
-    name: opts.name,
-    classId: opts.classId,
-  };
+  const joinOpts: Record<string, unknown> = { name: opts.name, classId: opts.classId };
   if (opts.ticket) joinOpts.ticket = opts.ticket;
-
   const room = await client.joinOrCreate(ZONE_ROOM, joinOpts);
-  // sessionId is the player's own entity id until Welcome confirms it.
   zoneStore.attach(room, room.sessionId);
   return room;
 }

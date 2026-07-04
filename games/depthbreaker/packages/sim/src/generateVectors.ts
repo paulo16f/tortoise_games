@@ -9,6 +9,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DeterministicRng, deriveStreamSeed, RngStream } from "./rng.js";
 import { damageReduction, resolveDamage } from "./combatMath.js";
+import { applyHeal, POTION_HEAL_FRACTION } from "./healing.js";
 import { XP_TO_NEXT, TOTAL_XP_TO_CAP, totalXpForLevel, levelForTotalXp } from "./xpCurve.js";
 import { ThreatTable } from "./threat.js";
 import { rollLoot, type LootTable } from "./lootRoller.js";
@@ -74,6 +75,23 @@ emit("damage_reduction.json", {
     damageReduction: damageReduction(c.armor, c.attackerLevel),
     finalDamage: resolveDamage(c.raw, c.armor, c.attackerLevel, c.isCrit),
   })),
+});
+
+// --- heal_potion.json ---------------------------------------------------------
+const healCases = [
+  { currentHp: 100, maxHp: 100, fraction: POTION_HEAL_FRACTION }, // full HP -> 0 effective
+  { currentHp: 1, maxHp: 100, fraction: POTION_HEAL_FRACTION },
+  { currentHp: 80, maxHp: 100, fraction: POTION_HEAL_FRACTION }, // overheal clamps to 20
+  { currentHp: 50, maxHp: 101, fraction: POTION_HEAL_FRACTION }, // roundHalfUp(35.35) = 35
+  { currentHp: 10, maxHp: 130, fraction: POTION_HEAL_FRACTION }, // roundHalfUp(45.5) = 46
+  { currentHp: 0, maxHp: 100, fraction: POTION_HEAL_FRACTION },
+  { currentHp: -5, maxHp: 100, fraction: POTION_HEAL_FRACTION }, // hostile hp clamps to 0
+  { currentHp: 40, maxHp: 100, fraction: -1 }, // hostile fraction clamps to 0
+];
+emit("heal_potion.json", {
+  spec: "GAME_MATH_SPEC.md — heal = min(missing, roundHalfUp(maxHp·fraction)); overheal excluded from effective",
+  potionHealFraction: POTION_HEAL_FRACTION,
+  cases: healCases.map((c) => ({ ...c, ...applyHeal(c.currentHp, c.maxHp, c.fraction) })),
 });
 
 // --- threat.json ------------------------------------------------------------

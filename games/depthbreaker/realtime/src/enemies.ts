@@ -1,14 +1,15 @@
-// Server-side enemy controller (design doc §5.3). Drives an EnemyState schema
-// object through the Idle -> Aggro -> Combat -> Leash FSM, using the shared
-// ThreatTable from @depthbreaker/sim for target selection. Runtime-only fields
-// (timers, spawn point, threat) live here; only EnemyState is synced.
+﻿// Server-side enemy controller. Drives an EnemyState through Idle -> Aggro ->
+// Combat -> Leash. EnemyDef carries the rank tuning used by wave spawns.
 
 import { ThreatTable } from "@depthbreaker/sim";
-import { ENEMY_AGGRO_RADIUS, ENEMY_LEASH_DISTANCE } from "@depthbreaker/protocol";
+import { ENEMY_AGGRO_RADIUS, ENEMY_LEASH_DISTANCE, isDungeonWalkable } from "@depthbreaker/protocol";
 import type { EnemyState } from "@depthbreaker/protocol";
+
+export type EnemyRank = "normal" | "elite" | "boss";
 
 export interface EnemyDef {
   id: string;
+  rank: EnemyRank;
   maxHp: number;
   attackDamage: number;
   attackInterval: number;
@@ -18,10 +19,12 @@ export interface EnemyDef {
   xpValue: number;
   currencyValue: number;
   level: number;
+  respawnDelay: number;
 }
 
 export const GRUNT: EnemyDef = {
   id: "grunt",
+  rank: "normal",
   maxHp: 50,
   attackDamage: 6,
   attackInterval: 1.2,
@@ -31,6 +34,36 @@ export const GRUNT: EnemyDef = {
   xpValue: 50,
   currencyValue: 5,
   level: 1,
+  respawnDelay: 0,
+};
+
+export const ELITE_GRUNT: EnemyDef = {
+  ...GRUNT,
+  id: "elite_grunt",
+  rank: "elite",
+  maxHp: 130,
+  attackDamage: 11,
+  attackInterval: 1.05,
+  moveSpeed: 3.8,
+  armor: 16,
+  xpValue: 140,
+  currencyValue: 18,
+  level: 3,
+};
+
+export const BOSS_BRUTE: EnemyDef = {
+  ...GRUNT,
+  id: "boss_brute",
+  rank: "boss",
+  maxHp: 520,
+  attackDamage: 18,
+  attackInterval: 1.35,
+  attackRange: 2.8,
+  moveSpeed: 2.6,
+  armor: 28,
+  xpValue: 600,
+  currencyValue: 80,
+  level: 6,
 };
 
 /** A live combat target the enemy can act on (player or another entity). */
@@ -58,7 +91,6 @@ export class EnemyController {
   private readonly spawnX: number;
   private readonly spawnZ: number;
   private attackCooldown = 0;
-  private readonly respawnDelay = 6;
   private respawnTimer = 0;
 
   constructor(
@@ -72,7 +104,6 @@ export class EnemyController {
     this.spawnZ = spawnZ;
   }
 
-  /** A player dealt `amount` damage — record threat so this enemy aggros them. */
   addThreat(playerId: string, amount: number): void {
     this.threat.addDamage(playerId, amount);
   }
@@ -81,11 +112,11 @@ export class EnemyController {
     this.threat.remove(playerId);
   }
 
-  /** Advance the FSM one tick. Returns an action for the room to resolve. */
   update(dt: number, targets: Map<string, CombatTarget>): EnemyAction {
     const s = this.state;
 
     if (!s.alive) {
+      if (this.def.respawnDelay <= 0) return { attackTargetId: null };
       this.respawnTimer -= dt;
       if (this.respawnTimer <= 0) this.respawn();
       return { attackTargetId: null };
@@ -93,7 +124,6 @@ export class EnemyController {
 
     this.attackCooldown = Math.max(0, this.attackCooldown - dt);
 
-    // Leash: too far from spawn -> drop everything, walk home, heal, idle.
     if (dist(s.x, s.z, this.spawnX, this.spawnZ) > ENEMY_LEASH_DISTANCE) {
       this.enterLeash();
     }
@@ -107,11 +137,10 @@ export class EnemyController {
       return { attackTargetId: null };
     }
 
-    // Idle: wake when a live target is within aggro radius.
     if (s.fsm === "idle") {
       for (const t of targets.values()) {
         if (t.alive && dist(s.x, s.z, t.x, t.z) <= ENEMY_AGGRO_RADIUS) {
-          this.threat.addDamage(t.id, 1); // seed threat so selectTarget has a table
+          this.threat.addDamage(t.id, 1);
           s.fsm = "aggro";
           break;
         }
@@ -119,7 +148,6 @@ export class EnemyController {
       if (s.fsm === "idle") return { attackTargetId: null };
     }
 
-    // Aggro/Combat: pick the highest-threat live target and engage.
     const targetId = this.threat.selectTarget(s.targetId || null, (id) => {
       const t = targets.get(id);
       return t ? dist(s.x, s.z, t.x, t.z) <= this.def.attackRange : false;
@@ -127,7 +155,6 @@ export class EnemyController {
     const target = targetId ? targets.get(targetId) : undefined;
 
     if (!target || !target.alive) {
-      // Nobody left to fight -> reset toward spawn.
       this.enterLeash();
       return { attackTargetId: null };
     }
@@ -149,7 +176,6 @@ export class EnemyController {
     return { attackTargetId: null };
   }
 
-  /** Apply damage from a player; returns true if this hit killed the enemy. */
   takeDamage(amount: number): boolean {
     if (!this.state.alive) return false;
     this.state.hp = Math.max(0, this.state.hp - amount);
@@ -158,7 +184,7 @@ export class EnemyController {
       this.state.fsm = "idle";
       this.state.targetId = "";
       this.threat.clear();
-      this.respawnTimer = this.respawnDelay;
+      this.respawnTimer = this.def.respawnDelay;
       return true;
     }
     return false;
@@ -187,8 +213,16 @@ export class EnemyController {
     const len = Math.sqrt(dx * dx + dz * dz);
     if (len < 1e-4) return;
     const step = Math.min(len, this.def.moveSpeed * dt);
-    s.x += (dx / len) * step;
-    s.z += (dz / len) * step;
+    const nextX = s.x + (dx / len) * step;
+    const nextZ = s.z + (dz / len) * step;
+    if (isDungeonWalkable(nextX, nextZ, 0.45)) {
+      s.x = nextX;
+      s.z = nextZ;
+    } else if (isDungeonWalkable(nextX, s.z, 0.45)) {
+      s.x = nextX;
+    } else if (isDungeonWalkable(s.x, nextZ, 0.45)) {
+      s.z = nextZ;
+    }
     s.yaw = Math.atan2(dx, dz);
   }
 

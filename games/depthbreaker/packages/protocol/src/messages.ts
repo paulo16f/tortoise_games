@@ -1,4 +1,4 @@
-// Client <-> server message contract. Colyseus messages are addressed by a
+﻿// Client <-> server message contract. Colyseus messages are addressed by a
 // string type; these constants + payload interfaces keep both ends in sync.
 
 /** Client -> server. */
@@ -7,7 +7,7 @@ export const ClientMessage = {
   Input: "input",
   /** Request to target an entity (player or enemy) by its state id. */
   SetTarget: "setTarget",
-  /** Use skill slot 0 or 1 on the current target. */
+  /** Use a skill slot. Q=0, E=2, potion=1. */
   UseSkill: "useSkill",
 } as const;
 
@@ -35,7 +35,7 @@ export interface SetTargetMessage {
 }
 
 export interface UseSkillMessage {
-  /** Skill slot: 0 or 1. */
+  /** Skill slot: 0 = Q class skill, 2 = E class skill, 1 = potion. */
   slot: number;
 }
 
@@ -44,7 +44,7 @@ export interface CombatEventMessage {
   targetId: string;
   /** Positive = damage dealt, negative = healing. */
   amount: number;
-  kind: "hit" | "crit" | "heal" | "death";
+  kind: "hit" | "crit" | "heal" | "death" | "skill";
 }
 
 export interface WelcomeMessage {

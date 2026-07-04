@@ -1,36 +1,40 @@
-// Colyseus authoritative room state. These classes are the wire format:
+﻿// Colyseus authoritative room state. These classes are the wire format:
 // the realtime server mutates them; the client imports the SAME classes so
-// colyseus.js decodes into typed objects. Data only — no behavior.
-//
-// Uses the decorator-free `defineTypes` API (not @type decorators) so the
-// schema transpiles identically under tsx/esbuild (server) and Vite/esbuild
-// (client) without per-tool experimentalDecorators configuration. Fields are
-// declared with definite assignment (no initializers) and set in the
-// constructor to avoid useDefineForClassFields conflicts across bundlers.
+// colyseus.js decodes into typed objects. Data only, no behavior.
 
 import { Schema, MapSchema, defineTypes } from "@colyseus/schema";
 
 /** One connected player. `id` equals the Colyseus sessionId. */
 export class PlayerState extends Schema {
-  id!: string;
-  accountId!: string;
-  characterId!: string;
-  name!: string;
-  classId!: string;
+  declare id: string;
+  declare accountId: string;
+  declare characterId: string;
+  declare name: string;
+  declare classId: string;
 
-  x!: number;
-  y!: number;
-  z!: number;
-  yaw!: number;
+  declare x: number;
+  declare y: number;
+  declare z: number;
+  declare yaw: number;
 
-  hp!: number;
-  maxHp!: number;
-  level!: number;
-  runXp!: number;
+  declare hp: number;
+  declare maxHp: number;
+  declare level: number;
+  declare runXp: number;
 
   /** Current target entity id (player or enemy), empty when none. */
-  targetId!: string;
-  alive!: boolean;
+  declare targetId: string;
+  declare alive: boolean;
+  /** Seconds until the healing potion is usable again (0 = ready). */
+  declare potionCooldown: number;
+  /** Seconds until Q class skill is usable again (0 = ready). */
+  declare skillQCooldown: number;
+  /** Seconds until E class skill is usable again (0 = ready). */
+  declare skillECooldown: number;
+  /** Seconds of warrior immunity remaining. */
+  declare shieldSeconds: number;
+  /** Seconds of mage orbiting frost projectiles remaining. */
+  declare frostSeconds: number;
 
   constructor() {
     super();
@@ -49,6 +53,11 @@ export class PlayerState extends Schema {
     this.runXp = 0;
     this.targetId = "";
     this.alive = true;
+    this.potionCooldown = 0;
+    this.skillQCooldown = 0;
+    this.skillECooldown = 0;
+    this.shieldSeconds = 0;
+    this.frostSeconds = 0;
   }
 }
 
@@ -68,27 +77,34 @@ defineTypes(PlayerState, {
   runXp: "number",
   targetId: "string",
   alive: "boolean",
+  potionCooldown: "number",
+  skillQCooldown: "number",
+  skillECooldown: "number",
+  shieldSeconds: "number",
+  frostSeconds: "number",
 });
 
 /** One server-driven enemy. */
 export class EnemyState extends Schema {
-  id!: string;
-  defId!: string;
-  x!: number;
-  y!: number;
-  z!: number;
-  yaw!: number;
-  hp!: number;
-  maxHp!: number;
+  declare id: string;
+  declare defId: string;
+  declare rank: string;
+  declare x: number;
+  declare y: number;
+  declare z: number;
+  declare yaw: number;
+  declare hp: number;
+  declare maxHp: number;
   /** FSM state name: "idle" | "aggro" | "combat" | "leash". */
-  fsm!: string;
-  targetId!: string;
-  alive!: boolean;
+  declare fsm: string;
+  declare targetId: string;
+  declare alive: boolean;
 
   constructor() {
     super();
     this.id = "";
     this.defId = "";
+    this.rank = "normal";
     this.x = 0;
     this.y = 0;
     this.z = 0;
@@ -104,6 +120,7 @@ export class EnemyState extends Schema {
 defineTypes(EnemyState, {
   id: "string",
   defId: "string",
+  rank: "string",
   x: "number",
   y: "number",
   z: "number",
@@ -115,13 +132,36 @@ defineTypes(EnemyState, {
   alive: "boolean",
 });
 
+export class BossPortalState extends Schema {
+  declare active: boolean;
+  declare x: number;
+  declare z: number;
+  declare countdown: number;
+
+  constructor() {
+    super();
+    this.active = false;
+    this.x = 0;
+    this.z = 0;
+    this.countdown = 0;
+  }
+}
+
+defineTypes(BossPortalState, {
+  active: "boolean",
+  x: "number",
+  z: "number",
+  countdown: "number",
+});
+
 /** Root synced state for a zone room. */
 export class ZoneState extends Schema {
-  zoneId!: string;
-  seed!: number;
-  depth!: number;
-  players!: MapSchema<PlayerState>;
-  enemies!: MapSchema<EnemyState>;
+  declare zoneId: string;
+  declare seed: number;
+  declare depth: number;
+  declare players: MapSchema<PlayerState>;
+  declare enemies: MapSchema<EnemyState>;
+  declare bossPortal: BossPortalState;
 
   constructor() {
     super();
@@ -130,6 +170,7 @@ export class ZoneState extends Schema {
     this.depth = 0;
     this.players = new MapSchema<PlayerState>();
     this.enemies = new MapSchema<EnemyState>();
+    this.bossPortal = new BossPortalState();
   }
 }
 
@@ -139,4 +180,5 @@ defineTypes(ZoneState, {
   depth: "number",
   players: { map: PlayerState },
   enemies: { map: EnemyState },
+  bossPortal: BossPortalState,
 });

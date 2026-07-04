@@ -1,6 +1,5 @@
-// Plain read-only interfaces mirroring the Colyseus schema fields. The client
-// uses these to type room.state (decoded via colyseus.js reflection) without
-// depending on the Schema classes' internals. Keep in sync with schema.ts.
+﻿// Plain read-only interfaces mirroring the Colyseus schema fields. The client
+// uses these to type room.state without depending on Schema internals.
 
 export interface PlayerView {
   id: string;
@@ -18,11 +17,17 @@ export interface PlayerView {
   runXp: number;
   targetId: string;
   alive: boolean;
+  potionCooldown: number;
+  skillQCooldown: number;
+  skillECooldown: number;
+  shieldSeconds: number;
+  frostSeconds: number;
 }
 
 export interface EnemyView {
   id: string;
   defId: string;
+  rank: string;
   x: number;
   y: number;
   z: number;
@@ -32,4 +37,11 @@ export interface EnemyView {
   fsm: string;
   targetId: string;
   alive: boolean;
+}
+
+export interface BossPortalView {
+  active: boolean;
+  x: number;
+  z: number;
+  countdown: number;
 }

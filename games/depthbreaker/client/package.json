@@ -18,7 +18,8 @@
     "colyseus.js": "^0.16.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "three": "^0.180.0"
+    "three": "^0.180.0",
+    "three-stdlib": "^2.36.1"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

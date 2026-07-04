@@ -1,0 +1,62 @@
+{
+  "spec": "GAME_MATH_SPEC.md — heal = min(missing, roundHalfUp(maxHp·fraction)); overheal excluded from effective",
+  "potionHealFraction": 0.35,
+  "cases": [
+    {
+      "currentHp": 100,
+      "maxHp": 100,
+      "fraction": 0.35,
+      "newHp": 100,
+      "effective": 0
+    },
+    {
+      "currentHp": 1,
+      "maxHp": 100,
+      "fraction": 0.35,
+      "newHp": 36,
+      "effective": 35
+    },
+    {
+      "currentHp": 80,
+      "maxHp": 100,
+      "fraction": 0.35,
+      "newHp": 100,
+      "effective": 20
+    },
+    {
+      "currentHp": 50,
+      "maxHp": 101,
+      "fraction": 0.35,
+      "newHp": 85,
+      "effective": 35
+    },
+    {
+      "currentHp": 10,
+      "maxHp": 130,
+      "fraction": 0.35,
+      "newHp": 56,
+      "effective": 46
+    },
+    {
+      "currentHp": 0,
+      "maxHp": 100,
+      "fraction": 0.35,
+      "newHp": 35,
+      "effective": 35
+    },
+    {
+      "currentHp": -5,
+      "maxHp": 100,
+      "fraction": 0.35,
+      "newHp": 35,
+      "effective": 35
+    },
+    {
+      "currentHp": 40,
+      "maxHp": 100,
+      "fraction": -1,
+      "newHp": 40,
+      "effective": 0
+    }
+  ]
+}

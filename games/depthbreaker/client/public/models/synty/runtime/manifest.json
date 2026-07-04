@@ -1,0 +1,95 @@
+{
+  "sourcePack": "POLYGON Dungeon Realms",
+  "runtimePolicy": "Only low, camera-safe modular pieces are approved for the v1 combat slice. Tall walls, pillars, torches, stairs, and bridge remain conversion-only until cutaway/fade validation exists.",
+  "assets": [
+    {
+      "key": "floor",
+      "category": "floor",
+      "url": "/models/synty/runtime/dungeon/floor.glb",
+      "bounds": { "size": [5.0003, 0.2505, 5.0007], "center": [2.4998, -0.1038, 2.5003] },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "walkable_tile",
+      "runtimeApproved": true
+    },
+    {
+      "key": "barrel",
+      "category": "prop",
+      "url": "/models/synty/runtime/dungeon/barrel.glb",
+      "bounds": { "size": [0.7176, 0.9098, 0.7176], "center": [-0.0103, 0.4549, 0.0004] },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "barrel_broken",
+      "category": "prop",
+      "url": "/models/synty/runtime/dungeon/barrel_broken.glb",
+      "bounds": { "size": [0.7816, 0.9598, 0.8383], "center": [0.015, 0.4594, 0.0072] },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "rubble",
+      "category": "prop",
+      "url": "/models/synty/runtime/dungeon/rubble.glb",
+      "bounds": { "size": [2.4911, 0.2811, 2.0933], "center": [0, 0.0375, 0] },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "rock_small",
+      "category": "prop",
+      "url": "/models/synty/runtime/dungeon/rock_small.glb",
+      "bounds": { "size": [0.2695, 0.2577, 0.2949], "center": [0.0184, -0.0046, 0.1264] },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "chest",
+      "category": "prop",
+      "url": "/models/synty/runtime/dungeon/chest.glb",
+      "bounds": { "size": [3.8317, 1.3258, 1.8746], "center": [-0.0036, 0.6486, 0] },
+      "visualScale": 0.72,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    }
+  ],
+  "characters": [
+    {
+      "key": "warrior",
+      "url": "/models/synty/depthbreaker/characters/warrior.glb",
+      "visualHeight": 1.15,
+      "radius": 0.42,
+      "requiredClips": ["idle", "run", "attack", "block", "hit", "death"],
+      "runtimeApproved": false,
+      "fallback": "/models/kaykit/characters/kaykit_knight.glb"
+    },
+    {
+      "key": "mage",
+      "url": "/models/synty/depthbreaker/characters/mage.glb",
+      "visualHeight": 1.15,
+      "radius": 0.42,
+      "requiredClips": ["idle", "run", "attack", "hit", "death"],
+      "runtimeApproved": false,
+      "fallback": "/models/kaykit/characters/kaykit_mage.glb"
+    },
+    {
+      "key": "skeleton",
+      "url": "/models/synty/depthbreaker/characters/skeleton.glb",
+      "visualHeight": 1.05,
+      "radius": 0.4,
+      "requiredClips": ["idle", "run", "attack", "hit", "death"],
+      "runtimeApproved": false,
+      "fallback": "/models/kaykit/characters/kaykit_skeleton_warrior.glb"
+    }
+  ]
+}
