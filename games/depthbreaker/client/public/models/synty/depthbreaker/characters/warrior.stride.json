@@ -1,8 +1,8 @@
 {
-  "characterHeight": 1.79117,
+  "characterHeight": 1.79114,
   "strideNorm": {
-    "walk": 0.83744,
-    "run": 1.01035,
-    "sprint": 2.42624
+    "walk": 0.83745,
+    "run": 1.01034,
+    "sprint": 2.42626
   }
 }

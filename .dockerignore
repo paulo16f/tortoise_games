@@ -1,0 +1,12 @@
+# Build-context exclusions for the depthbreaker service images (context = repo root).
+**/node_modules
+**/dist
+**/.git
+**/.github
+Logs/
+**/Logs/
+**/.codex-logs/
+# Large local-only asset/editor folders (also gitignored, excluded belt-and-suspenders).
+games/depthbreaker/My project (1)/
+games/depthbreaker/unity/
+**/*.log

@@ -1,6 +1,13 @@
 import { LoopOnce, LoopRepeat, type AnimationAction } from "three";
 import type { MotionProfile } from "./motionProfiles";
 
+// Bump this string whenever the locomotion behaviour changes. It logs once at
+// import time so we can confirm from the browser console that the running app
+// is actually on the latest build (and not a stale cached bundle).
+export const LOCOMOTION_BUILD = "phase-sync-v2";
+// eslint-disable-next-line no-console
+console.log(`%c[depthbreaker] locomotion controller: ${LOCOMOTION_BUILD}`, "color:#38bdf8;font-weight:bold");
+
 /** Logical clip slots -> GLB clip names. Locomotion + transition slots are
  * optional so a GLB (or fallback) that lacks them degrades to the plain speed
  * blend. Baked by tools/convert_synty_depthbreaker.py. */

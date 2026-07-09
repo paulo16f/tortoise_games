@@ -13,6 +13,7 @@ import {
 import syntyRuntimeManifest from "../../../public/models/synty/runtime/manifest.json";
 import { AnimatedCharacter, type PreviewState, type StrideNorm } from "./AnimatedCharacter";
 import { MOTION_PROFILES, type MotionProfileId } from "./motionProfiles";
+import { LOCOMOTION_BUILD } from "./locomotionController";
 
 type ManifestCharacter = {
   key: string;
@@ -92,7 +93,7 @@ export function AnimationDebugView() {
       </Canvas>
 
       <section style={{ position: "fixed", top: 16, left: 16, display: "grid", gap: 8, padding: 12, background: "rgba(8, 9, 12, 0.86)", border: "1px solid rgba(148, 163, 184, 0.25)", borderRadius: 8, fontFamily: "system-ui, sans-serif", minWidth: 300 }}>
-        <strong>Animation QA</strong>
+        <strong>Animation QA <span style={{ color: "#38bdf8", fontWeight: 400 }}>· build: {LOCOMOTION_BUILD}</span></strong>
         <label>
           Character{" "}
           <select value={character?.key ?? ""} onChange={(event) => { setCharacterKey(event.target.value); setClipName(""); }}>

@@ -313,11 +313,11 @@
       "fallback": "/models/kaykit/characters/kaykit_knight.glb",
       "naturalHeight": 1.79117,
       "restMinY": -0.00312,
-      "assetVersion": "dbb17c5710b7",
+      "assetVersion": "95975a04057e",
       "strideNorm": {
-        "walk": 0.83744,
-        "run": 1.01035,
-        "sprint": 2.42624
+        "walk": 0.83745,
+        "run": 1.01034,
+        "sprint": 2.42626
       }
     },
     {
@@ -356,11 +356,11 @@
       "fallback": "/models/kaykit/characters/kaykit_knight.glb",
       "naturalHeight": 1.78695,
       "restMinY": 0.0011,
-      "assetVersion": "42befda499af",
+      "assetVersion": "488c2cfea041",
       "strideNorm": {
-        "walk": 0.83942,
-        "run": 1.01273,
-        "sprint": 2.43197
+        "walk": 0.96747,
+        "run": 1.16719,
+        "sprint": 2.80292
       }
     },
     {
@@ -400,11 +400,11 @@
       "fallback": "/models/kaykit/characters/kaykit_mage.glb",
       "naturalHeight": 1.79399,
       "restMinY": -0.00547,
-      "assetVersion": "e5c59f51ef64",
+      "assetVersion": "18190432fcb2",
       "strideNorm": {
-        "walk": 0.83613,
-        "run": 1.00876,
-        "sprint": 2.42242
+        "walk": 0.96108,
+        "run": 1.15949,
+        "sprint": 2.78443
       }
     },
     {
@@ -443,11 +443,11 @@
       "fallback": "/models/kaykit/characters/kaykit_skeleton_warrior.glb",
       "naturalHeight": 1.83556,
       "restMinY": -0.00033,
-      "assetVersion": "02be76ef817f",
+      "assetVersion": "a6520f93206f",
       "strideNorm": {
-        "walk": 0.81719,
-        "run": 0.98591,
-        "sprint": 2.36756
+        "walk": 0.96554,
+        "run": 1.16487,
+        "sprint": 2.79735
       }
     },
     {
@@ -486,11 +486,11 @@
       "fallback": "/models/kaykit/characters/kaykit_skeleton_warrior.glb",
       "naturalHeight": 1.62796,
       "restMinY": -0.00797,
-      "assetVersion": "1537a981a058",
+      "assetVersion": "c6562ff4dd97",
       "strideNorm": {
-        "walk": 0.9214,
-        "run": 1.11164,
-        "sprint": 2.66948
+        "walk": 0.95481,
+        "run": 1.15192,
+        "sprint": 2.76626
       }
     },
     {
@@ -529,11 +529,11 @@
       "fallback": "/models/kaykit/characters/kaykit_skeleton_minion.glb",
       "naturalHeight": 1.82552,
       "restMinY": -0.00033,
-      "assetVersion": "22568eca53cb",
+      "assetVersion": "8df08571b014",
       "strideNorm": {
-        "walk": 0.82168,
-        "run": 0.99133,
-        "sprint": 2.38058
+        "walk": 0.9655,
+        "run": 1.16482,
+        "sprint": 2.79723
       }
     }
   ]
