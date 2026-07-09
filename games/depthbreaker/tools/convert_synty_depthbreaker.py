@@ -1,4 +1,10 @@
-"""Build Depthbreaker-ready Synty Dungeon Realms GLBs with named clips.
+"""LEGACY: Blender-based Depthbreaker Synty GLB builder.
+
+The active character pipeline is now Unity Humanoid retarget export via
+`My project (1)/Assets/Editor/DepthbreakerGltfExport.cs`. Keep this file only as
+historical fallback/reference; do not use it for approved runtime character GLBs.
+
+Build Depthbreaker-ready Synty Dungeon Realms GLBs with named clips.
 
 The active v1 runtime uses Polygon Dungeon Realms characters because they share
 the same bone names as the Polygon locomotion/combat animation packs. Keep this
@@ -51,7 +57,7 @@ CLIPS = {
     # Prefer Polygon clips over Sidekick for Dungeon Realms / standard POLYGON
     # rigs. Keep this as the single runtime source of truth: if a clip choice
     # changes, regenerate these GLBs instead of branching at runtime.
-    "idle": f"{_SWORD}/Idle/Menacing01/A_Idle_Menacing01_Sword.fbx",
+    "idle": f"{_SWORD}/Idle/Base/A_Idle_Base_Sword.fbx",
     "walk": f"{_LOCO}/Locomotion/Walk/A_Walk_F_Masc.fbx",
     "run": f"{_LOCO}/Locomotion/Run/A_Run_F_Masc.fbx",
     "sprint": f"{_LOCO}/Locomotion/Sprint/A_Sprint_F_Masc.fbx",

@@ -16,7 +16,7 @@ const warnings = [];
 const MOTION_PROFILES = new Set(["humanoidPlayer", "lightEnemy", "eliteEnemy", "heavyBoss"]);
 const MIN_CHARACTER_CLIP_DURATION = 0.25;
 const MIN_CHARACTER_CLIP_TRACKS = 20;
-const REQUIRED_CHARACTER_BONES = ["Root", "Hips", "Spine_01", "Head", "Hand_R", "Ankle_L", "Ankle_R"];
+const REQUIRED_CHARACTER_BONES = ["Hips", "Spine_01", "Head", "Hand_R", "Ankle_L", "Ankle_R"];
 const CLIP_SAMPLE_FRACTIONS = [0, 0.25, 0.5, 0.75, 1];
 const MIN_IDLE_HAND_BIND_DELTA = 0.12;
 
