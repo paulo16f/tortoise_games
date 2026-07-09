@@ -7,6 +7,9 @@ export const ARPG_CAMERA = {
   minDistance: 6.5,
   maxDistance: 12,
   fov: 48,
-  panLimit: 1.2,
+  minPitch: 0.32,
+  maxPitch: 0.82,
+  yawSpeed: 0.006,
+  pitchSpeed: 0.0035,
   targetLerp: 12,
 } as const;

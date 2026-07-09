@@ -18,13 +18,13 @@ export function CameraRig() {
     const self = zoneStore.state?.players.get(zoneStore.selfId);
     const targetHeight = (self ? resolvePlayerModel(self.classId)?.visualHeight : undefined) ?? 1.15;
     const lookHeight = targetHeight * 0.72;
-    const cosPitch = Math.cos(ARPG_CAMERA.pitch);
-    const ox = Math.sin(ARPG_CAMERA.yaw) * cosPitch * o.distance;
-    const oz = Math.cos(ARPG_CAMERA.yaw) * cosPitch * o.distance;
-    const oy = Math.sin(ARPG_CAMERA.pitch) * o.distance;
-    desired.set(p.x + o.panX + ox, p.y + oy + lookHeight, p.z + o.panZ + oz);
+    const cosPitch = Math.cos(o.pitch);
+    const ox = Math.sin(o.yaw) * cosPitch * o.distance;
+    const oz = Math.cos(o.yaw) * cosPitch * o.distance;
+    const oy = Math.sin(o.pitch) * o.distance;
+    desired.set(p.x + ox, p.y + oy + lookHeight, p.z + oz);
     camera.position.lerp(desired, Math.min(1, ARPG_CAMERA.targetLerp * delta));
-    lookTarget.set(p.x + o.panX, p.y + lookHeight, p.z + o.panZ);
+    lookTarget.set(p.x, p.y + lookHeight, p.z);
     camera.lookAt(lookTarget);
   });
 

@@ -8,6 +8,17 @@ import { useZoneState } from "../net/useZone";
 import { zoneStore } from "../net/room";
 import type { EnemyView, PlayerView } from "@depthbreaker/protocol";
 
+const WEAPON_LABELS: Record<string, string> = {
+  iron_sword: "Iron Sword",
+  ash_staff: "Ash Staff",
+};
+
+function weaponIcon(weaponId?: string): string {
+  if (weaponId === "ash_staff") return "ST";
+  if (weaponId === "iron_sword") return "SW";
+  return "--";
+}
+
 /** Human-readable enemy AI state for the target frame. */
 function enemyStatus(fsm: string): string {
   switch (fsm) {
@@ -140,18 +151,6 @@ function PotionSlot({ cooldown }: { cooldown: number }) {
           </span>
         </>
       )}
-      <span
-        style={{
-          position: "absolute",
-          right: 3,
-          bottom: 1,
-          fontSize: 10,
-          opacity: 0.8,
-          color: "#e6e9ef",
-        }}
-      >
-        2
-      </span>
     </div>
   );
 }
@@ -230,7 +229,7 @@ export function Hud() {
       {/* Local player panel (bottom-left). */}
       <div style={{ position: "absolute", left: 16, bottom: 16, ...panelStyle }}>
         <div style={{ fontWeight: 600, marginBottom: 6 }}>
-          {self?.name ?? "â€”"}{" "}
+          {self?.name ?? "—"}{" "}
           <span style={{ opacity: 0.7, fontWeight: 400 }}>
             ({self?.classId ?? "?"})
           </span>
@@ -248,6 +247,27 @@ export function Hud() {
           <span style={{ opacity: 0.7, fontVariantNumeric: "tabular-nums" }}>
             {need > 0 ? `${xpIntoLevel}/${need}` : "MAX"}
           </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              display: "grid",
+              placeItems: "center",
+              borderRadius: 6,
+              border: "1px solid rgba(255,255,255,0.2)",
+              background: "rgba(15,23,42,0.86)",
+              fontSize: 18,
+            }}
+            title="Equipped weapon"
+          >
+            {weaponIcon(self?.weaponId)}
+          </div>
+          <div>
+            <div style={{ opacity: 0.65, fontSize: 11 }}>Weapon</div>
+            <div style={{ fontWeight: 700 }}>{WEAPON_LABELS[self?.weaponId ?? ""] ?? self?.weaponId ?? "Unequipped"}</div>
+          </div>
         </div>
       </div>
 
@@ -276,11 +296,12 @@ export function Hud() {
             </span>
           </div>
           {isEnemy(target) && (
-            <div style={{ opacity: 0.7, marginTop: 5, fontSize: 12 }}>
-              {enemyStatus(target.fsm)}
+          <div style={{ opacity: 0.7, marginTop: 5, fontSize: 12 }}>
+            {self?.autoAttack && self.targetId === target.id ? "auto attack on | " : ""}
+            {enemyStatus(target.fsm)}
               {target.targetId && (
                 <>
-                  {" | "}â†’ {targetOfTargetName(target.targetId, self?.id)}
+                  {" | "}→ {targetOfTargetName(target.targetId, self?.id)}
                 </>
               )}
             </div>
@@ -301,14 +322,21 @@ export function Hud() {
           }}
         >
           <SkillSlot
-            hotkey="Q"
+            hotkey="1"
+            label={self.autoAttack ? "AUTO" : "ATK"}
+            cooldown={0}
+            max={1}
+            active={self.autoAttack}
+          />
+          <SkillSlot
+            hotkey="2"
             label={self.classId === "mage" ? "FIRE" : "SHIELD"}
             cooldown={self.skillQCooldown ?? 0}
             max={self.classId === "mage" ? 6 : 10}
             active={(self.shieldSeconds ?? 0) > 0}
           />
           <SkillSlot
-            hotkey="E"
+            hotkey="3"
             label={self.classId === "mage" ? "FROST" : "SLASH"}
             cooldown={self.skillECooldown ?? 0}
             max={self.classId === "mage" ? 14 : 7}
@@ -324,7 +352,7 @@ export function Hud() {
           {snap.bossPortal.active && <> | boss in {Math.ceil(snap.bossPortal.countdown)}s</>}
         </div>
         <div style={{ opacity: 0.6, marginTop: 4, fontSize: 12 }}>
-          WASD move | click/Tab target | right-drag pan | scroll zoom | Q/E skills | 2 potion
+          WASD/click move | hover mob highlight | click mob auto-attack | Tab target | 1 auto | 2-5 skills | V weapon | right-drag rotate
         </div>
       </div>
     </div>

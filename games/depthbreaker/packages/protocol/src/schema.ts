@@ -24,7 +24,16 @@ export class PlayerState extends Schema {
 
   /** Current target entity id (player or enemy), empty when none. */
   declare targetId: string;
+  /** Whether the server should auto-follow and basic-attack the current target. */
+  declare autoAttack: boolean;
+  /** Currently equipped weapon item id; v1 exposes weapon only. */
+  declare weaponId: string;
   declare alive: boolean;
+  declare actionState: string;
+  declare actionStartedAt: number;
+  declare actionEndsAt: number;
+  declare actionTargetId: string;
+  declare actionId: string;
   /** Seconds until the healing potion is usable again (0 = ready). */
   declare potionCooldown: number;
   /** Seconds until Q class skill is usable again (0 = ready). */
@@ -52,7 +61,14 @@ export class PlayerState extends Schema {
     this.level = 1;
     this.runXp = 0;
     this.targetId = "";
+    this.autoAttack = false;
+    this.weaponId = "iron_sword";
     this.alive = true;
+    this.actionState = "idle";
+    this.actionStartedAt = 0;
+    this.actionEndsAt = 0;
+    this.actionTargetId = "";
+    this.actionId = "";
     this.potionCooldown = 0;
     this.skillQCooldown = 0;
     this.skillECooldown = 0;
@@ -76,7 +92,14 @@ defineTypes(PlayerState, {
   level: "number",
   runXp: "number",
   targetId: "string",
+  autoAttack: "boolean",
+  weaponId: "string",
   alive: "boolean",
+  actionState: "string",
+  actionStartedAt: "number",
+  actionEndsAt: "number",
+  actionTargetId: "string",
+  actionId: "string",
   potionCooldown: "number",
   skillQCooldown: "number",
   skillECooldown: "number",
@@ -99,6 +122,11 @@ export class EnemyState extends Schema {
   declare fsm: string;
   declare targetId: string;
   declare alive: boolean;
+  declare actionState: string;
+  declare actionStartedAt: number;
+  declare actionEndsAt: number;
+  declare actionTargetId: string;
+  declare actionId: string;
 
   constructor() {
     super();
@@ -114,6 +142,11 @@ export class EnemyState extends Schema {
     this.fsm = "idle";
     this.targetId = "";
     this.alive = true;
+    this.actionState = "idle";
+    this.actionStartedAt = 0;
+    this.actionEndsAt = 0;
+    this.actionTargetId = "";
+    this.actionId = "";
   }
 }
 
@@ -130,6 +163,11 @@ defineTypes(EnemyState, {
   fsm: "string",
   targetId: "string",
   alive: "boolean",
+  actionState: "string",
+  actionStartedAt: "number",
+  actionEndsAt: "number",
+  actionTargetId: "string",
+  actionId: "string",
 });
 
 export class BossPortalState extends Schema {

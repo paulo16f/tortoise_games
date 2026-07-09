@@ -1,3 +1,5 @@
+import { buildDungeon, DEFAULT_DEPTH, DEFAULT_SEED } from "./mapGen.js";
+
 export interface Rect {
   minX: number;
   maxX: number;
@@ -10,78 +12,89 @@ export interface Vec2 {
   z: number;
 }
 
+export type DungeonRoomId = "market" | "normal" | "elite" | "boss";
+export type DungeonVisualAssetId =
+  | "floor"
+  | "bones"
+  | "crystal"
+  | "crystal_alt"
+  | "mushroom"
+  | "mushroom_alt"
+  | "rocks"
+  | "skull"
+  | "stairs"
+  | "chest_closed"
+  | "chest_open"
+  | "campfire"
+  | "crate";
+
 export interface DungeonProp {
-  asset: "barrel" | "barrel_broken" | "rubble" | "rock_small" | "chest";
+  asset: Exclude<DungeonVisualAssetId, "floor">;
   x: number;
   z: number;
   yaw?: number;
 }
 
+export interface DungeonRoom {
+  id: DungeonRoomId;
+  rect: Rect;
+}
+
+export interface DungeonVisualPlacement {
+  asset: DungeonVisualAssetId;
+  x: number;
+  z: number;
+  y?: number;
+  yaw?: number;
+  scale?: number | [number, number, number];
+  tint?: string;
+}
+
 export interface DungeonMapDefinition {
   tileSize: number;
+  rooms: DungeonRoom[];
   walkable: Rect[];
+  collision: Rect[];
   floorTiles: Vec2[];
   playerSpawn: Vec2;
+  normalSpawns: Vec2[];
+  eliteSpawns: Vec2[];
   enemySpawns: Vec2[];
   waveSpawns: Vec2[];
   bossPortal: Vec2;
   props: DungeonProp[];
+  visualPlacements: DungeonVisualPlacement[];
 }
 
-const TILE = 5;
-
-function floorTiles(): Vec2[] {
-  const tiles: Vec2[] = [];
-  for (let x = -10; x <= 10; x += TILE) {
-    for (let z = -10; z <= 10; z += TILE) tiles.push({ x, z });
-  }
-  for (const z of [15, 20]) tiles.push({ x: 0, z });
-  for (let x = -5; x <= 5; x += TILE) {
-    for (let z = 25; z <= 30; z += TILE) tiles.push({ x, z });
-  }
-  return tiles;
-}
-
-export const DEPTHBREAKER_DUNGEON: DungeonMapDefinition = {
-  tileSize: TILE,
-  walkable: [
-    { minX: -12.5, maxX: 12.5, minZ: -12.5, maxZ: 12.5 },
-    { minX: -2.5, maxX: 2.5, minZ: 12.5, maxZ: 25 },
-    { minX: -7.5, maxX: 7.5, minZ: 25, maxZ: 35 },
-  ],
-  floorTiles: floorTiles(),
-  playerSpawn: { x: 0, z: 0 },
-  enemySpawns: [
-    { x: -8, z: -7 },
-    { x: 8, z: -7 },
-    { x: -8, z: 7 },
-    { x: 8, z: 7 },
-  ],
-  waveSpawns: [
-    { x: -9, z: -9 },
-    { x: 9, z: -9 },
-    { x: -9, z: 9 },
-    { x: 9, z: 9 },
-    { x: 0, z: 19 },
-    { x: -5, z: 30 },
-    { x: 5, z: 30 },
-  ],
-  bossPortal: { x: 0, z: 30 },
-  props: [
-    { asset: "barrel", x: -9, z: -8, yaw: 0.8 },
-    { asset: "barrel_broken", x: -7.5, z: -7, yaw: -0.4 },
-    { asset: "rubble", x: 7.5, z: 7.5, yaw: 1.1 },
-    { asset: "rock_small", x: 1.8, z: 18, yaw: 0.2 },
-    { asset: "chest", x: -4, z: 31, yaw: Math.PI },
-  ],
-};
+// The dungeon is generated from the seeded room graph (see mapGen.ts). This
+// module-level instance is only a fallback/default for the exported helpers'
+// `map =` parameters - real runs build their own per-seed map on both the
+// server (ZoneRoom) and the client (RuntimeDungeon), each from the synced seed.
+export const DEPTHBREAKER_DUNGEON: DungeonMapDefinition = buildDungeon(DEFAULT_SEED, DEFAULT_DEPTH);
 
 export function isPointInRect(x: number, z: number, rect: Rect, radius = 0): boolean {
   return x >= rect.minX + radius && x <= rect.maxX - radius && z >= rect.minZ + radius && z <= rect.maxZ - radius;
 }
 
 export function isDungeonWalkable(x: number, z: number, radius = 0.45, map = DEPTHBREAKER_DUNGEON): boolean {
-  return map.walkable.some((rect) => isPointInRect(x, z, rect, radius));
+  return map.collision.some((rect) => isPointInRect(x, z, rect, radius));
+}
+
+export function nearestDungeonWalkablePoint(x: number, z: number, radius = 0.45, map = DEPTHBREAKER_DUNGEON): Vec2 {
+  if (isDungeonWalkable(x, z, radius, map)) return { x, z };
+
+  let best: Vec2 = map.playerSpawn;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const rect of map.collision) {
+    const px = Math.min(Math.max(x, rect.minX + radius), rect.maxX - radius);
+    const pz = Math.min(Math.max(z, rect.minZ + radius), rect.maxZ - radius);
+    const d = Math.hypot(px - x, pz - z);
+    if (d < bestDistance) {
+      bestDistance = d;
+      best = { x: px, z: pz };
+    }
+  }
+  return best;
 }
 
 export function nearestDungeonSpawn(index: number, spawns = DEPTHBREAKER_DUNGEON.waveSpawns): Vec2 {

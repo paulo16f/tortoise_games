@@ -1,14 +1,15 @@
 ﻿import { useEffect, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { Billboard } from "@react-three/drei";
 import type { Group, MeshStandardMaterial } from "three";
 import { MathUtils } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import { zoneStore } from "../../net/room";
 import { combatBus } from "../../net/combatBus";
-import { localPlayerPos } from "../entityRefs";
+import { clearClickDestination } from "../input/controls";
 import { resolveEnemyModel } from "./useModel";
 import { AnimatedCharacter } from "./AnimatedCharacter";
+import { DEFAULT_MOTION_PROFILE } from "./motionProfiles";
 import { HIT_FLASH_MS } from "../fx/fxConstants";
 
 interface EnemyProps {
@@ -21,29 +22,14 @@ const DEAD_COLOR = "#3f3f46";
 const TARGET_EMISSIVE = "#ef4444";
 const HOVER_EMISSIVE = "#fca5a5";
 
-function blocksCameraRay(x: number, z: number, cameraX: number, cameraZ: number): boolean {
-  const p = localPlayerPos;
-  const abx = p.x - cameraX;
-  const abz = p.z - cameraZ;
-  const apx = x - cameraX;
-  const apz = z - cameraZ;
-  const abLenSq = abx * abx + abz * abz;
-  if (abLenSq < 0.0001) return false;
-  const t = (apx * abx + apz * abz) / abLenSq;
-  if (t <= 0.08 || t >= 0.9) return false;
-  const cx = cameraX + abx * t;
-  const cz = cameraZ + abz * t;
-  return Math.hypot(x - cx, z - cz) < 1.25;
-}
-
 export function Enemy({ id, isTarget }: EnemyProps) {
-  const camera = useThree((s) => s.camera);
   const group = useRef<Group>(null);
   const bodyMat = useRef<MeshStandardMaterial>(null);
   const modelMats = useRef<MeshStandardMaterial[]>([]);
   const reticle = useRef<Group>(null);
   const flashAt = useRef(Number.NEGATIVE_INFINITY);
   const hovered = useRef(false);
+  const initialized = useRef(false);
 
   useEffect(
     () =>
@@ -58,14 +44,27 @@ export function Enemy({ id, isTarget }: EnemyProps) {
     const g = group.current;
     if (!g) return;
     const e = zoneStore.state?.enemies.get(id);
-    if (!e) return;
+    if (!e) {
+      g.visible = false;
+      return;
+    }
 
-    const t = Math.min(1, 15 * delta);
-    g.position.x = MathUtils.lerp(g.position.x, e.x, t);
-    g.position.z = MathUtils.lerp(g.position.z, e.z, t);
+    const profile = resolveEnemyModel(e.defId)?.motionProfile ?? DEFAULT_MOTION_PROFILE;
+    const positionT = Math.min(1, profile.positionLerp * delta);
+    const turnT = Math.min(1, profile.turnLerp * delta);
+    const dx = e.x - g.position.x;
+    const dz = e.z - g.position.z;
+    if (!initialized.current || Math.hypot(dx, dz) > profile.positionSnapDistance) {
+      g.position.x = e.x;
+      g.position.z = e.z;
+      initialized.current = true;
+    } else {
+      g.position.x = MathUtils.lerp(g.position.x, e.x, positionT);
+      g.position.z = MathUtils.lerp(g.position.z, e.z, positionT);
+    }
     g.position.y = e.y;
-    g.rotation.y = lerpAngle(g.rotation.y, e.yaw, t);
-    g.visible = e.alive && !blocksCameraRay(g.position.x, g.position.z, camera.position.x, camera.position.z);
+    g.rotation.y = lerpAngle(g.rotation.y, e.yaw, turnT);
+    g.visible = true;
     if (reticle.current) reticle.current.rotation.z -= delta * 1.5;
 
     const sinceFlash = performance.now() - flashAt.current;
@@ -98,7 +97,10 @@ export function Enemy({ id, isTarget }: EnemyProps) {
 
   const handleClick = (ev: ThreeEvent<PointerEvent>) => {
     ev.stopPropagation();
-    if (alive) zoneStore.sendTarget(id);
+    if (alive) {
+      clearClickDestination();
+      zoneStore.sendTarget(id, true);
+    }
   };
   const handleOver = (ev: ThreeEvent<PointerEvent>) => {
     ev.stopPropagation();
@@ -117,7 +119,7 @@ export function Enemy({ id, isTarget }: EnemyProps) {
     <group ref={group}>
       {model ? (
         <>
-          <AnimatedCharacter entityId={id} kind="enemy" url={model.url} weaponUrl={model.weaponUrl} handBoneNames={model.handBoneNames} clips={model.clips} targetHeight={model.targetHeight} weaponTransform={model.weaponTransform} onMaterials={(mats) => { modelMats.current = mats; }} />
+          <AnimatedCharacter entityId={id} kind="enemy" url={model.url} weaponUrl={model.weaponUrl} handBoneNames={model.handBoneNames} clips={model.clips} targetHeight={model.targetHeight} weaponTransform={model.weaponTransform} naturalHeight={model.naturalHeight} restMinY={model.restMinY} motionProfile={model.motionProfile} strideNorm={model.strideNorm} onMaterials={(mats) => { modelMats.current = mats; }} />
           {alive && (
             <mesh position={[0, visualHeight * 0.5, 0]} onPointerDown={handleClick} onPointerOver={handleOver} onPointerOut={handleOut}>
               <capsuleGeometry args={[radius, Math.max(0.1, visualHeight - radius * 2), 4, 8]} />

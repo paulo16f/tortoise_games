@@ -4,14 +4,14 @@ export interface OrbitState {
   yaw: number;
   pitch: number;
   distance: number;
-  panX: number;
-  panZ: number;
 }
 
 export interface ControlState {
   keys: Set<string>;
   orbit: OrbitState;
   dragging: boolean;
+  dragPointerId?: number;
+  clickDestination?: { x: number; z: number };
 }
 
 export const MIN_ZOOM = ARPG_CAMERA.minDistance;
@@ -23,10 +23,10 @@ export const controlState: ControlState = {
     yaw: ARPG_CAMERA.yaw,
     pitch: ARPG_CAMERA.pitch,
     distance: ARPG_CAMERA.distance,
-    panX: 0,
-    panZ: 0,
   },
   dragging: false,
+  dragPointerId: undefined,
+  clickDestination: undefined,
 };
 
 const MOVE_KEYS = new Set([
@@ -53,6 +53,7 @@ export function computeMove(state: ControlState): { moveX: number; moveZ: number
   if (k.has("KeyD") || k.has("ArrowRight")) strafe += 1;
   if (k.has("KeyA") || k.has("ArrowLeft")) strafe -= 1;
   if (forward === 0 && strafe === 0) return { moveX: 0, moveZ: 0 };
+  state.clickDestination = undefined;
 
   const yaw = state.orbit.yaw;
   const sin = Math.sin(yaw);
@@ -70,4 +71,17 @@ export function computeMove(state: ControlState): { moveX: number; moveZ: number
     moveZ /= len;
   }
   return { moveX, moveZ };
+}
+
+export function setClickDestination(x: number, z: number): void {
+  controlState.clickDestination = { x, z };
+}
+
+export function clearClickDestination(): void {
+  controlState.clickDestination = undefined;
+}
+
+export function resetCameraOrbit(): void {
+  controlState.orbit.yaw = ARPG_CAMERA.yaw;
+  controlState.orbit.pitch = ARPG_CAMERA.pitch;
 }

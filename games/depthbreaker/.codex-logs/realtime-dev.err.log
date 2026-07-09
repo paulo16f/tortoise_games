@@ -1,0 +1,472 @@
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+C:\Users\vlgp6\Projects\Tortoise-Games\games\depthbreaker\realtime\src\ZoneRoom.ts:27
+  resolveDamage,
+  ^
+SyntaxError: The requested module '@depthbreaker/sim' contains conflicting star exports for name 'resolveDamage'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:327:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:431:5)
+    at async node:internal/modules/esm/loader:633:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.16.0
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}
+Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12)
+[realtime] failed to start: Error: listen EADDRINUSE: address already in use :::2567
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at WebSocketTransport.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:37:17)
+    at file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:73:22
+    at new Promise (<anonymous>)
+    at Server.listen (file:///C:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/node_modules/@colyseus/core/build/Server.mjs:71:12) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 2567
+}

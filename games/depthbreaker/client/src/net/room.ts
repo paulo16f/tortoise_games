@@ -11,13 +11,14 @@ import {
   type EnemyView,
   type BossPortalView,
   type InputMessage,
+  type SetAutoAttackMessage,
   type SetTargetMessage,
+  type ToggleWeaponMessage,
   type UseSkillMessage,
   type CombatEventMessage,
   type WelcomeMessage,
 } from "@depthbreaker/protocol";
 import { combatBus } from "./combatBus";
-import { MAX_PROJECTILE_DELAY_MS, PROJECTILE_SPEED } from "../game/fx/fxConstants";
 
 export interface MapLike<V> {
   forEach(cb: (value: V, key: string) => void): void;
@@ -46,6 +47,7 @@ export interface CombatFloater {
   targetId: string;
   amount: number;
   kind: CombatEventMessage["kind"];
+  actionId: string;
   bornAt: number;
   delayMs: number;
 }
@@ -125,8 +127,9 @@ class ZoneStore {
         targetId: msg.targetId,
         amount: msg.amount,
         kind: msg.kind,
+        actionId: msg.actionId ?? "",
         bornAt: performance.now(),
-        delayMs: this.projectileDelayMs(msg),
+        delayMs: msg.impactDelayMs ?? 0,
       };
       this.combat.push(floater);
       const cutoff = performance.now() - 2000;
@@ -137,17 +140,6 @@ class ZoneStore {
 
     room.onLeave(() => this.detach());
     this.refresh();
-  }
-
-  private projectileDelayMs(msg: CombatEventMessage): number {
-    if (msg.kind !== "hit" && msg.kind !== "crit" && msg.kind !== "skill") return 0;
-    const st = this.state;
-    const source = st?.players.get(msg.sourceId);
-    if (!source || source.classId !== "mage" || msg.amount <= 0) return 0;
-    const target = st?.enemies.get(msg.targetId) ?? st?.players.get(msg.targetId);
-    if (!target) return 0;
-    const dist = Math.hypot(target.x - source.x, target.z - source.z);
-    return Math.min(MAX_PROJECTILE_DELAY_MS, (dist / PROJECTILE_SPEED) * 1000);
   }
 
   private refresh(): void {
@@ -188,14 +180,24 @@ class ZoneStore {
     this.room?.send(ClientMessage.Input, msg);
   }
 
-  sendTarget(targetId: string): void {
-    const payload: SetTargetMessage = { targetId };
+  sendTarget(targetId: string, autoAttack = false): void {
+    const payload: SetTargetMessage = { targetId, autoAttack };
     this.room?.send(ClientMessage.SetTarget, payload);
+  }
+
+  sendAutoAttack(enabled: boolean): void {
+    const payload: SetAutoAttackMessage = { enabled };
+    this.room?.send(ClientMessage.SetAutoAttack, payload);
   }
 
   sendSkill(slot: number): void {
     const payload: UseSkillMessage = { slot };
     this.room?.send(ClientMessage.UseSkill, payload);
+  }
+
+  sendToggleWeapon(equipped: boolean): void {
+    const payload: ToggleWeaponMessage = { equipped };
+    this.room?.send(ClientMessage.ToggleWeapon, payload);
   }
 }
 

@@ -1,55 +1,19 @@
-﻿// Top-level state machine: "menu" -> "connecting" -> "playing".
-// On Play we attempt the full backend flow (guest login -> ensure character ->
-// start run -> ws url + ticket). If ANY step fails we fall back to a ticketless
-// join against REALTIME_URL. The client must work even without the backend.
-
-import { Suspense, useState, useCallback } from "react";
+import { Suspense, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import type { ClassId } from "@depthbreaker/protocol";
 import { REALTIME_URL } from "./config";
-import {
-  guestLogin,
-  listCharacters,
-  createCharacter,
-  startRun,
-} from "./net/backend";
 import { connectToZone } from "./net/room";
 import { useControls } from "./game/input/useControls";
 import { Scene } from "./game/world/Scene";
-import { ARPG_CAMERA } from "./game/world/cameraPreset";
-import { Menu } from "./ui/Menu";
+import { AnimationDebugView } from "./game/actors/AnimationDebugView";
 import { Hud } from "./ui/Hud";
+import { Menu } from "./ui/Menu";
 
-type Phase = "menu" | "connecting" | "playing";
-
-async function backendFlow(
-  name: string,
-  classId: ClassId,
-): Promise<{ url: string; ticket: string } | null> {
-  try {
-    const { accessToken } = await guestLogin();
-    let characters = await listCharacters(accessToken);
-    let character = characters.find((c) => c.class_id === classId);
-    if (!character) character = await createCharacter(accessToken, name, classId);
-    const run = await startRun(accessToken, character.id);
-    const url = typeof run.wsUrl === "string" && /^wss?:\/\//.test(run.wsUrl)
-      ? run.wsUrl
-      : REALTIME_URL;
-    return { url, ticket: run.joinTicket };
-  } catch (err) {
-    console.warn("[depthbreaker] backend flow failed, joining ticketless:", err);
-    return null;
-  }
-}
-
-function PlayingLayer() {
+function GameCanvas() {
   useControls();
   return (
     <>
-      <Canvas
-        shadows
-        camera={{ position: [0, 5.5, -7], fov: ARPG_CAMERA.fov, near: 0.1, far: 120 }}
-      >
+      <Canvas shadows camera={{ position: [0, 8, 10], fov: 42 }} gl={{ antialias: true }}>
         <Suspense fallback={null}>
           <Scene />
         </Suspense>
@@ -59,29 +23,31 @@ function PlayingLayer() {
   );
 }
 
-export default function App() {
-  const [phase, setPhase] = useState<Phase>("menu");
+function GameApp() {
+  const [connected, setConnected] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handlePlay = useCallback(async (name: string, classId: ClassId) => {
+  const play = async (name: string, classId: ClassId) => {
+    setConnecting(true);
     setError(null);
-    setPhase("connecting");
     try {
-      const flow = await backendFlow(name, classId);
-      const url = flow?.url ?? REALTIME_URL;
-      await connectToZone({ url, ticket: flow?.ticket, name, classId });
-      setPhase("playing");
+      await connectToZone({ url: REALTIME_URL, name, classId });
+      setConnected(true);
     } catch (err) {
-      console.error("[depthbreaker] failed to join zone:", err);
-      setError(
-        "Could not connect to the realtime server. Is it running on " +
-          REALTIME_URL +
-          "?",
-      );
-      setPhase("menu");
+      setError(err instanceof Error ? err.message : "Could not connect to realtime server.");
+    } finally {
+      setConnecting(false);
     }
-  }, []);
+  };
 
-  if (phase === "playing") return <PlayingLayer />;
-  return <Menu connecting={phase === "connecting"} error={error} onPlay={handlePlay} />;
+  return (
+    <main style={{ position: "fixed", inset: 0, overflow: "hidden", background: "#08090c" }}>
+      {connected ? <GameCanvas /> : <Menu connecting={connecting} error={error} onPlay={play} />}
+    </main>
+  );
+}
+
+export default function App() {
+  return new URLSearchParams(window.location.search).has("debugAnim") ? <AnimationDebugView /> : <GameApp />;
 }

@@ -2,7 +2,8 @@
 
 import { useGLTF } from "@react-three/drei";
 import type { ClassId } from "@depthbreaker/protocol";
-import { MELEE_CLIPS, CASTER_CLIPS, type ClipSet } from "./AnimatedCharacter";
+import type { ClipSet, StrideNorm } from "./AnimatedCharacter";
+import { MOTION_PROFILES, type MotionProfile, type MotionProfileId } from "./motionProfiles";
 import syntyRuntimeManifest from "../../../public/models/synty/runtime/manifest.json";
 
 export interface CharacterModel {
@@ -18,82 +19,120 @@ export interface CharacterModel {
     rotation?: [number, number, number];
     scale?: number;
   };
+  // Bind-pose height/foot-offset recorded once offline by
+  // tools/validate_synty_runtime.mjs (see runtime/manifest.json). When
+  // present, AnimatedCharacter.tsx trusts these instead of measuring a
+  // freshly-cloned SkinnedMesh's bounding box at runtime.
+  naturalHeight?: number;
+  restMinY?: number;
+  motionProfile: MotionProfile;
+  strideNorm?: StrideNorm;
+  locomotionSet?: string;
+  walkRuntimeApproved?: boolean;
+  runtimeApproved?: boolean;
 }
 
-const KNIGHT = "/models/kaykit/characters/kaykit_knight.glb";
-const MAGE = "/models/kaykit/characters/kaykit_mage.glb";
-const SKELETON_WARRIOR = "/models/kaykit/characters/kaykit_skeleton_warrior.glb";
-const SKELETON_MINION = "/models/kaykit/characters/kaykit_skeleton_minion.glb";
-const SWORD = "/models/kaykit/weapons/kaykit_sword.gltf";
-
-const SYNTY_KNIGHT = "/models/synty/characters/sk_dungeon_knight_male.glb";
-const SYNTY_WARRIOR = "/models/synty/characters/sk_adventure_warrior.glb";
-const SYNTY_WIZARD = "/models/synty/characters/sk_fantasy_wizard.glb";
-const SYNTY_SKELETON = "/models/synty/characters/sk_dungeon_skeleton_soldier.glb";
-const SYNTY_GOBLIN_CHIEF = "/models/synty/characters/sk_dungeon_goblin_chief.glb";
-const SYNTY_ROCK_GOLEM = "/models/synty/characters/sk_dungeon_rock_golem.glb";
-const SYNTY_SWORD = "/models/synty/weapons/prop_sword.glb";
-const SYNTY_STAFF = "/models/synty/weapons/prop_staff.glb";
-const SYNTY_SHIELD = "/models/synty/weapons/prop_shield_knight.glb";
-
 const SYNTY_DB_WARRIOR = "/models/synty/depthbreaker/characters/warrior.glb";
+const SYNTY_DB_WARDEN = "/models/synty/depthbreaker/characters/warden.glb";
 const SYNTY_DB_MAGE = "/models/synty/depthbreaker/characters/mage.glb";
 const SYNTY_DB_SKELETON = "/models/synty/depthbreaker/characters/skeleton.glb";
-const SYNTY_DB_GOBLIN_CHIEF = "/models/synty/depthbreaker/characters/goblin_chief.glb";
-const SYNTY_DB_ROCK_GOLEM = "/models/synty/depthbreaker/characters/rock_golem.glb";
+const SYNTY_DB_UNDEAD_KNIGHT = "/models/synty/depthbreaker/characters/undead_knight.glb";
+const SYNTY_DB_BOSS_SKELETON = "/models/synty/depthbreaker/characters/boss_skeleton.glb";
 const SYNTY_DB_SWORD = "/models/synty/depthbreaker/weapons/sword.glb";
 const SYNTY_DB_STAFF = "/models/synty/depthbreaker/weapons/staff.glb";
 
 const SYNTY_DEPTHBREAKER_CLIPS: ClipSet = {
   idle: "idle",
+  walk: "walk",
   run: "run",
+  sprint: "sprint",
+  walkStart: "walk_start",
+  runStart: "run_start",
+  walkStop: "walk_stop",
+  runStop: "run_stop",
+  turnLeft: "turn_l",
+  turnRight: "turn_r",
   attack: "attack",
   hit: "hit",
   death: "death",
 };
 
-// Raw Synty Mini Fantasy conversions are kept for preview/reference. The
-// depthbreaker set below is the runtime-ready version with named clips.
-export const SYNTY_MODELS = {
-  warrior: { url: SYNTY_WARRIOR, weaponUrl: SYNTY_SWORD, handBoneNames: ["hand_r"], clips: MELEE_CLIPS, targetHeight: 1.85, visualHeight: 1.85, radius: 0.45 },
-  knight: { url: SYNTY_KNIGHT, weaponUrl: SYNTY_SWORD, handBoneNames: ["hand_r"], clips: MELEE_CLIPS, targetHeight: 1.85, visualHeight: 1.85, radius: 0.45 },
-  wizard: { url: SYNTY_WIZARD, weaponUrl: SYNTY_STAFF, handBoneNames: ["hand_r"], clips: CASTER_CLIPS, targetHeight: 1.85, visualHeight: 1.85, radius: 0.45 },
-  skeleton: { url: SYNTY_SKELETON, weaponUrl: SYNTY_SWORD, handBoneNames: ["hand_r"], clips: MELEE_CLIPS, targetHeight: 1.8, visualHeight: 1.8, radius: 0.45 },
-  goblinChief: { url: SYNTY_GOBLIN_CHIEF, weaponUrl: SYNTY_SWORD, handBoneNames: ["hand_r"], clips: MELEE_CLIPS, targetHeight: 2.1, visualHeight: 2.1, radius: 0.55 },
-  rockGolem: { url: SYNTY_ROCK_GOLEM, handBoneNames: ["hand_r"], clips: MELEE_CLIPS, targetHeight: 3.0, visualHeight: 3.0, radius: 0.8 },
-} satisfies Record<string, CharacterModel>;
+type RuntimeManifestCharacter = {
+  key: string;
+  runtimeApproved?: boolean;
+  naturalHeight?: number;
+  restMinY?: number;
+  assetVersion?: string;
+  motionProfile?: MotionProfileId;
+  locomotionSet?: string;
+  walkRuntimeApproved?: boolean;
+  strideNorm?: StrideNorm;
+};
+
+function versionedUrl(url: string, version?: string): string {
+  return version ? `${url}?v=${encodeURIComponent(version)}` : url;
+}
+
+function manifestCharacterConfig(
+  key: string,
+  fallbackProfile: MotionProfileId,
+): { naturalHeight?: number; restMinY?: number; assetVersion?: string; motionProfile: MotionProfile; clips: ClipSet; strideNorm?: StrideNorm; locomotionSet?: string; walkRuntimeApproved?: boolean; runtimeApproved?: boolean } {
+  const entry = (syntyRuntimeManifest.characters as RuntimeManifestCharacter[]).find((character) => character.key === key);
+  const profileId = entry?.motionProfile ?? fallbackProfile;
+  return {
+    naturalHeight: entry?.naturalHeight,
+    restMinY: entry?.restMinY,
+    assetVersion: entry?.assetVersion,
+    motionProfile: MOTION_PROFILES[profileId] ?? MOTION_PROFILES[fallbackProfile],
+    // All Depthbreaker GLBs bake identical clip names, so the static logical
+    // -> GLB map is the source of truth (the manifest's per-character `clips`
+    // block is snake_cased metadata, not the camelCase runtime ClipSet).
+    clips: SYNTY_DEPTHBREAKER_CLIPS,
+    strideNorm: entry?.strideNorm,
+    locomotionSet: entry?.locomotionSet,
+    walkRuntimeApproved: entry?.walkRuntimeApproved ?? false,
+    runtimeApproved: entry?.runtimeApproved ?? false,
+  };
+}
+
+function characterUrl(baseUrl: string, config: { assetVersion?: string }): string {
+  return versionedUrl(baseUrl, config.assetVersion);
+}
 
 export const SYNTY_DEPTHBREAKER_MODELS = {
-  warrior: { url: SYNTY_DB_WARRIOR, weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["hand_r"], clips: SYNTY_DEPTHBREAKER_CLIPS, targetHeight: 1.15, visualHeight: 1.15, radius: 0.42, weaponTransform: { scale: 0.62, rotation: [0, 0, -0.35], position: [0.02, 0, 0.02] } },
-  mage: { url: SYNTY_DB_MAGE, weaponUrl: SYNTY_DB_STAFF, handBoneNames: ["hand_r"], clips: SYNTY_DEPTHBREAKER_CLIPS, targetHeight: 1.15, visualHeight: 1.15, radius: 0.42, weaponTransform: { scale: 0.58, rotation: [0.2, 0, -0.2], position: [0.02, 0, 0.03] } },
-  skeleton: { url: SYNTY_DB_SKELETON, weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["hand_r"], clips: SYNTY_DEPTHBREAKER_CLIPS, targetHeight: 1.05, visualHeight: 1.05, radius: 0.4, weaponTransform: { scale: 0.56, rotation: [0, 0, -0.35], position: [0.02, 0, 0.02] } },
-  goblinChief: { url: SYNTY_DB_GOBLIN_CHIEF, weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["hand_r"], clips: SYNTY_DEPTHBREAKER_CLIPS, targetHeight: 1.35, visualHeight: 1.35, radius: 0.5, weaponTransform: { scale: 0.7, rotation: [0, 0, -0.35], position: [0.02, 0, 0.02] } },
-  rockGolem: { url: SYNTY_DB_ROCK_GOLEM, handBoneNames: ["hand_r"], clips: SYNTY_DEPTHBREAKER_CLIPS, targetHeight: 1.9, visualHeight: 1.9, radius: 0.75 },
+  warrior: makeCharacterModel(SYNTY_DB_WARRIOR, "warrior", "humanoidPlayer", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 1.8, visualHeight: 1.8, radius: 0.45, weaponTransform: { scale: 0.8, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
+  warden: makeCharacterModel(SYNTY_DB_WARDEN, "warden", "humanoidPlayer", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 1.8, visualHeight: 1.8, radius: 0.45, weaponTransform: { scale: 0.8, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
+  mage: makeCharacterModel(SYNTY_DB_MAGE, "mage", "humanoidPlayer", { weaponUrl: SYNTY_DB_STAFF, handBoneNames: ["Hand_R"], targetHeight: 1.75, visualHeight: 1.75, radius: 0.43, weaponTransform: { scale: 0.78, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
+  skeleton: makeCharacterModel(SYNTY_DB_SKELETON, "skeleton", "lightEnemy", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 1.7, visualHeight: 1.7, radius: 0.42, weaponTransform: { scale: 0.72, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
+  undeadKnight: makeCharacterModel(SYNTY_DB_UNDEAD_KNIGHT, "undead_knight", "eliteEnemy", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 1.95, visualHeight: 1.95, radius: 0.55, weaponTransform: { scale: 0.85, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
+  bossSkeleton: makeCharacterModel(SYNTY_DB_BOSS_SKELETON, "boss_skeleton", "heavyBoss", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 2.35, visualHeight: 2.35, radius: 0.78, weaponTransform: { scale: 1.0, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
 } satisfies Record<string, CharacterModel>;
 
-const KAYKIT_MODELS = {
-  knight: { url: KNIGHT, weaponUrl: SWORD, handBoneNames: ["handslot.r", "hand_r"], clips: MELEE_CLIPS, targetHeight: 1.15, visualHeight: 1.15, radius: 0.42, weaponTransform: { scale: 0.75, rotation: [0, 0, -0.35], position: [0, 0, 0] } },
-  mage: { url: MAGE, handBoneNames: ["handslot.r", "hand_r"], clips: CASTER_CLIPS, targetHeight: 1.15, visualHeight: 1.15, radius: 0.42 },
-  skeleton: { url: SKELETON_WARRIOR, weaponUrl: SWORD, handBoneNames: ["handslot.r", "hand_r"], clips: MELEE_CLIPS, targetHeight: 1.05, visualHeight: 1.05, radius: 0.4, weaponTransform: { scale: 0.68, rotation: [0, 0, -0.35], position: [0, 0, 0] } },
-  eliteSkeleton: { url: SKELETON_WARRIOR, weaponUrl: SWORD, handBoneNames: ["handslot.r", "hand_r"], clips: MELEE_CLIPS, targetHeight: 1.35, visualHeight: 1.35, radius: 0.5, weaponTransform: { scale: 0.78, rotation: [0, 0, -0.35], position: [0, 0, 0] } },
-  bossSkeleton: { url: SKELETON_MINION, weaponUrl: SWORD, handBoneNames: ["handslot.r", "hand_r"], clips: MELEE_CLIPS, targetHeight: 1.9, visualHeight: 1.9, radius: 0.75, weaponTransform: { scale: 0.95, rotation: [0, 0, -0.35], position: [0, 0, 0] } },
-} satisfies Record<string, CharacterModel>;
-
-function syntyCharacterApproved(key: string): boolean {
-  return syntyRuntimeManifest.characters.some((character) => character.key === key && character.runtimeApproved);
+function makeCharacterModel(
+  baseUrl: string,
+  manifestKey: string,
+  fallbackProfile: MotionProfileId,
+  model: Omit<CharacterModel, "url" | "clips" | "motionProfile">,
+): CharacterModel {
+  const config = manifestCharacterConfig(manifestKey, fallbackProfile);
+  return {
+    ...model,
+    ...config,
+    url: characterUrl(baseUrl, config),
+  };
 }
 
 const PLAYER_MODELS: Record<ClassId, CharacterModel> = {
-  bruiser: syntyCharacterApproved("warrior") ? SYNTY_DEPTHBREAKER_MODELS.warrior : KAYKIT_MODELS.knight,
-  warden: syntyCharacterApproved("warrior") ? SYNTY_DEPTHBREAKER_MODELS.warrior : KAYKIT_MODELS.knight,
-  mage: syntyCharacterApproved("mage") ? SYNTY_DEPTHBREAKER_MODELS.mage : KAYKIT_MODELS.mage,
+  bruiser: SYNTY_DEPTHBREAKER_MODELS.warrior,
+  warden: SYNTY_DEPTHBREAKER_MODELS.warden,
+  mage: SYNTY_DEPTHBREAKER_MODELS.mage,
 };
 
 const ENEMY_MODELS: Record<string, CharacterModel> = {
-  grunt: syntyCharacterApproved("skeleton") ? SYNTY_DEPTHBREAKER_MODELS.skeleton : KAYKIT_MODELS.skeleton,
-  elite_grunt: syntyCharacterApproved("goblin_chief") ? SYNTY_DEPTHBREAKER_MODELS.goblinChief : KAYKIT_MODELS.eliteSkeleton,
-  boss_brute: syntyCharacterApproved("rock_golem") ? SYNTY_DEPTHBREAKER_MODELS.rockGolem : KAYKIT_MODELS.bossSkeleton,
-  minion: syntyCharacterApproved("skeleton") ? SYNTY_DEPTHBREAKER_MODELS.skeleton : KAYKIT_MODELS.skeleton,
+  grunt: SYNTY_DEPTHBREAKER_MODELS.skeleton,
+  elite_grunt: SYNTY_DEPTHBREAKER_MODELS.undeadKnight,
+  boss_brute: SYNTY_DEPTHBREAKER_MODELS.bossSkeleton,
+  minion: SYNTY_DEPTHBREAKER_MODELS.skeleton,
 };
 
 export function resolvePlayerModel(classId: string): CharacterModel | undefined {
@@ -105,16 +144,12 @@ export function resolveEnemyModel(defId: string): CharacterModel | undefined {
 }
 
 for (const url of new Set<string>([
-  KNIGHT,
-  MAGE,
-  SKELETON_WARRIOR,
-  SKELETON_MINION,
-  SWORD,
-  SYNTY_DB_WARRIOR,
-  SYNTY_DB_MAGE,
-  SYNTY_DB_SKELETON,
-  SYNTY_DB_GOBLIN_CHIEF,
-  SYNTY_DB_ROCK_GOLEM,
+  SYNTY_DEPTHBREAKER_MODELS.warrior.url,
+  SYNTY_DEPTHBREAKER_MODELS.warden.url,
+  SYNTY_DEPTHBREAKER_MODELS.mage.url,
+  SYNTY_DEPTHBREAKER_MODELS.skeleton.url,
+  SYNTY_DEPTHBREAKER_MODELS.undeadKnight.url,
+  SYNTY_DEPTHBREAKER_MODELS.bossSkeleton.url,
   SYNTY_DB_SWORD,
   SYNTY_DB_STAFF,
 ])) {

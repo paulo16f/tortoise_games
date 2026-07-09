@@ -1,6 +1,8 @@
 ﻿// Plain read-only interfaces mirroring the Colyseus schema fields. The client
 // uses these to type room.state without depending on Schema internals.
 
+import type { CombatActionState } from "./messages.js";
+
 export interface PlayerView {
   id: string;
   accountId: string;
@@ -16,7 +18,14 @@ export interface PlayerView {
   level: number;
   runXp: number;
   targetId: string;
+  autoAttack: boolean;
+  weaponId: string;
   alive: boolean;
+  actionState: CombatActionState;
+  actionStartedAt: number;
+  actionEndsAt: number;
+  actionTargetId: string;
+  actionId: string;
   potionCooldown: number;
   skillQCooldown: number;
   skillECooldown: number;
@@ -37,6 +46,11 @@ export interface EnemyView {
   fsm: string;
   targetId: string;
   alive: boolean;
+  actionState: CombatActionState;
+  actionStartedAt: number;
+  actionEndsAt: number;
+  actionTargetId: string;
+  actionId: string;
 }
 
 export interface BossPortalView {

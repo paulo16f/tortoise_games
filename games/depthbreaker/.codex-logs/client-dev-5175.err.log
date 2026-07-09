@@ -1,0 +1,7 @@
+npm error Lifecycle script `dev` failed with error:
+npm error code 4294967295
+npm error path C:\Users\vlgp6\Projects\Tortoise-Games\games\depthbreaker\client
+npm error workspace depthbreaker-client@0.1.0
+npm error location C:\Users\vlgp6\Projects\Tortoise-Games\games\depthbreaker\client
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c vite --host 127.0.0.1 --port 5175

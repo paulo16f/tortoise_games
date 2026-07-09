@@ -1,6 +1,7 @@
 ﻿// The 3D scene: lighting, dungeon, entities, FX, and camera.
 
 import { useMemo } from "react";
+import { Environment, Lightformer } from "@react-three/drei";
 import { zoneStore } from "../../net/room";
 import { useZoneState } from "../../net/useZone";
 import { Player } from "../actors/Player";
@@ -8,8 +9,12 @@ import { Enemy } from "../actors/Enemy";
 import { CameraRig } from "./CameraRig";
 import { CombatFloaters } from "../fx/CombatFloaters";
 import { Projectiles } from "../fx/Projectiles";
-import { Dungeon } from "./Dungeon";
+import { DungeonClickPlane } from "./DungeonClickPlane";
 import { BossPortal } from "./BossPortal";
+import { RuntimeDungeon } from "./RuntimeDungeon";
+import { SunLight } from "./SunLight";
+import { DungeonGround } from "./DungeonGround";
+import { Effects } from "./Effects";
 
 export function Scene() {
   const snap = useZoneState();
@@ -29,17 +34,24 @@ export function Scene() {
 
   return (
     <>
-      <ambientLight intensity={0.85} />
-      <directionalLight
-        position={[20, 30, 10]}
-        intensity={1.35}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
-      <fog attach="fog" args={["#0b0d12", 40, 90]} />
+      <color attach="background" args={["#08090c"]} />
+      <fog attach="fog" args={["#08090c", 28, 95]} />
 
-      <Dungeon />
+      {/* Soft cool-over-warm fill instead of flat ambient. */}
+      <hemisphereLight args={["#4a5a6a", "#181410", 0.35]} />
+      {/* Warm key light with a player-following bounded shadow camera. */}
+      <SunLight />
+      {/* Self-contained dark-cave IBL (no CDN/HDRI files) for PBR fill/reflections. */}
+      <Environment frames={1} resolution={256} environmentIntensity={0.3}>
+        <color attach="background" args={["#04050a"]} />
+        <Lightformer intensity={0.6} color="#6b7c92" position={[0, 8, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[30, 30, 1]} />
+        <Lightformer intensity={0.9} color="#ffcf9a" position={[10, 4, 6]} rotation={[0, -Math.PI / 3, 0]} scale={[8, 8, 1]} />
+        <Lightformer intensity={0.35} color="#3a5f7a" position={[-12, 3, -8]} rotation={[0, Math.PI / 3, 0]} scale={[10, 10, 1]} />
+      </Environment>
+
+      <DungeonGround />
+      <RuntimeDungeon />
+      <DungeonClickPlane />
 
       {playerIds.map((id) => (
         <Player key={id} id={id} isLocal={id === selfId} />
@@ -53,6 +65,7 @@ export function Scene() {
       <Projectiles />
       <BossPortal />
       <CameraRig />
+      <Effects />
     </>
   );
 }

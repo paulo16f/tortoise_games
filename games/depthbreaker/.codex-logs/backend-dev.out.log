@@ -1,0 +1,180 @@
+
+> depthbreaker@0.1.0 dev:backend
+> npm run dev --workspace backend
+
+
+> depthbreaker-backend@0.1.0 dev
+> tsx watch src/server.ts
+
+{"level":30,"time":1783346400110,"pid":44292,"hostname":"p6-tuf","msg":"Server listening at http://127.0.0.1:3000"}
+{"level":30,"time":1783346400111,"pid":44292,"hostname":"p6-tuf","msg":"Server listening at http://172.22.16.1:3000"}
+{"level":30,"time":1783346400111,"pid":44292,"hostname":"p6-tuf","msg":"Server listening at http://192.168.100.54:3000"}
+{"level":30,"time":1783346443281,"pid":44292,"hostname":"p6-tuf","reqId":"req-1","req":{"method":"GET","url":"/health","host":"127.0.0.1:3000","remoteAddress":"127.0.0.1","remotePort":59293},"msg":"incoming request"}
+{"level":30,"time":1783346443282,"pid":44292,"hostname":"p6-tuf","reqId":"req-1","msg":"Route GET:/health not found"}
+{"level":30,"time":1783346443286,"pid":44292,"hostname":"p6-tuf","reqId":"req-1","res":{"statusCode":404},"responseTime":4.855400025844574,"msg":"request completed"}
+{"level":30,"time":1783346465755,"pid":44292,"hostname":"p6-tuf","reqId":"req-2","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:3000","remoteAddress":"127.0.0.1","remotePort":59299},"msg":"incoming request"}
+{"level":30,"time":1783346465782,"pid":44292,"hostname":"p6-tuf","reqId":"req-2","res":{"statusCode":200},"responseTime":26.33889999985695,"msg":"request completed"}
+{"level":30,"time":1783346504241,"pid":44292,"hostname":"p6-tuf","reqId":"req-3","req":{"method":"OPTIONS","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":53777},"msg":"incoming request"}
+{"level":30,"time":1783346504242,"pid":44292,"hostname":"p6-tuf","reqId":"req-3","res":{"statusCode":204},"responseTime":0.39980000257492065,"msg":"request completed"}
+{"level":30,"time":1783346504550,"pid":44292,"hostname":"p6-tuf","reqId":"req-4","req":{"method":"POST","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":61921},"msg":"incoming request"}
+{"level":30,"time":1783346504630,"pid":44292,"hostname":"p6-tuf","reqId":"req-4","res":{"statusCode":201},"responseTime":79.38580000400543,"msg":"request completed"}
+{"level":30,"time":1783346504633,"pid":44292,"hostname":"p6-tuf","reqId":"req-5","req":{"method":"OPTIONS","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":53777},"msg":"incoming request"}
+{"level":30,"time":1783346504633,"pid":44292,"hostname":"p6-tuf","reqId":"req-5","res":{"statusCode":204},"responseTime":0.3797000050544739,"msg":"request completed"}
+{"level":30,"time":1783346504634,"pid":44292,"hostname":"p6-tuf","reqId":"req-6","req":{"method":"GET","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":61921},"msg":"incoming request"}
+{"level":30,"time":1783346504646,"pid":44292,"hostname":"p6-tuf","reqId":"req-6","res":{"statusCode":200},"responseTime":11.624300003051758,"msg":"request completed"}
+{"level":30,"time":1783346504649,"pid":44292,"hostname":"p6-tuf","reqId":"req-7","req":{"method":"POST","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":61921},"msg":"incoming request"}
+{"level":30,"time":1783346504661,"pid":44292,"hostname":"p6-tuf","reqId":"req-7","res":{"statusCode":201},"responseTime":11.977399975061417,"msg":"request completed"}
+{"level":30,"time":1783346504664,"pid":44292,"hostname":"p6-tuf","reqId":"req-8","req":{"method":"OPTIONS","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":53777},"msg":"incoming request"}
+{"level":30,"time":1783346504664,"pid":44292,"hostname":"p6-tuf","reqId":"req-8","res":{"statusCode":204},"responseTime":0.3627000153064728,"msg":"request completed"}
+{"level":30,"time":1783346504665,"pid":44292,"hostname":"p6-tuf","reqId":"req-9","req":{"method":"POST","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":61921},"msg":"incoming request"}
+{"level":30,"time":1783346504685,"pid":44292,"hostname":"p6-tuf","reqId":"req-9","res":{"statusCode":201},"responseTime":19.53830000758171,"msg":"request completed"}
+{"level":30,"time":1783347303495,"pid":44292,"hostname":"p6-tuf","reqId":"req-a","req":{"method":"POST","url":"/internal/runs/feeb9877-5323-4aab-9d76-f2631bfa9eb8/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":61226},"msg":"incoming request"}
+{"level":30,"time":1783347382821,"pid":44292,"hostname":"p6-tuf","reqId":"req-a","res":{"statusCode":200},"responseTime":79321.50830000639,"msg":"request completed"}
+{"level":30,"time":1783350536406,"pid":44292,"hostname":"p6-tuf","reqId":"req-b","req":{"method":"OPTIONS","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":55800},"msg":"incoming request"}
+{"level":30,"time":1783350536417,"pid":44292,"hostname":"p6-tuf","reqId":"req-b","res":{"statusCode":204},"responseTime":5.369599997997284,"msg":"request completed"}
+{"level":30,"time":1783350536735,"pid":44292,"hostname":"p6-tuf","reqId":"req-c","req":{"method":"POST","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":60356},"msg":"incoming request"}
+{"level":30,"time":1783350536937,"pid":44292,"hostname":"p6-tuf","reqId":"req-c","res":{"statusCode":201},"responseTime":201.9815999865532,"msg":"request completed"}
+{"level":30,"time":1783350536940,"pid":44292,"hostname":"p6-tuf","reqId":"req-d","req":{"method":"OPTIONS","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":55800},"msg":"incoming request"}
+{"level":30,"time":1783350536940,"pid":44292,"hostname":"p6-tuf","reqId":"req-d","res":{"statusCode":204},"responseTime":0.321399986743927,"msg":"request completed"}
+{"level":30,"time":1783350536948,"pid":44292,"hostname":"p6-tuf","reqId":"req-e","req":{"method":"GET","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":60356},"msg":"incoming request"}
+{"level":30,"time":1783350536963,"pid":44292,"hostname":"p6-tuf","reqId":"req-e","res":{"statusCode":200},"responseTime":14.520500004291534,"msg":"request completed"}
+{"level":30,"time":1783350536966,"pid":44292,"hostname":"p6-tuf","reqId":"req-f","req":{"method":"POST","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":60356},"msg":"incoming request"}
+{"level":30,"time":1783350536984,"pid":44292,"hostname":"p6-tuf","reqId":"req-f","res":{"statusCode":201},"responseTime":18.101599991321564,"msg":"request completed"}
+{"level":30,"time":1783350536985,"pid":44292,"hostname":"p6-tuf","reqId":"req-g","req":{"method":"OPTIONS","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":55800},"msg":"incoming request"}
+{"level":30,"time":1783350536986,"pid":44292,"hostname":"p6-tuf","reqId":"req-g","res":{"statusCode":204},"responseTime":0.26190000772476196,"msg":"request completed"}
+{"level":30,"time":1783350536988,"pid":44292,"hostname":"p6-tuf","reqId":"req-h","req":{"method":"POST","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":60356},"msg":"incoming request"}
+{"level":30,"time":1783350537008,"pid":44292,"hostname":"p6-tuf","reqId":"req-h","res":{"statusCode":201},"responseTime":20.007100015878677,"msg":"request completed"}
+{"level":30,"time":1783350780584,"pid":44292,"hostname":"p6-tuf","reqId":"req-i","req":{"method":"POST","url":"/internal/runs/fde2ad1e-cc7b-4092-80c6-100311aeea15/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":51555},"msg":"incoming request"}
+{"level":50,"time":1783350830063,"pid":44292,"hostname":"p6-tuf","reqId":"req-i","req":{"method":"POST","url":"/internal/runs/fde2ad1e-cc7b-4092-80c6-100311aeea15/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":51555},"res":{"statusCode":500},"err":{"type":"Error","message":"read ECONNRESET","stack":"Error: read ECONNRESET\n    at C:\\Users\\vlgp6\\Projects\\Tortoise-Games\\games\\depthbreaker\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async withTransaction (C:\\Users\\vlgp6\\Projects\\Tortoise-Games\\games\\depthbreaker\\backend\\src\\db\\pool.ts:15:18)\n    at async Object.<anonymous> (C:\\Users\\vlgp6\\Projects\\Tortoise-Games\\games\\depthbreaker\\backend\\src\\routes\\internal.ts:55:22)","errno":-4077,"code":"ECONNRESET","syscall":"read"},"msg":"read ECONNRESET"}
+{"level":30,"time":1783350830128,"pid":44292,"hostname":"p6-tuf","reqId":"req-i","res":{"statusCode":500},"responseTime":49543.24669998884,"msg":"request completed"}
+{"level":30,"time":1783350830489,"pid":44292,"hostname":"p6-tuf","reqId":"req-j","req":{"method":"POST","url":"/internal/runs/fde2ad1e-cc7b-4092-80c6-100311aeea15/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":51555},"msg":"incoming request"}
+{"level":30,"time":1783350833023,"pid":44292,"hostname":"p6-tuf","reqId":"req-j","res":{"statusCode":200},"responseTime":2533.4025000035763,"msg":"request completed"}
+{"level":30,"time":1783350837828,"pid":44292,"hostname":"p6-tuf","reqId":"req-k","req":{"method":"OPTIONS","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":51126},"msg":"incoming request"}
+{"level":30,"time":1783350837829,"pid":44292,"hostname":"p6-tuf","reqId":"req-k","res":{"statusCode":204},"responseTime":0.4302999973297119,"msg":"request completed"}
+{"level":30,"time":1783350838141,"pid":44292,"hostname":"p6-tuf","reqId":"req-l","req":{"method":"POST","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":63789},"msg":"incoming request"}
+{"level":30,"time":1783350838169,"pid":44292,"hostname":"p6-tuf","reqId":"req-l","res":{"statusCode":201},"responseTime":28.348999977111816,"msg":"request completed"}
+{"level":30,"time":1783350838172,"pid":44292,"hostname":"p6-tuf","reqId":"req-m","req":{"method":"OPTIONS","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":51126},"msg":"incoming request"}
+{"level":30,"time":1783350838173,"pid":44292,"hostname":"p6-tuf","reqId":"req-m","res":{"statusCode":204},"responseTime":0.25870001316070557,"msg":"request completed"}
+{"level":30,"time":1783350838174,"pid":44292,"hostname":"p6-tuf","reqId":"req-n","req":{"method":"GET","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":63789},"msg":"incoming request"}
+{"level":30,"time":1783350838181,"pid":44292,"hostname":"p6-tuf","reqId":"req-n","res":{"statusCode":200},"responseTime":6.8619000017642975,"msg":"request completed"}
+{"level":30,"time":1783350838183,"pid":44292,"hostname":"p6-tuf","reqId":"req-o","req":{"method":"POST","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":63789},"msg":"incoming request"}
+{"level":30,"time":1783350838191,"pid":44292,"hostname":"p6-tuf","reqId":"req-o","res":{"statusCode":201},"responseTime":8.232199996709824,"msg":"request completed"}
+{"level":30,"time":1783350838193,"pid":44292,"hostname":"p6-tuf","reqId":"req-p","req":{"method":"OPTIONS","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":51126},"msg":"incoming request"}
+{"level":30,"time":1783350838194,"pid":44292,"hostname":"p6-tuf","reqId":"req-p","res":{"statusCode":204},"responseTime":0.26829999685287476,"msg":"request completed"}
+{"level":30,"time":1783350838194,"pid":44292,"hostname":"p6-tuf","reqId":"req-q","req":{"method":"POST","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":63789},"msg":"incoming request"}
+{"level":30,"time":1783350838209,"pid":44292,"hostname":"p6-tuf","reqId":"req-q","res":{"statusCode":201},"responseTime":14.588899999856949,"msg":"request completed"}
+{"level":30,"time":1783352613254,"pid":44292,"hostname":"p6-tuf","reqId":"req-r","req":{"method":"POST","url":"/internal/runs/5dfbde4f-90e8-41d3-a98c-96a97aae4dd6/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":65460},"msg":"incoming request"}
+{"level":50,"time":1783352657996,"pid":44292,"hostname":"p6-tuf","reqId":"req-r","req":{"method":"POST","url":"/internal/runs/5dfbde4f-90e8-41d3-a98c-96a97aae4dd6/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":65460},"res":{"statusCode":500},"err":{"type":"Error","message":"read ECONNRESET","stack":"Error: read ECONNRESET\n    at C:\\Users\\vlgp6\\Projects\\Tortoise-Games\\games\\depthbreaker\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async withTransaction (C:\\Users\\vlgp6\\Projects\\Tortoise-Games\\games\\depthbreaker\\backend\\src\\db\\pool.ts:15:18)\n    at async Object.<anonymous> (C:\\Users\\vlgp6\\Projects\\Tortoise-Games\\games\\depthbreaker\\backend\\src\\routes\\internal.ts:55:22)","errno":-4077,"code":"ECONNRESET","syscall":"read"},"msg":"read ECONNRESET"}
+{"level":30,"time":1783352658527,"pid":44292,"hostname":"p6-tuf","reqId":"req-r","res":{"statusCode":500},"responseTime":45221.02760002017,"msg":"request completed"}
+{"level":30,"time":1783352658872,"pid":44292,"hostname":"p6-tuf","reqId":"req-s","req":{"method":"POST","url":"/internal/runs/5dfbde4f-90e8-41d3-a98c-96a97aae4dd6/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":65460},"msg":"incoming request"}
+{"level":30,"time":1783352659974,"pid":44292,"hostname":"p6-tuf","reqId":"req-s","res":{"statusCode":200},"responseTime":1101.6527000069618,"msg":"request completed"}
+{"level":30,"time":1783355125756,"pid":44292,"hostname":"p6-tuf","reqId":"req-t","req":{"method":"OPTIONS","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":63054},"msg":"incoming request"}
+{"level":30,"time":1783355125778,"pid":44292,"hostname":"p6-tuf","reqId":"req-t","res":{"statusCode":204},"responseTime":14.101099967956543,"msg":"request completed"}
+{"level":30,"time":1783355126086,"pid":44292,"hostname":"p6-tuf","reqId":"req-u","req":{"method":"POST","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":64428},"msg":"incoming request"}
+{"level":30,"time":1783355126378,"pid":44292,"hostname":"p6-tuf","reqId":"req-u","res":{"statusCode":201},"responseTime":291.2907000184059,"msg":"request completed"}
+{"level":30,"time":1783355126382,"pid":44292,"hostname":"p6-tuf","reqId":"req-v","req":{"method":"OPTIONS","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":63054},"msg":"incoming request"}
+{"level":30,"time":1783355126383,"pid":44292,"hostname":"p6-tuf","reqId":"req-v","res":{"statusCode":204},"responseTime":0.37040001153945923,"msg":"request completed"}
+{"level":30,"time":1783355126385,"pid":44292,"hostname":"p6-tuf","reqId":"req-w","req":{"method":"GET","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":64428},"msg":"incoming request"}
+{"level":30,"time":1783355126406,"pid":44292,"hostname":"p6-tuf","reqId":"req-w","res":{"statusCode":200},"responseTime":20.420100033283234,"msg":"request completed"}
+{"level":30,"time":1783355126409,"pid":44292,"hostname":"p6-tuf","reqId":"req-x","req":{"method":"POST","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":64428},"msg":"incoming request"}
+{"level":30,"time":1783355126430,"pid":44292,"hostname":"p6-tuf","reqId":"req-x","res":{"statusCode":201},"responseTime":20.398299992084503,"msg":"request completed"}
+{"level":30,"time":1783355126433,"pid":44292,"hostname":"p6-tuf","reqId":"req-y","req":{"method":"OPTIONS","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":63054},"msg":"incoming request"}
+{"level":30,"time":1783355126433,"pid":44292,"hostname":"p6-tuf","reqId":"req-y","res":{"statusCode":204},"responseTime":0.5502000451087952,"msg":"request completed"}
+{"level":30,"time":1783355126434,"pid":44292,"hostname":"p6-tuf","reqId":"req-z","req":{"method":"POST","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":64428},"msg":"incoming request"}
+{"level":30,"time":1783355126463,"pid":44292,"hostname":"p6-tuf","reqId":"req-z","res":{"statusCode":201},"responseTime":28.76089996099472,"msg":"request completed"}
+{"level":30,"time":1783357518853,"pid":44292,"hostname":"p6-tuf","reqId":"req-10","req":{"method":"POST","url":"/internal/runs/b0038c47-2be4-4156-83de-7f3cac59f233/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":62619},"msg":"incoming request"}
+{"level":50,"time":1783365384693,"pid":44292,"hostname":"p6-tuf","reqId":"req-10","req":{"method":"POST","url":"/internal/runs/b0038c47-2be4-4156-83de-7f3cac59f233/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":62619},"res":{"statusCode":500},"err":{"type":"Error","message":"read ECONNRESET","stack":"Error: read ECONNRESET\n    at C:\\Users\\vlgp6\\Projects\\Tortoise-Games\\games\\depthbreaker\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async withTransaction (C:\\Users\\vlgp6\\Projects\\Tortoise-Games\\games\\depthbreaker\\backend\\src\\db\\pool.ts:15:18)\n    at async Object.<anonymous> (C:\\Users\\vlgp6\\Projects\\Tortoise-Games\\games\\depthbreaker\\backend\\src\\routes\\internal.ts:55:22)","errno":-4077,"code":"ECONNRESET","syscall":"read"},"msg":"read ECONNRESET"}
+{"level":30,"time":1783365385138,"pid":44292,"hostname":"p6-tuf","reqId":"req-10","res":{"statusCode":500},"responseTime":7866280.974399984,"msg":"request completed"}
+{"level":30,"time":1783365385828,"pid":44292,"hostname":"p6-tuf","reqId":"req-11","req":{"method":"POST","url":"/internal/runs/b0038c47-2be4-4156-83de-7f3cac59f233/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":62619},"msg":"incoming request"}
+{"level":30,"time":1783365395551,"pid":44292,"hostname":"p6-tuf","reqId":"req-11","res":{"statusCode":200},"responseTime":9722.48649996519,"msg":"request completed"}
+{"level":30,"time":1783365699907,"pid":44292,"hostname":"p6-tuf","reqId":"req-12","req":{"method":"OPTIONS","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":59285},"msg":"incoming request"}
+{"level":30,"time":1783365699920,"pid":44292,"hostname":"p6-tuf","reqId":"req-12","res":{"statusCode":204},"responseTime":10.011699974536896,"msg":"request completed"}
+{"level":30,"time":1783365700227,"pid":44292,"hostname":"p6-tuf","reqId":"req-13","req":{"method":"POST","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58070},"msg":"incoming request"}
+{"level":30,"time":1783365700383,"pid":44292,"hostname":"p6-tuf","reqId":"req-13","res":{"statusCode":201},"responseTime":155.19709998369217,"msg":"request completed"}
+{"level":30,"time":1783365700386,"pid":44292,"hostname":"p6-tuf","reqId":"req-14","req":{"method":"OPTIONS","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":59285},"msg":"incoming request"}
+{"level":30,"time":1783365700386,"pid":44292,"hostname":"p6-tuf","reqId":"req-14","res":{"statusCode":204},"responseTime":0.25429999828338623,"msg":"request completed"}
+{"level":30,"time":1783365700387,"pid":44292,"hostname":"p6-tuf","reqId":"req-15","req":{"method":"GET","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58070},"msg":"incoming request"}
+{"level":30,"time":1783365700395,"pid":44292,"hostname":"p6-tuf","reqId":"req-15","res":{"statusCode":200},"responseTime":7.546099960803986,"msg":"request completed"}
+{"level":30,"time":1783365700397,"pid":44292,"hostname":"p6-tuf","reqId":"req-16","req":{"method":"POST","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58070},"msg":"incoming request"}
+{"level":30,"time":1783365700406,"pid":44292,"hostname":"p6-tuf","reqId":"req-16","res":{"statusCode":201},"responseTime":8.86760002374649,"msg":"request completed"}
+{"level":30,"time":1783365700407,"pid":44292,"hostname":"p6-tuf","reqId":"req-17","req":{"method":"OPTIONS","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":59285},"msg":"incoming request"}
+{"level":30,"time":1783365700408,"pid":44292,"hostname":"p6-tuf","reqId":"req-17","res":{"statusCode":204},"responseTime":0.20389997959136963,"msg":"request completed"}
+{"level":30,"time":1783365700408,"pid":44292,"hostname":"p6-tuf","reqId":"req-18","req":{"method":"POST","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":58070},"msg":"incoming request"}
+{"level":30,"time":1783365700430,"pid":44292,"hostname":"p6-tuf","reqId":"req-18","res":{"statusCode":201},"responseTime":21.324400007724762,"msg":"request completed"}
+{"level":30,"time":1783365876811,"pid":44292,"hostname":"p6-tuf","reqId":"req-19","req":{"method":"POST","url":"/internal/runs/392ca45c-7782-499c-b7be-212f86193138/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":65268},"msg":"incoming request"}
+{"level":30,"time":1783365876971,"pid":44292,"hostname":"p6-tuf","reqId":"req-19","res":{"statusCode":200},"responseTime":157.26429998874664,"msg":"request completed"}
+{"level":30,"time":1783365890150,"pid":44292,"hostname":"p6-tuf","reqId":"req-1a","req":{"method":"OPTIONS","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":56739},"msg":"incoming request"}
+{"level":30,"time":1783365890152,"pid":44292,"hostname":"p6-tuf","reqId":"req-1a","res":{"statusCode":204},"responseTime":1.0414000153541565,"msg":"request completed"}
+{"level":30,"time":1783365890457,"pid":44292,"hostname":"p6-tuf","reqId":"req-1b","req":{"method":"POST","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":60448},"msg":"incoming request"}
+{"level":30,"time":1783365890526,"pid":44292,"hostname":"p6-tuf","reqId":"req-1b","res":{"statusCode":201},"responseTime":68.98400002717972,"msg":"request completed"}
+{"level":30,"time":1783365890528,"pid":44292,"hostname":"p6-tuf","reqId":"req-1c","req":{"method":"OPTIONS","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":56739},"msg":"incoming request"}
+{"level":30,"time":1783365890529,"pid":44292,"hostname":"p6-tuf","reqId":"req-1c","res":{"statusCode":204},"responseTime":0.3658999800682068,"msg":"request completed"}
+{"level":30,"time":1783365890530,"pid":44292,"hostname":"p6-tuf","reqId":"req-1d","req":{"method":"GET","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":60448},"msg":"incoming request"}
+{"level":30,"time":1783365890545,"pid":44292,"hostname":"p6-tuf","reqId":"req-1d","res":{"statusCode":200},"responseTime":15.258800029754639,"msg":"request completed"}
+{"level":30,"time":1783365890548,"pid":44292,"hostname":"p6-tuf","reqId":"req-1e","req":{"method":"POST","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":60448},"msg":"incoming request"}
+{"level":30,"time":1783365890564,"pid":44292,"hostname":"p6-tuf","reqId":"req-1e","res":{"statusCode":201},"responseTime":15.491900026798248,"msg":"request completed"}
+{"level":30,"time":1783365890566,"pid":44292,"hostname":"p6-tuf","reqId":"req-1f","req":{"method":"OPTIONS","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":56739},"msg":"incoming request"}
+{"level":30,"time":1783365890566,"pid":44292,"hostname":"p6-tuf","reqId":"req-1f","res":{"statusCode":204},"responseTime":0.2896999716758728,"msg":"request completed"}
+{"level":30,"time":1783365890567,"pid":44292,"hostname":"p6-tuf","reqId":"req-1g","req":{"method":"POST","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":60448},"msg":"incoming request"}
+{"level":30,"time":1783365890599,"pid":44292,"hostname":"p6-tuf","reqId":"req-1g","res":{"statusCode":201},"responseTime":32.471000015735626,"msg":"request completed"}
+{"level":30,"time":1783366073502,"pid":44292,"hostname":"p6-tuf","reqId":"req-1h","req":{"method":"POST","url":"/internal/runs/829012d4-4916-40ab-875a-0c7354521e02/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":65315},"msg":"incoming request"}
+{"level":30,"time":1783366073763,"pid":44292,"hostname":"p6-tuf","reqId":"req-1h","res":{"statusCode":200},"responseTime":256.32929998636246,"msg":"request completed"}
+{"level":30,"time":1783366475214,"pid":44292,"hostname":"p6-tuf","reqId":"req-1i","req":{"method":"OPTIONS","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":55348},"msg":"incoming request"}
+{"level":30,"time":1783366475235,"pid":44292,"hostname":"p6-tuf","reqId":"req-1i","res":{"statusCode":204},"responseTime":13.912199974060059,"msg":"request completed"}
+{"level":30,"time":1783366475540,"pid":44292,"hostname":"p6-tuf","reqId":"req-1j","req":{"method":"POST","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":61052},"msg":"incoming request"}
+{"level":30,"time":1783366475724,"pid":44292,"hostname":"p6-tuf","reqId":"req-1j","res":{"statusCode":201},"responseTime":183.79689997434616,"msg":"request completed"}
+{"level":30,"time":1783366475727,"pid":44292,"hostname":"p6-tuf","reqId":"req-1k","req":{"method":"OPTIONS","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":55348},"msg":"incoming request"}
+{"level":30,"time":1783366475728,"pid":44292,"hostname":"p6-tuf","reqId":"req-1k","res":{"statusCode":204},"responseTime":0.25529998540878296,"msg":"request completed"}
+{"level":30,"time":1783366475729,"pid":44292,"hostname":"p6-tuf","reqId":"req-1l","req":{"method":"GET","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":61052},"msg":"incoming request"}
+{"level":30,"time":1783366475739,"pid":44292,"hostname":"p6-tuf","reqId":"req-1l","res":{"statusCode":200},"responseTime":10.319599986076355,"msg":"request completed"}
+{"level":30,"time":1783366475742,"pid":44292,"hostname":"p6-tuf","reqId":"req-1m","req":{"method":"POST","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":61052},"msg":"incoming request"}
+{"level":30,"time":1783366475755,"pid":44292,"hostname":"p6-tuf","reqId":"req-1m","res":{"statusCode":201},"responseTime":13.131900012493134,"msg":"request completed"}
+{"level":30,"time":1783366475757,"pid":44292,"hostname":"p6-tuf","reqId":"req-1n","req":{"method":"OPTIONS","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":55348},"msg":"incoming request"}
+{"level":30,"time":1783366475758,"pid":44292,"hostname":"p6-tuf","reqId":"req-1n","res":{"statusCode":204},"responseTime":0.2688000202178955,"msg":"request completed"}
+{"level":30,"time":1783366475758,"pid":44292,"hostname":"p6-tuf","reqId":"req-1o","req":{"method":"POST","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":61052},"msg":"incoming request"}
+{"level":30,"time":1783366475785,"pid":44292,"hostname":"p6-tuf","reqId":"req-1o","res":{"statusCode":201},"responseTime":27.272000014781952,"msg":"request completed"}
+{"level":30,"time":1783369048651,"pid":44292,"hostname":"p6-tuf","reqId":"req-1p","req":{"method":"OPTIONS","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":56449},"msg":"incoming request"}
+{"level":30,"time":1783369048672,"pid":44292,"hostname":"p6-tuf","reqId":"req-1p","res":{"statusCode":204},"responseTime":13.71119999885559,"msg":"request completed"}
+{"level":30,"time":1783369048677,"pid":44292,"hostname":"p6-tuf","reqId":"req-1q","req":{"method":"POST","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52311},"msg":"incoming request"}
+{"level":30,"time":1783369048860,"pid":44292,"hostname":"p6-tuf","reqId":"req-1q","res":{"statusCode":201},"responseTime":182.26630002260208,"msg":"request completed"}
+{"level":30,"time":1783369048862,"pid":44292,"hostname":"p6-tuf","reqId":"req-1r","req":{"method":"OPTIONS","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":56449},"msg":"incoming request"}
+{"level":30,"time":1783369048863,"pid":44292,"hostname":"p6-tuf","reqId":"req-1r","res":{"statusCode":204},"responseTime":0.3666999936103821,"msg":"request completed"}
+{"level":30,"time":1783369048864,"pid":44292,"hostname":"p6-tuf","reqId":"req-1s","req":{"method":"GET","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52311},"msg":"incoming request"}
+{"level":30,"time":1783369048873,"pid":44292,"hostname":"p6-tuf","reqId":"req-1s","res":{"statusCode":200},"responseTime":9.111899971961975,"msg":"request completed"}
+{"level":30,"time":1783369048875,"pid":44292,"hostname":"p6-tuf","reqId":"req-1t","req":{"method":"POST","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52311},"msg":"incoming request"}
+{"level":30,"time":1783369048885,"pid":44292,"hostname":"p6-tuf","reqId":"req-1t","res":{"statusCode":201},"responseTime":10.315400004386902,"msg":"request completed"}
+{"level":30,"time":1783369048888,"pid":44292,"hostname":"p6-tuf","reqId":"req-1u","req":{"method":"OPTIONS","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":56449},"msg":"incoming request"}
+{"level":30,"time":1783369048888,"pid":44292,"hostname":"p6-tuf","reqId":"req-1u","res":{"statusCode":204},"responseTime":0.20889997482299805,"msg":"request completed"}
+{"level":30,"time":1783369048889,"pid":44292,"hostname":"p6-tuf","reqId":"req-1v","req":{"method":"POST","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":52311},"msg":"incoming request"}
+{"level":30,"time":1783369048905,"pid":44292,"hostname":"p6-tuf","reqId":"req-1v","res":{"statusCode":201},"responseTime":15.672100007534027,"msg":"request completed"}
+{"level":30,"time":1783369130828,"pid":44292,"hostname":"p6-tuf","reqId":"req-1w","req":{"method":"POST","url":"/internal/runs/496cdbc2-6c79-4282-8a73-13317a3ad3ae/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":51433},"msg":"incoming request"}
+{"level":30,"time":1783369130871,"pid":44292,"hostname":"p6-tuf","reqId":"req-1w","res":{"statusCode":200},"responseTime":42.538500010967255,"msg":"request completed"}
+{"level":30,"time":1783372811859,"pid":44292,"hostname":"p6-tuf","reqId":"req-1x","req":{"method":"POST","url":"/internal/runs/1813b68a-39a4-4037-ace6-61a54c022331/finish","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":59505},"msg":"incoming request"}
+{"level":30,"time":1783372812129,"pid":44292,"hostname":"p6-tuf","reqId":"req-1x","res":{"statusCode":200},"responseTime":264.2005000114441,"msg":"request completed"}
+{"level":30,"time":1783372817511,"pid":44292,"hostname":"p6-tuf","reqId":"req-1y","req":{"method":"OPTIONS","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":55097},"msg":"incoming request"}
+{"level":30,"time":1783372817511,"pid":44292,"hostname":"p6-tuf","reqId":"req-1y","res":{"statusCode":204},"responseTime":0.43410003185272217,"msg":"request completed"}
+{"level":30,"time":1783372817824,"pid":44292,"hostname":"p6-tuf","reqId":"req-1z","req":{"method":"POST","url":"/api/auth/guest","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":53563},"msg":"incoming request"}
+{"level":30,"time":1783372817860,"pid":44292,"hostname":"p6-tuf","reqId":"req-1z","res":{"statusCode":201},"responseTime":35.70069998502731,"msg":"request completed"}
+{"level":30,"time":1783372817862,"pid":44292,"hostname":"p6-tuf","reqId":"req-20","req":{"method":"OPTIONS","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":55097},"msg":"incoming request"}
+{"level":30,"time":1783372817863,"pid":44292,"hostname":"p6-tuf","reqId":"req-20","res":{"statusCode":204},"responseTime":0.23580002784729004,"msg":"request completed"}
+{"level":30,"time":1783372817864,"pid":44292,"hostname":"p6-tuf","reqId":"req-21","req":{"method":"GET","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":53563},"msg":"incoming request"}
+{"level":30,"time":1783372817875,"pid":44292,"hostname":"p6-tuf","reqId":"req-21","res":{"statusCode":200},"responseTime":11.259199976921082,"msg":"request completed"}
+{"level":30,"time":1783372817878,"pid":44292,"hostname":"p6-tuf","reqId":"req-22","req":{"method":"POST","url":"/api/characters","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":53563},"msg":"incoming request"}
+{"level":30,"time":1783372817894,"pid":44292,"hostname":"p6-tuf","reqId":"req-22","res":{"statusCode":201},"responseTime":16.337199985980988,"msg":"request completed"}
+{"level":30,"time":1783372817896,"pid":44292,"hostname":"p6-tuf","reqId":"req-23","req":{"method":"OPTIONS","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":55097},"msg":"incoming request"}
+{"level":30,"time":1783372817897,"pid":44292,"hostname":"p6-tuf","reqId":"req-23","res":{"statusCode":204},"responseTime":0.23089998960494995,"msg":"request completed"}
+{"level":30,"time":1783372817898,"pid":44292,"hostname":"p6-tuf","reqId":"req-24","req":{"method":"POST","url":"/api/runs/start","host":"localhost:3000","remoteAddress":"127.0.0.1","remotePort":53563},"msg":"incoming request"}
+{"level":30,"time":1783372817918,"pid":44292,"hostname":"p6-tuf","reqId":"req-24","res":{"statusCode":201},"responseTime":20.5417999625206,"msg":"request completed"}
+6:41:18 PM [tsx] change in ./..\packages\sim\src\index.ts Restarting...
+c6:47:37 PM [tsx] change in ./..\packages\sim\src\arpgMvp.ts Rerunning...
+c{"level":30,"time":1783374459106,"pid":17232,"hostname":"p6-tuf","msg":"Server listening at http://127.0.0.1:3000"}
+{"level":30,"time":1783374459107,"pid":17232,"hostname":"p6-tuf","msg":"Server listening at http://172.22.16.1:3000"}
+{"level":30,"time":1783374459107,"pid":17232,"hostname":"p6-tuf","msg":"Server listening at http://192.168.100.54:3000"}
+7:06:40 PM [tsx] change in ./..\packages\sim\src\index.ts Restarting...
+c7:07:04 PM [tsx] change in ./..\packages\sim\src\arpgCombat.ts Rerunning...
+c{"level":30,"time":1783375626354,"pid":50352,"hostname":"p6-tuf","msg":"Server listening at http://127.0.0.1:3000"}
+{"level":30,"time":1783375626355,"pid":50352,"hostname":"p6-tuf","msg":"Server listening at http://172.22.16.1:3000"}
+{"level":30,"time":1783375626355,"pid":50352,"hostname":"p6-tuf","msg":"Server listening at http://192.168.100.54:3000"}
+7:31:16 PM [tsx] change in ./..\packages\sim\src\arpgCombat.ts Restarting...
+c7:32:58 PM [tsx] change in ./..\packages\sim\src\arpgCombat.ts Rerunning...
+c

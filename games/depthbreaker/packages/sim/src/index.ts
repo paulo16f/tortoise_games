@@ -5,9 +5,12 @@
 
 export * from "./rng.js";
 export * from "./combatMath.js";
+export * from "./combatTimeline.js";
 export * from "./healing.js";
 export * from "./xpCurve.js";
 export * from "./threat.js";
 export * from "./lootRoller.js";
+export * from "./arpgMvp.js";
+export * from "./arpgCombat.js";
 export * from "./dungeonGraph.js";
 export * from "./plausibility.js";

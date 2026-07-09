@@ -7,7 +7,7 @@ import { PROJECTILE_SPEED } from "./fxConstants";
 
 const POOL_SIZE = 8;
 const HIT_RADIUS = 0.4;
-const MAX_AGE_MS = 1200;
+const MAX_AGE_MS = 1800;
 const BOLT_COLOR = "#a78bfa";
 
 interface Bolt {
@@ -16,18 +16,27 @@ interface Bolt {
   y: number;
   z: number;
   targetId: string;
+  actionId: string;
   bornAt: number;
 }
 
 export function Projectiles() {
-  const bolts = useRef<Bolt[]>(Array.from({ length: POOL_SIZE }, () => ({ active: false, x: 0, y: 0, z: 0, targetId: "", bornAt: 0 })));
+  const bolts = useRef<Bolt[]>(Array.from({ length: POOL_SIZE }, () => ({ active: false, x: 0, y: 0, z: 0, targetId: "", actionId: "", bornAt: 0 })));
   const meshes = useRef<(Mesh | null)[]>(Array(POOL_SIZE).fill(null));
   const slots = useMemo(() => Array.from({ length: POOL_SIZE }, (_, i) => i), []);
 
   useEffect(
     () =>
       combatBus.subscribe((f) => {
-        if (f.delayMs <= 0 || (f.kind !== "hit" && f.kind !== "crit" && f.kind !== "skill")) return;
+        if (f.kind !== "skill" || f.amount !== 0) {
+          if (f.actionId) {
+            for (const bolt of bolts.current) {
+              if (bolt.active && bolt.actionId === f.actionId) bolt.active = false;
+            }
+          }
+          return;
+        }
+        if (f.delayMs <= 0) return;
         const source = zoneStore.state?.players.get(f.sourceId);
         if (!source) return;
         const bolt = bolts.current.find((b) => !b.active) ?? bolts.current.reduce((a, b) => (a.bornAt <= b.bornAt ? a : b));
@@ -36,6 +45,7 @@ export function Projectiles() {
         bolt.y = source.y + 1.2;
         bolt.z = source.z;
         bolt.targetId = f.targetId;
+        bolt.actionId = f.actionId;
         bolt.bornAt = performance.now();
       }),
     [],

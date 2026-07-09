@@ -6,25 +6,38 @@ import {
   computeMove,
   MIN_ZOOM,
   MAX_ZOOM,
+  clearClickDestination,
+  resetCameraOrbit,
 } from "./controls";
+import { ARPG_CAMERA } from "../world/cameraPreset";
 import { zoneStore } from "../../net/room";
 import { localPlayerPos } from "../entityRefs";
 
-function targetNearestEnemy(): void {
+const TARGET_SELECTION_RANGE = 18;
+const CLICK_STOP_DISTANCE = 0.35;
+
+function targetNextEnemyInRange(): void {
   const st = zoneStore.state;
   if (!st) return;
   const px = localPlayerPos.x;
   const pz = localPlayerPos.z;
   const alive: { id: string; d: number }[] = [];
   st.enemies.forEach((e, id) => {
-    if (e.alive) alive.push({ id, d: Math.hypot(e.x - px, e.z - pz) });
+    if (!e.alive) return;
+    const d = Math.hypot(e.x - px, e.z - pz);
+    if (d <= TARGET_SELECTION_RANGE) alive.push({ id, d });
   });
-  if (alive.length === 0) return;
+  if (alive.length === 0) {
+    clearClickDestination();
+    zoneStore.sendTarget("");
+    return;
+  }
   alive.sort((a, b) => a.d - b.d);
   const current = st.players.get(zoneStore.selfId)?.targetId ?? "";
   const idx = alive.findIndex((a) => a.id === current);
   const next = idx === -1 ? alive[0] : alive[(idx + 1) % alive.length];
-  zoneStore.sendTarget(next.id);
+  clearClickDestination();
+  zoneStore.sendTarget(next.id, false);
 }
 
 export function useControls(): void {
@@ -32,12 +45,25 @@ export function useControls(): void {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isMoveKey(e.code)) controlState.keys.add(e.code);
       if (e.repeat) return;
-      if (e.code === "KeyQ") zoneStore.sendSkill(0);
-      if (e.code === "KeyE") zoneStore.sendSkill(2);
-      if (e.code === "Digit2") zoneStore.sendSkill(1);
+      if (e.code === "Digit1") {
+        const self = zoneStore.state?.players.get(zoneStore.selfId);
+        if (self?.targetId) {
+          clearClickDestination();
+          zoneStore.sendAutoAttack(!self.autoAttack);
+        }
+      }
+      if (e.code === "Digit2") zoneStore.sendSkill(0);
+      if (e.code === "Digit3") zoneStore.sendSkill(2);
+      if (e.code === "Digit4") zoneStore.sendSkill(0);
+      if (e.code === "Digit5") zoneStore.sendSkill(2);
+      if (e.code === "KeyV") {
+        const self = zoneStore.state?.players.get(zoneStore.selfId);
+        if (self) zoneStore.sendToggleWeapon(!self.weaponId);
+      }
+      if (e.code === "KeyR") resetCameraOrbit();
       if (e.code === "Tab") {
         e.preventDefault();
-        targetNearestEnemy();
+        targetNextEnemyInRange();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -45,16 +71,27 @@ export function useControls(): void {
     };
     const onBlur = () => controlState.keys.clear();
     const onPointerDown = (e: PointerEvent) => {
-      if (e.button === 2) controlState.dragging = true;
+      if (e.button !== 2) return;
+      e.preventDefault();
+      controlState.dragging = true;
+      controlState.dragPointerId = e.pointerId;
+      const target = e.target instanceof Element ? e.target : null;
+      target?.setPointerCapture?.(e.pointerId);
     };
     const onPointerUp = (e: PointerEvent) => {
-      if (e.button === 2) controlState.dragging = false;
+      if (e.button !== 2 && e.pointerId !== controlState.dragPointerId) return;
+      controlState.dragging = false;
+      controlState.dragPointerId = undefined;
+      const target = e.target instanceof Element ? e.target : null;
+      target?.releasePointerCapture?.(e.pointerId);
     };
     const onPointerMove = (e: PointerEvent) => {
       if (!controlState.dragging) return;
+      if (controlState.dragPointerId !== undefined && e.pointerId !== controlState.dragPointerId) return;
+      e.preventDefault();
       const o = controlState.orbit;
-      o.panX = Math.max(-1.2, Math.min(1.2, o.panX - e.movementX * 0.012));
-      o.panZ = Math.max(-1.2, Math.min(1.2, o.panZ + e.movementY * 0.012));
+      o.yaw -= e.movementX * ARPG_CAMERA.yawSpeed;
+      o.pitch = clamp(o.pitch + e.movementY * ARPG_CAMERA.pitchSpeed, ARPG_CAMERA.minPitch, ARPG_CAMERA.maxPitch);
     };
     const onWheel = (e: WheelEvent) => {
       const o = controlState.orbit;
@@ -75,7 +112,7 @@ export function useControls(): void {
 
     let seq = 0;
     const interval = window.setInterval(() => {
-      const { moveX, moveZ } = computeMove(controlState);
+      const { moveX, moveZ } = computeMoveWithClickDestination();
       zoneStore.sendInput({ seq: seq++, moveX, moveZ, yaw: controlState.orbit.yaw });
     }, 1000 / INPUT_SEND_HZ);
 
@@ -90,6 +127,30 @@ export function useControls(): void {
       window.removeEventListener("contextmenu", onContextMenu);
       window.clearInterval(interval);
       controlState.keys.clear();
+      controlState.clickDestination = undefined;
+      controlState.dragging = false;
+      controlState.dragPointerId = undefined;
     };
   }, []);
+}
+
+function computeMoveWithClickDestination(): { moveX: number; moveZ: number } {
+  const held = computeMove(controlState);
+  if (Math.hypot(held.moveX, held.moveZ) > 0.01) return held;
+
+  const dest = controlState.clickDestination;
+  if (!dest) return held;
+
+  const dx = dest.x - localPlayerPos.x;
+  const dz = dest.z - localPlayerPos.z;
+  const distance = Math.hypot(dx, dz);
+  if (distance <= CLICK_STOP_DISTANCE) {
+    controlState.clickDestination = undefined;
+    return { moveX: 0, moveZ: 0 };
+  }
+  return { moveX: dx / distance, moveZ: dz / distance };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }

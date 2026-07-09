@@ -1,7 +1,8 @@
 import { useGLTF } from "@react-three/drei";
+import type { DungeonVisualAssetId } from "@depthbreaker/protocol";
 import manifest from "../../../public/models/synty/runtime/manifest.json";
 
-export type DungeonAssetKey = "floor" | "barrel" | "barrel_broken" | "rubble" | "rock_small" | "chest";
+export type DungeonAssetKey = DungeonVisualAssetId;
 
 export interface RuntimeDungeonAsset {
   key: DungeonAssetKey;

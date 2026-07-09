@@ -2,8 +2,8 @@
 // Combat -> Leash. EnemyDef carries the rank tuning used by wave spawns.
 
 import { ThreatTable } from "@depthbreaker/sim";
-import { ENEMY_AGGRO_RADIUS, ENEMY_LEASH_DISTANCE, isDungeonWalkable } from "@depthbreaker/protocol";
-import type { EnemyState } from "@depthbreaker/protocol";
+import { ENEMY_AGGRO_RADIUS, ENEMY_LEASH_DISTANCE, DEPTHBREAKER_DUNGEON, isDungeonWalkable } from "@depthbreaker/protocol";
+import type { EnemyState, DungeonMapDefinition } from "@depthbreaker/protocol";
 
 export type EnemyRank = "normal" | "elite" | "boss";
 
@@ -29,7 +29,9 @@ export const GRUNT: EnemyDef = {
   attackDamage: 6,
   attackInterval: 1.2,
   attackRange: 2.2,
-  moveSpeed: 3.5,
+  // Move speeds tuned down alongside PLAYER_SPEED (6 -> 4) so enemy locomotion
+  // clips read the same way the player's do; player/enemy speed ratio preserved.
+  moveSpeed: 2.4,
   armor: 8,
   xpValue: 50,
   currencyValue: 5,
@@ -44,7 +46,7 @@ export const ELITE_GRUNT: EnemyDef = {
   maxHp: 130,
   attackDamage: 11,
   attackInterval: 1.05,
-  moveSpeed: 3.8,
+  moveSpeed: 2.6,
   armor: 16,
   xpValue: 140,
   currencyValue: 18,
@@ -59,7 +61,7 @@ export const BOSS_BRUTE: EnemyDef = {
   attackDamage: 18,
   attackInterval: 1.35,
   attackRange: 2.8,
-  moveSpeed: 2.6,
+  moveSpeed: 1.8,
   armor: 28,
   xpValue: 600,
   currencyValue: 80,
@@ -92,6 +94,9 @@ export class EnemyController {
   private readonly spawnZ: number;
   private attackCooldown = 0;
   private respawnTimer = 0;
+  // The per-run map, refreshed each update() so movement collision uses the
+  // seeded dungeon rather than the module fallback.
+  private map: DungeonMapDefinition = DEPTHBREAKER_DUNGEON;
 
   constructor(
     readonly state: EnemyState,
@@ -112,7 +117,8 @@ export class EnemyController {
     this.threat.remove(playerId);
   }
 
-  update(dt: number, targets: Map<string, CombatTarget>): EnemyAction {
+  update(dt: number, targets: Map<string, CombatTarget>, map: DungeonMapDefinition): EnemyAction {
+    this.map = map;
     const s = this.state;
 
     if (!s.alive) {
@@ -215,12 +221,12 @@ export class EnemyController {
     const step = Math.min(len, this.def.moveSpeed * dt);
     const nextX = s.x + (dx / len) * step;
     const nextZ = s.z + (dz / len) * step;
-    if (isDungeonWalkable(nextX, nextZ, 0.45)) {
+    if (isDungeonWalkable(nextX, nextZ, 0.45, this.map)) {
       s.x = nextX;
       s.z = nextZ;
-    } else if (isDungeonWalkable(nextX, s.z, 0.45)) {
+    } else if (isDungeonWalkable(nextX, s.z, 0.45, this.map)) {
       s.x = nextX;
-    } else if (isDungeonWalkable(s.x, nextZ, 0.45)) {
+    } else if (isDungeonWalkable(s.x, nextZ, 0.45, this.map)) {
       s.z = nextZ;
     }
     s.yaw = Math.atan2(dx, dz);

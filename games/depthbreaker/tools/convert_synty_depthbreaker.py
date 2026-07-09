@@ -1,7 +1,9 @@
-"""Build Depthbreaker-ready Synty GLBs with named gameplay clips.
+"""Build Depthbreaker-ready Synty Dungeon Realms GLBs with named clips.
 
-This script combines a Mini Fantasy character FBX with Polygon animation FBXs
-from the Synty animation packs, then exports one GLB per runtime character.
+The active v1 runtime uses Polygon Dungeon Realms characters because they share
+the same bone names as the Polygon locomotion/combat animation packs. Keep this
+pipeline direct: no Mini Fantasy retarget and no Sidekick fallback in runtime
+assets.
 
 Run with Blender:
 blender --background --python tools/convert_synty_depthbreaker.py -- --source "C:\\Users\\vlgp6\\Projects\\unity sheets\\Source_Files" --restored "C:\\Users\\vlgp6\\Projects\\unity sheets\\_restored" --out client\\public\\models\\synty\\depthbreaker
@@ -10,41 +12,73 @@ blender --background --python tools/convert_synty_depthbreaker.py -- --source "C
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import bpy
+from mathutils import Vector
 
 
 DEFAULT_SOURCE = Path(r"C:\Users\vlgp6\Projects\unity sheets\Source_Files")
 DEFAULT_RESTORED = Path(r"C:\Users\vlgp6\Projects\unity sheets\_restored")
 DEFAULT_OUT = Path("client/public/models/synty/depthbreaker")
-TEXTURE_NAME = "PolygonMinis_Texture_01_A.png"
+DUNGEON_REALMS_CHARACTERS = "Assets/Synty/PolygonDungeonRealms/Models/Characters/Characters.fbx"
+WEAPON_TEXTURE_NAME = "PolygonMinis_Texture_01_A.png"
 
 
 @dataclass(frozen=True)
 class RuntimeCharacter:
-    source: str
+    mesh: str
     out: str
 
 
 CHARACTERS = [
-    RuntimeCharacter("Characters/SK_Dungeon_KnightMale_01.fbx", "characters/warrior.glb"),
-    RuntimeCharacter("Characters/SK_Fantasy_Wizard_01.fbx", "characters/mage.glb"),
-    RuntimeCharacter("Characters/SK_Dungeon_SkeletonSoldier_01.fbx", "characters/skeleton.glb"),
-    RuntimeCharacter("Characters/SK_Dungeon_GoblinChief_01.fbx", "characters/goblin_chief.glb"),
-    RuntimeCharacter("Characters/SK_Dungeon_RockGolem_01.fbx", "characters/rock_golem.glb"),
+    RuntimeCharacter("Chr_Hero_Male_01", "characters/warrior.glb"),
+    RuntimeCharacter("Chr_Nomad_Male_01", "characters/warden.glb"),
+    RuntimeCharacter("Chr_Nomad_Female_01", "characters/mage.glb"),
+    RuntimeCharacter("Chr_Skeleton_01", "characters/skeleton.glb"),
+    RuntimeCharacter("Chr_Undead_Knight_01", "characters/undead_knight.glb"),
+    RuntimeCharacter("Chr_Skeleton_03", "characters/boss_skeleton.glb"),
 ]
 
+_LOCO = "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine"
+_SWORD = "Assets/Synty/AnimationSwordCombat/Animations/Polygon"
+
 CLIPS = {
-    "idle": "Assets/Synty/AnimationBaseLocomotion/Animations/Sidekick/Masculine/Idles/A_MOD_BL_Idle_Standing_Masc.fbx",
-    "walk": "Assets/Synty/AnimationBaseLocomotion/Animations/Sidekick/Masculine/Locomotion/Walk/A_MOD_BL_Walk_F_Masc.fbx",
-    "run": "Assets/Synty/AnimationBaseLocomotion/Animations/Sidekick/Masculine/Locomotion/Run/A_MOD_BL_Run_F_Masc.fbx",
-    "attack": "Assets/Synty/AnimationSwordCombat/Animations/Sidekick/Attack/LightCombo01/A_MOD_SWD_Attack_LightCombo01A_Neut.fbx",
-    "block": "Assets/Synty/AnimationSwordCombat/Animations/Sidekick/Block/A_MOD_SWD_Block_Loop_Neut.fbx",
-    "hit": "Assets/Synty/AnimationSwordCombat/Animations/Sidekick/Hit/HitReact/A_MOD_SWD_Hit_F_React_Neut.fbx",
-    "death": "Assets/Synty/AnimationSwordCombat/Animations/Sidekick/Death/A_MOD_SWD_Death_F_Neut.fbx",
+    # Prefer Polygon clips over Sidekick for Dungeon Realms / standard POLYGON
+    # rigs. Keep this as the single runtime source of truth: if a clip choice
+    # changes, regenerate these GLBs instead of branching at runtime.
+    "idle": f"{_SWORD}/Idle/Menacing01/A_Idle_Menacing01_Sword.fbx",
+    "walk": f"{_LOCO}/Locomotion/Walk/A_Walk_F_Masc.fbx",
+    "run": f"{_LOCO}/Locomotion/Run/A_Run_F_Masc.fbx",
+    "sprint": f"{_LOCO}/Locomotion/Sprint/A_Sprint_F_Masc.fbx",
+    # One-shot locomotion transitions (start/stop) that the runtime locomotion
+    # controller fires when leaving/entering idle. Baked like any other clip;
+    # the runtime degrades to the plain speed blend when a GLB lacks them.
+    "walk_start": f"{_LOCO}/Transitions/Idle_ToWalk/A_Idle_ToWalkF_Masc.fbx",
+    "run_start": f"{_LOCO}/Transitions/Idle_ToRun/A_Idle_ToRunF_Masc.fbx",
+    "walk_stop": f"{_LOCO}/Transitions/Walk_ToIdle/A_Walk_ToIdleF_RFoot_Masc.fbx",
+    "run_stop": f"{_LOCO}/Transitions/Run_ToIdle/A_Run_ToIdleF_RFoot_Masc.fbx",
+    # Turn-in-place (played when the body rotates while standing still).
+    "turn_l": f"{_LOCO}/Locomotion/Turn/A_Turn_Standing_90L_Masc.fbx",
+    "turn_r": f"{_LOCO}/Locomotion/Turn/A_Turn_Standing_90R_Masc.fbx",
+    "attack": f"{_SWORD}/Attack/LightCombo01/A_Attack_LightCombo01A_Sword.fbx",
+    "block": f"{_SWORD}/Block/A_Block_Loop_Sword.fbx",
+    "hit": f"{_SWORD}/Hit/HitReact/A_Hit_F_React_Sword.fbx",
+    "death": f"{_SWORD}/Death/A_Death_F_01_Sword.fbx",
+}
+
+# The runtime foot-locks locomotion playback to real ground speed, which needs
+# each looping clip's authored ground speed. The base clips above are IN-PLACE
+# (no root travel - the server drives position), so we read forward travel from
+# their _RootMotion_ siblings instead and store it normalized by character
+# height (scale-invariant). Runtime: Vnat = normStride * visualHeight / duration.
+STRIDE_ROOTMOTION = {
+    "walk": f"{_LOCO}/Locomotion/Walk/A_Walk_F_RootMotion_Masc.fbx",
+    "run": f"{_LOCO}/Locomotion/Run/A_Run_F_RootMotion_Masc.fbx",
+    "sprint": f"{_LOCO}/Locomotion/Sprint/A_Sprint_F_RootMotion_Masc.fbx",
 }
 
 WEAPONS = [
@@ -65,6 +99,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
     parser.add_argument("--restored", type=Path, default=DEFAULT_RESTORED)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--skip-weapons", action="store_true", help="Only rebuild character GLBs (weapons are unchanged).")
     return parser.parse_args(argv)
 
 
@@ -109,59 +144,137 @@ def import_fbx(path: Path) -> list[bpy.types.Object]:
     return [obj for obj in bpy.context.scene.objects if obj not in before]
 
 
-def strip_missing_bone_curves(action: bpy.types.Action, target_armature: bpy.types.Object) -> None:
-    target_bones = {bone.name for bone in target_armature.data.bones}
-    curve_owners = []
+def _curve_owners(action: bpy.types.Action) -> list:
+    owners = []
     if hasattr(action, "fcurves"):
-        curve_owners.append(action)
+        owners.append(action)
     for layer in getattr(action, "layers", []):
         for strip in getattr(layer, "strips", []):
             for bag in getattr(strip, "channelbags", []):
                 if hasattr(bag, "fcurves"):
-                    curve_owners.append(bag)
+                    owners.append(bag)
+    return owners
 
-    for owner in curve_owners:
+
+def strip_root_motion(action: bpy.types.Action) -> None:
+    for owner in _curve_owners(action):
         for curve in list(owner.fcurves):
-            marker = 'pose.bones["'
-            if marker not in curve.data_path:
-                continue
-            bone_name = curve.data_path.split(marker, 1)[1].split('"]', 1)[0]
-            if bone_name not in target_bones:
+            if curve.data_path in {
+                'pose.bones["Root"].location',
+                'pose.bones["root"].location',
+            }:
                 owner.fcurves.remove(curve)
 
 
-def strip_unsafe_bone_translation_curves(action: bpy.types.Action) -> None:
-    """Prevent FBX retarget translation tracks from stretching the runtime rig."""
-    curve_owners = []
-    if hasattr(action, "fcurves"):
-        curve_owners.append(action)
-    for layer in getattr(action, "layers", []):
-        for strip in getattr(layer, "strips", []):
-            for bag in getattr(strip, "channelbags", []):
-                if hasattr(bag, "fcurves"):
-                    curve_owners.append(bag)
+def count_action_fcurves(action: bpy.types.Action) -> int:
+    return sum(len(owner.fcurves) for owner in _curve_owners(action))
 
-    for owner in curve_owners:
-        for curve in list(owner.fcurves):
-            if "pose.bones[" not in curve.data_path or not curve.data_path.endswith(".location"):
-                continue
-            if 'pose.bones["root"]' in curve.data_path:
-                continue
-            owner.fcurves.remove(curve)
+
+def hierarchy_depth(pose_bone: bpy.types.PoseBone) -> int:
+    depth = 0
+    parent = pose_bone.parent
+    while parent is not None:
+        depth += 1
+        parent = parent.parent
+    return depth
+
+
+def reset_pose(armature: bpy.types.Object) -> None:
+    for pose_bone in armature.pose.bones:
+        pose_bone.location = (0, 0, 0)
+        pose_bone.rotation_mode = "QUATERNION"
+        pose_bone.rotation_quaternion = (1, 0, 0, 0)
+        pose_bone.scale = (1, 1, 1)
+
+
+def bake_retargeted_action(
+    target_armature: bpy.types.Object,
+    source_armature: bpy.types.Object,
+    source_action: bpy.types.Action,
+    clip_name: str,
+) -> bpy.types.Action:
+    """Bake a Synty Polygon clip onto the Dungeon Realms rig in armature space.
+
+    The animation packs and Dungeon Realms characters share bone names, but
+    their FBX bone local axes/rolls are not interchangeable. Copying raw
+    fcurves makes forward locomotion drive the target's side axis. This bake
+    samples source pose matrices, converts each source rest-space delta to the
+    target rest bone, and inserts clean target rotation keys.
+    """
+
+    source_armature.animation_data_create()
+    source_armature.animation_data.action = source_action
+    target_armature.animation_data_create()
+    target_action = bpy.data.actions.new(clip_name)
+    target_action.use_fake_user = True
+    target_armature.animation_data.action = target_action
+
+    source_bones = source_armature.pose.bones
+    target_bones = target_armature.pose.bones
+    common_names = sorted(
+        (name for name in target_bones.keys() if name in source_bones),
+        key=lambda name: hierarchy_depth(target_bones[name]),
+    )
+    if len(common_names) < 30:
+        raise RuntimeError(f"{clip_name}: only {len(common_names)} common bones between source and target")
+
+    start, end = source_action.frame_range
+    start_i = int(start)
+    end_i = int(end)
+    scene = bpy.context.scene
+    old_frame = scene.frame_current
+
+    for source_frame in range(start_i, end_i + 1):
+        scene.frame_set(source_frame)
+        bpy.context.view_layer.update()
+        reset_pose(target_armature)
+
+        for bone_name in common_names:
+            source_pose = source_bones[bone_name]
+            target_pose = target_bones[bone_name]
+            source_rest = source_pose.bone.matrix_local
+            target_rest = target_pose.bone.matrix_local
+            source_delta = source_pose.matrix @ source_rest.inverted()
+            target_pose.matrix = source_delta @ target_rest
+
+        dst_frame = source_frame - start_i
+        for bone_name in common_names:
+            target_pose = target_bones[bone_name]
+            target_pose.rotation_mode = "QUATERNION"
+            if bone_name == "Root":
+                target_pose.location = (0, 0, 0)
+            target_pose.keyframe_insert(data_path="rotation_quaternion", frame=dst_frame)
+            if bone_name == "Hips":
+                target_pose.keyframe_insert(data_path="location", frame=dst_frame)
+
+    scene.frame_set(old_frame)
+    target_action.frame_start = 0
+    target_action.frame_end = max(1, end_i - start_i)
+    strip_root_motion(target_action)
+    if count_action_fcurves(target_action) == 0:
+        raise RuntimeError(f"{clip_name}: baked action has no fcurves")
+    reset_pose(target_armature)
+    return target_action
 
 
 def stash_action(target_armature: bpy.types.Object, source_action: bpy.types.Action, clip_name: str) -> None:
-    action = source_action.copy()
+    action = source_action
     action.name = clip_name
     action.use_fake_user = True
-    strip_missing_bone_curves(action, target_armature)
-    strip_unsafe_bone_translation_curves(action)
+    strip_root_motion(action)
+    if count_action_fcurves(action) == 0:
+        raise RuntimeError(f"{clip_name}: action has no fcurves after root-motion strip")
 
     target_armature.animation_data_create()
     track = target_armature.animation_data.nla_tracks.new()
     track.name = clip_name
     strip = track.strips.new(clip_name, 0, action)
     strip.action = action
+    start, end = action.frame_range
+    strip.action_frame_start = start
+    strip.action_frame_end = end
+    strip.frame_start = 0
+    strip.frame_end = max(1, end - start)
 
 
 def add_clip(target_armature: bpy.types.Object, clip_path: Path, clip_name: str) -> None:
@@ -178,7 +291,13 @@ def add_clip(target_armature: bpy.types.Object, clip_path: Path, clip_name: str)
         raise RuntimeError(f"No animated armature found in {clip_path}")
 
     source_armature_name = source_armature.name
-    stash_action(target_armature, source_armature.animation_data.action, clip_name)
+    baked_action = bake_retargeted_action(
+        target_armature,
+        source_armature,
+        source_armature.animation_data.action,
+        clip_name,
+    )
+    stash_action(target_armature, baked_action, clip_name)
 
     for obj in imported:
         bpy.data.objects.remove(obj, do_unlink=True)
@@ -186,7 +305,6 @@ def add_clip(target_armature: bpy.types.Object, clip_path: Path, clip_name: str)
     for action in list(bpy.data.actions):
         if action.name != clip_name and action.name.startswith(source_armature_name):
             bpy.data.actions.remove(action)
-
 
 def export_glb(out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -197,36 +315,118 @@ def export_glb(out_path: Path) -> None:
         export_skins=True,
         export_animations=True,
         export_apply=False,
+        # Each runtime clip is stashed onto its own NLA track (see stash_action).
+        # The default "ACTIONS" export mode bakes the pose from the object's
+        # blended NLA stack instead of isolating each track, which reintroduces
+        # the exact translation drift stash_action just stripped. NLA_TRACKS
+        # solos each track for its own bake, matching how the clips are stored.
+        export_animation_mode="NLA_TRACKS",
     )
 
 
-def convert_character(character: RuntimeCharacter, source_root: Path, restored_root: Path, out_root: Path) -> None:
-    clear_scene()
-    character_path = source_root / character.source
+def import_dungeon_realms_character(restored_root: Path, mesh_name: str) -> bpy.types.Object:
+    character_path = restored_root / DUNGEON_REALMS_CHARACTERS
     import_fbx(character_path)
-    assign_texture(source_root / "Textures" / TEXTURE_NAME)
-
     target_armature = next(iter(armatures()), None)
     if target_armature is None:
         raise RuntimeError(f"No armature found in {character_path}")
 
+    selected_mesh = bpy.data.objects.get(mesh_name)
+    if selected_mesh is None or selected_mesh.type != "MESH":
+        raise RuntimeError(f"Mesh {mesh_name} not found in {character_path}")
+
+    for obj in list(bpy.context.scene.objects):
+        if obj.type == "MESH" and obj.name != mesh_name:
+            bpy.data.objects.remove(obj, do_unlink=True)
+
     target_armature.animation_data_clear()
-    for clip_name, relative_path in CLIPS.items():
-        add_clip(target_armature, restored_root / relative_path, clip_name)
+    return target_armature
+
+
+def measure_character_height(mesh_name: str) -> float:
+    obj = bpy.data.objects.get(mesh_name)
+    if obj is None or obj.type != "MESH":
+        return 0.0
+    corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
+    zs = [v.z for v in corners]
+    return max(zs) - min(zs)
+
+
+def measure_stride_norms(restored_root: Path, char_height: float) -> dict[str, float]:
+    """Read forward ground travel from the _RootMotion_ locomotion clips (the
+    in-place base clips carry no travel) and normalize by character height, so
+    the runtime can foot-lock playback rate. Imports each FBX into a scratch
+    scene; the caller's next clear_scene() reclaims the leftover armatures."""
+    strides: dict[str, float] = {}
+    if char_height <= 1e-4:
+        return strides
+    scene = bpy.context.scene
+    for clip_name, rel in STRIDE_ROOTMOTION.items():
+        path = restored_root / rel
+        if not path.exists():
+            print(f"[stride] skip {clip_name}: missing {path}")
+            continue
+        imported = import_fbx(path)
+        arm = next((o for o in imported if o.type == "ARMATURE" and o.animation_data and o.animation_data.action), None)
+        if arm is None:
+            print(f"[stride] skip {clip_name}: no animated armature")
+            continue
+        bone = arm.pose.bones.get("Root") or arm.pose.bones.get("Hips")
+        act = arm.animation_data.action
+        start, end = act.frame_range
+        first: Vector | None = None
+        last: Vector | None = None
+        for frame in range(int(start), int(end) + 1):
+            scene.frame_set(frame)
+            bpy.context.view_layer.update()
+            world = (arm.matrix_world @ bone.matrix).translation.copy()
+            if first is None:
+                first = world
+            last = world
+        travel = last - first
+        ground = (travel.x ** 2 + travel.y ** 2) ** 0.5
+        strides[clip_name] = round(ground / char_height, 5)
+        for obj in imported:
+            try:
+                bpy.data.objects.remove(obj, do_unlink=True)
+            except Exception:
+                pass
+    return strides
+
+
+def write_stride_sidecar(glb_path: Path, char_height: float, stride: dict[str, float]) -> None:
+    """Persist per-clip normalized forward travel next to the GLB. The runtime
+    foot-locks locomotion playback with: timeScale = groundSpeed /
+    (strideNorm * visualHeight / clipDuration). See locomotionController.ts."""
+    side = glb_path.with_suffix(".stride.json")
+    side.write_text(json.dumps({"characterHeight": round(char_height, 5), "strideNorm": stride}, indent=2))
+    print(f"[stride] wrote {side.name}: {stride}")
+
+
+def convert_character(character: RuntimeCharacter, restored_root: Path, out_root: Path) -> None:
+    clear_scene()
+    target_armature = import_dungeon_realms_character(restored_root, character.mesh)
+    char_height = measure_character_height(character.mesh)
+
+    for clip_name in CLIPS:
+        add_clip(target_armature, restored_root / CLIPS[clip_name], clip_name)
 
     keep = set(CLIPS)
     for action in list(bpy.data.actions):
         if action.name not in keep:
             bpy.data.actions.remove(action)
 
-    export_glb(out_root / character.out)
+    out_path = out_root / character.out
+    export_glb(out_path)
+    strides = measure_stride_norms(restored_root, char_height)
+    write_stride_sidecar(out_path, char_height, strides)
     print(f"[ok] {character.out}")
 
 
 def convert_weapon(source_root: Path, out_root: Path, relative_source: str, relative_out: str) -> None:
     clear_scene()
     import_fbx(source_root / relative_source)
-    assign_texture(source_root / "Textures" / TEXTURE_NAME)
+    assign_texture(source_root / "Textures" / WEAPON_TEXTURE_NAME)
     export_glb(out_root / relative_out)
     print(f"[ok] {relative_out}")
 
@@ -238,8 +438,11 @@ def main() -> None:
     out_root = args.out.resolve()
 
     for character in CHARACTERS:
-        convert_character(character, source_root, restored_root, out_root)
+        convert_character(character, restored_root, out_root)
 
+    if args.skip_weapons:
+        print("[skip] weapons (unchanged)")
+        return
     for relative_source, relative_out in WEAPONS:
         convert_weapon(source_root, out_root, relative_source, relative_out)
 

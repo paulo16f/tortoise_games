@@ -6,3 +6,4 @@ export * from "./messages.js";
 export * from "./schema.js";
 export * from "./views.js";
 export * from "./map.js";
+export * from "./mapGen.js";

@@ -8,6 +8,7 @@ import { combatBus } from "../../net/combatBus";
 import { localPlayerPos } from "../entityRefs";
 import { resolvePlayerModel } from "./useModel";
 import { AnimatedCharacter } from "./AnimatedCharacter";
+import { DEFAULT_MOTION_PROFILE } from "./motionProfiles";
 import { FLINCH_MS } from "../fx/fxConstants";
 
 interface PlayerProps {
@@ -43,11 +44,13 @@ export function Player({ id, isLocal }: PlayerProps) {
     const p = zoneStore.state?.players.get(id);
     if (!p) return;
 
-    const t = Math.min(1, 15 * delta);
-    g.position.x = MathUtils.lerp(g.position.x, p.x, t);
-    g.position.z = MathUtils.lerp(g.position.z, p.z, t);
+    const profile = resolvePlayerModel(p.classId)?.motionProfile ?? DEFAULT_MOTION_PROFILE;
+    const positionT = Math.min(1, profile.positionLerp * delta);
+    const turnT = Math.min(1, profile.turnLerp * delta);
+    g.position.x = MathUtils.lerp(g.position.x, p.x, positionT);
+    g.position.z = MathUtils.lerp(g.position.z, p.z, positionT);
     g.position.y = p.y;
-    g.rotation.y = lerpAngle(g.rotation.y, p.yaw, t);
+    g.rotation.y = lerpAngle(g.rotation.y, p.yaw, turnT);
     g.visible = p.alive;
 
     if (skillFx.current) skillFx.current.rotation.y += delta * 2.2;
@@ -78,6 +81,7 @@ export function Player({ id, isLocal }: PlayerProps) {
   const name = p?.name ?? "";
   const classId = p?.classId ?? "";
   const model = resolvePlayerModel(classId);
+  const weaponUrl = p?.weaponId ? model?.weaponUrl : undefined;
   const visualHeight = model?.visualHeight ?? 1.8;
   const radius = model?.radius ?? 0.45;
   const color = !alive ? DEAD_COLOR : isLocal ? LOCAL_COLOR : OTHER_COLOR;
@@ -89,11 +93,15 @@ export function Player({ id, isLocal }: PlayerProps) {
           entityId={id}
           kind="player"
           url={model.url}
-          weaponUrl={model.weaponUrl}
+          weaponUrl={weaponUrl}
           handBoneNames={model.handBoneNames}
           clips={model.clips}
           targetHeight={model.targetHeight}
           weaponTransform={model.weaponTransform}
+          naturalHeight={model.naturalHeight}
+          restMinY={model.restMinY}
+          motionProfile={model.motionProfile}
+          strideNorm={model.strideNorm}
           onMaterials={(mats) => {
             modelMats.current = mats;
           }}
