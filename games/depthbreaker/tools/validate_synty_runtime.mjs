@@ -18,6 +18,9 @@ const MIN_CHARACTER_CLIP_DURATION = 0.25;
 const MIN_CHARACTER_CLIP_TRACKS = 20;
 const REQUIRED_CHARACTER_BONES = ["Hips", "Spine_01", "Head", "Hand_R", "Ankle_L", "Ankle_R"];
 const CLIP_SAMPLE_FRACTIONS = [0, 0.25, 0.5, 0.75, 1];
+const FOOT_SAMPLE_FRACTIONS = Array.from({ length: 11 }, (_, index) => index / 10);
+const FOOT_OPPOSED_DOT_THRESHOLD = -0.35;
+const MAX_OPPOSED_RIGHT_FOOT_FRAMES = 6;
 const MIN_IDLE_HAND_BIND_DELTA = 0.12;
 
 function publicPath(url) {
@@ -212,6 +215,7 @@ function validateLocomotionAxis(character, gltf) {
   for (const clipName of ["walk", "run"]) {
     const clip = gltf.animations.find((candidate) => candidate.name === clipName);
     if (!clip) continue;
+    mixer.stopAllAction();
     const action = mixer.clipAction(clip);
     action.reset().play();
     const ranges = {
@@ -235,6 +239,61 @@ function validateLocomotionAxis(character, gltf) {
       failures.push(`${character.key}: ${clipName} locomotion is not forward-axis dominant (x=${xRange.toFixed(3)}, z=${zRange.toFixed(3)})`);
     }
     mixer.stopAllAction();
+  }
+  mixer.stopAllAction();
+}
+
+function horizontalFootVector(byName, side) {
+  const ankle = byName.get(`Ankle_${side}`);
+  const toes = byName.get(`Toes_${side}`);
+  if (!ankle || !toes) return null;
+  const anklePoint = new THREE.Vector3();
+  const toesPoint = new THREE.Vector3();
+  ankle.getWorldPosition(anklePoint);
+  toes.getWorldPosition(toesPoint);
+  const vector = toesPoint.sub(anklePoint);
+  vector.y = 0;
+  if (vector.lengthSq() < 1e-6) return null;
+  return vector.normalize();
+}
+
+function validateRightFootOrientation(character, gltf) {
+  gltf.scene.traverse((object) => {
+    if (object.isSkinnedMesh) object.skeleton?.pose();
+  });
+  gltf.scene.updateMatrixWorld(true);
+
+  const byName = new Map();
+  gltf.scene.traverse((object) => {
+    if (object.isBone) byName.set(object.name, object);
+  });
+
+  const mixer = new THREE.AnimationMixer(gltf.scene);
+  let opposedFrames = 0;
+  let sampledFrames = 0;
+  for (const clipName of ["idle", "walk", "run", "sprint"]) {
+    const clip = gltf.animations.find((candidate) => candidate.name === clipName);
+    if (!clip) continue;
+    mixer.stopAllAction();
+    const action = mixer.clipAction(clip);
+    action.reset().play();
+    for (const fraction of FOOT_SAMPLE_FRACTIONS) {
+      mixer.setTime(clip.duration * fraction);
+      gltf.scene.updateMatrixWorld(true);
+      const left = horizontalFootVector(byName, "L");
+      const right = horizontalFootVector(byName, "R");
+      if (!left || !right) continue;
+      sampledFrames++;
+      if (left.dot(right) < FOOT_OPPOSED_DOT_THRESHOLD) opposedFrames++;
+    }
+    mixer.stopAllAction();
+  }
+  mixer.stopAllAction();
+
+  if (sampledFrames === 0) {
+    failures.push(`${character.key}: could not sample foot orientation`);
+  } else if (opposedFrames > MAX_OPPOSED_RIGHT_FOOT_FRAMES) {
+    failures.push(`${character.key}: right foot points sideways/backward too often (${opposedFrames}/${sampledFrames} sampled locomotion frames)`);
   }
 }
 
@@ -307,6 +366,7 @@ for (const character of manifest.characters ?? []) {
   validateCharacterClips(character, gltf);
   validateAnimatedPoseBounds(character, gltf);
   validateLocomotionAxis(character, gltf);
+  validateRightFootOrientation(character, gltf);
   validateIdleCombatPose(character, gltf);
   const rootTracks = rootMotionTracks(gltf);
   if (rootTracks.length > 0) failures.push(`${character.key}: unstripped root motion tracks: ${rootTracks.slice(0, 8).join("; ")}`);
