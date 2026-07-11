@@ -13,6 +13,8 @@ export interface JoinTicketClaims {
   seed: number; // uint32
   /** Character's persistent total XP at run start; drives the base level. */
   totalXp: number;
+  /** Character's equipped cosmetic skin id ("" = class default). */
+  skinId: string;
 }
 
 export async function signJoinTicket(
@@ -25,6 +27,7 @@ export async function signJoinTicket(
     rid: claims.runId,
     seed: claims.seed,
     txp: claims.totalXp,
+    skn: claims.skinId,
   })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setSubject(claims.accountId)
@@ -57,6 +60,7 @@ export async function verifyJoinTicket(
       seed: payload.seed,
       // Tolerate tickets without txp (pre-progression signers) as level 1.
       totalXp: typeof payload.txp === "number" ? payload.txp : 0,
+      skinId: typeof payload.skn === "string" ? payload.skn : "",
     };
   } catch {
     return null;

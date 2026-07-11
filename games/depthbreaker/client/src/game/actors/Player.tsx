@@ -80,7 +80,7 @@ export function Player({ id, isLocal }: PlayerProps) {
   const alive = p?.alive ?? true;
   const name = p?.name ?? "";
   const classId = p?.classId ?? "";
-  const model = resolvePlayerModel(classId);
+  const model = resolvePlayerModel(classId, p?.skinId);
   const weaponUrl = p?.weaponId ? model?.weaponUrl : undefined;
   const visualHeight = model?.visualHeight ?? 1.8;
   const radius = model?.radius ?? 0.45;

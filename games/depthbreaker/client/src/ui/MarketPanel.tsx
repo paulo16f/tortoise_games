@@ -5,12 +5,15 @@
 // external-store pattern as InventoryPanel.
 
 import { useState, useSyncExternalStore } from "react";
-import { itemDef } from "@depthbreaker/sim";
+import { itemDef, SKIN_CATALOG } from "@depthbreaker/sim";
 import { MARKET_STOCK, MARKET_RANGE, buildDungeon } from "@depthbreaker/protocol";
 import { useZoneState } from "../net/useZone";
 import { zoneStore } from "../net/room";
 import { localPlayerPos } from "../game/entityRefs";
 import { rarityColor, itemInitials } from "./itemDisplay";
+import { useDraggablePanel } from "./useDraggablePanel";
+import { tooltipHandlers } from "./Tooltip";
+import { ItemCard } from "./ItemCard";
 
 let marketOpen = false;
 const openListeners = new Set<() => void>();
@@ -19,6 +22,11 @@ function emitOpen(): void {
 }
 export function toggleMarket(): void {
   marketOpen = !marketOpen;
+  emitOpen();
+}
+export function closeMarket(): void {
+  if (!marketOpen) return;
+  marketOpen = false;
   emitOpen();
 }
 function subscribeOpen(fn: () => void): () => void {
@@ -40,7 +48,8 @@ function GoldChip({ amount }: { amount: number }) {
 export function MarketPanel() {
   const open = useMarketOpenInternal();
   const snap = useZoneState();
-  const [tab, setTab] = useState<"buy" | "sell">("buy");
+  const [tab, setTab] = useState<"buy" | "sell" | "skins">("buy");
+  const { position, dragHandlers } = useDraggablePanel("market", () => ({ x: 16, y: 72 }));
   if (!open || !snap.self) return null;
   const self = snap.self;
   const gold = self.gold ?? 0;
@@ -58,8 +67,8 @@ export function MarketPanel() {
     <div
       style={{
         position: "absolute",
-        left: 16,
-        top: 72,
+        left: position.x,
+        top: position.y,
         width: 300,
         background: "rgba(11,13,18,0.88)",
         border: "1px solid rgba(255,255,255,0.12)",
@@ -72,7 +81,10 @@ export function MarketPanel() {
         pointerEvents: "auto",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+      <div
+        {...dragHandlers}
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}
+      >
         <b>Market</b>
         <GoldChip amount={gold} />
       </div>
@@ -84,7 +96,7 @@ export function MarketPanel() {
       )}
 
       <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-        {(["buy", "sell"] as const).map((t) => (
+        {(["buy", "sell", "skins"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -100,12 +112,51 @@ export function MarketPanel() {
               fontWeight: 600,
             }}
           >
-            {t === "buy" ? "Buy" : "Sell"}
+            {t === "buy" ? "Buy" : t === "sell" ? "Sell" : "Skins"}
           </button>
         ))}
       </div>
 
-      {tab === "buy" ? (
+      {tab === "skins" ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: "48vh", overflowY: "auto" }}>
+          <div style={{ opacity: 0.6, fontSize: 11, marginBottom: 2 }}>Cosmetic only — no combat effect.</div>
+          {SKIN_CATALOG.map((skin) => {
+            const owned = snap.skins.owned.includes(skin.id);
+            const equipped = snap.skins.equipped === skin.id;
+            const affordable = gold >= skin.price;
+            return (
+              <div key={skin.id} style={rowStyle}>
+                <div style={{ ...iconStyle, borderColor: "rgba(147,197,253,0.6)" }}>🎭</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>{skin.name}</div>
+                  <div style={{ opacity: 0.6, fontSize: 11 }}>{owned ? "owned" : "cosmetic skin"}</div>
+                </div>
+                {equipped ? (
+                  <span style={{ color: "#4ade80", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>Equipped</span>
+                ) : owned ? (
+                  <button onClick={() => zoneStore.sendEquipSkin(skin.id)} disabled={!inRange} style={tradeBtn(inRange)}>
+                    Equip
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => zoneStore.sendBuySkin(skin.id)}
+                    disabled={!inRange || !affordable}
+                    title={affordable ? undefined : "Not enough gold"}
+                    style={tradeBtn(inRange && affordable)}
+                  >
+                    🪙 {skin.price}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {snap.skins.equipped !== "" && (
+            <button onClick={() => zoneStore.sendEquipSkin("")} disabled={!inRange} style={{ ...tradeBtn(inRange), alignSelf: "flex-start" }}>
+              Revert to default
+            </button>
+          )}
+        </div>
+      ) : tab === "buy" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: "48vh", overflowY: "auto" }}>
           {MARKET_STOCK.map((itemId) => {
             const def = itemDef(itemId);
@@ -113,7 +164,9 @@ export function MarketPanel() {
             const affordable = gold >= def.buyValue;
             const enabled = inRange && affordable;
             return (
-              <div key={itemId} style={rowStyle}>
+              <div key={itemId} style={rowStyle} {...tooltipHandlers(() => (
+                <ItemCard itemId={itemId} action={affordable ? "Click the price to buy" : "Not enough gold"} />
+              ))}>
                 <div style={{ ...iconStyle, borderColor: rarityColor(def.rarity) }}>{itemInitials(itemId)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 13 }}>{def.name}</div>
@@ -122,12 +175,7 @@ export function MarketPanel() {
                     {def.attack ? ` · +${def.attack} atk` : ""}
                   </div>
                 </div>
-                <button
-                  onClick={() => zoneStore.sendBuy(itemId)}
-                  disabled={!enabled}
-                  title={affordable ? undefined : "Not enough gold"}
-                  style={tradeBtn(enabled)}
-                >
+                <button onClick={() => zoneStore.sendBuy(itemId)} disabled={!enabled} style={tradeBtn(enabled)}>
                   🪙 {def.buyValue}
                 </button>
               </div>
@@ -138,7 +186,9 @@ export function MarketPanel() {
         <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: "48vh", overflowY: "auto" }}>
           {sellables.length === 0 && <div style={{ opacity: 0.55, fontSize: 12 }}>Nothing sellable in your bag.</div>}
           {sellables.map(({ slot, index, def }) => (
-            <div key={index} style={rowStyle}>
+            <div key={index} style={rowStyle} {...tooltipHandlers(() => (
+              <ItemCard itemId={slot.itemId} count={slot.count} action="Click the price to sell one" />
+            ))}>
               <div style={{ ...iconStyle, borderColor: rarityColor(slot.rarity) }}>{itemInitials(slot.itemId)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 13 }}>

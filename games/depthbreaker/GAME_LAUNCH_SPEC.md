@@ -2,6 +2,14 @@
 
 > **LAUNCH BLOCKED.** The Solana/Pump.fun layer is intentionally deferred (Phase 2). Sections 3 and 5 contain `TBD` in launch-critical fields, and required shared modules (`shared/lib/auth.ts`, `db.ts`, `payment.ts`, `token-gate.ts`, `api.ts`) are not yet implemented. Do not share a public link. See `docs/DEPTHBREAKER_TECHNICAL_DESIGN.md` Appendix B for the full blocker list.
 
+> **Phase 2 design superseded (2026-07-10):** the normative token design is now
+> [`docs/PHASE2_TOKEN_ECONOMY.md`](docs/PHASE2_TOKEN_ECONOMY.md) — a
+> Kintara-style model where the game mints only gold and players convert
+> gold→token P2P (game never pays tokens; no payout signer). §2's emission-pool
+> fields, §3's payment flows, and §5 (payout spec) are superseded by that
+> document; they are kept below for history until Phase 2 implementation
+> rewrites them.
+
 Filled from the template at `docs/FABLE_GAME_LAUNCH_SPEC.md`.
 
 ## 1. Creative Spec

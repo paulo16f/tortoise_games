@@ -10,9 +10,11 @@ import {
   resetCameraOrbit,
 } from "./controls";
 import { zoneStore } from "../../net/room";
-import { toggleInventory } from "../../ui/InventoryPanel";
-import { toggleSkillBook } from "../../ui/SkillBookPanel";
-import { toggleMarket } from "../../ui/MarketPanel";
+import { closeInventory, toggleInventory } from "../../ui/InventoryPanel";
+import { closeSkillBook, toggleSkillBook } from "../../ui/SkillBookPanel";
+import { closeMarket, toggleMarket } from "../../ui/MarketPanel";
+import { closeStash, toggleStash } from "../../ui/StashPanel";
+import { closeDailies, toggleDailies } from "../../ui/DailyQuestPanel";
 import { localPlayerPos } from "../entityRefs";
 
 /** Keys 1-9,0 map to hotbar slots 0-9. */
@@ -75,6 +77,15 @@ export function useControls(): void {
       if (e.code === "KeyB") toggleInventory();
       if (e.code === "KeyK") toggleSkillBook();
       if (e.code === "KeyM") toggleMarket();
+      if (e.code === "KeyN") toggleStash();
+      if (e.code === "KeyJ") toggleDailies();
+      if (e.code === "Escape") {
+        closeInventory();
+        closeSkillBook();
+        closeMarket();
+        closeStash();
+        closeDailies();
+      }
       if (e.code === "KeyR") resetCameraOrbit();
       if (e.code === "Tab") {
         e.preventDefault();

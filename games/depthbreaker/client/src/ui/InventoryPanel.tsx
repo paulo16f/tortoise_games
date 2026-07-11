@@ -8,6 +8,9 @@ import type { ItemSlotView } from "@depthbreaker/protocol";
 import { useZoneState } from "../net/useZone";
 import { zoneStore } from "../net/room";
 import { rarityColor, itemInitials } from "./itemDisplay";
+import { useDraggablePanel } from "./useDraggablePanel";
+import { tooltipHandlers } from "./Tooltip";
+import { ItemCard } from "./ItemCard";
 
 // Minimal external store for the open/closed flag so the input layer (window
 // keydown in useControls) and this component agree without prop drilling.
@@ -18,6 +21,11 @@ function emitOpen(): void {
 }
 export function toggleInventory(): void {
   bagOpen = !bagOpen;
+  emitOpen();
+}
+export function closeInventory(): void {
+  if (!bagOpen) return;
+  bagOpen = false;
   emitOpen();
 }
 function subscribeOpen(fn: () => void): () => void {
@@ -44,12 +52,12 @@ function BagSlot({ slot, index }: { slot: ItemSlotView; index: number }) {
   };
 
   const clickable = !empty && (isWeapon || isConsumable);
-  const hint = def ? `${def.name}${clickable ? (isWeapon ? " — click to equip" : " — click to use") : ""}` : slot.itemId;
+  const action = clickable ? (isWeapon ? "Click to equip" : "Click to use") : undefined;
 
   return (
     <div
       onClick={onClick}
-      title={empty ? undefined : hint}
+      {...(empty ? {} : tooltipHandlers(() => <ItemCard itemId={slot.itemId} count={slot.count} action={action} />))}
       style={{
         position: "relative",
         width: 52,
@@ -88,6 +96,10 @@ function BagSlot({ slot, index }: { slot: ItemSlotView; index: number }) {
 export function InventoryPanel() {
   const open = useBagOpen();
   const snap = useZoneState();
+  const { position, dragHandlers } = useDraggablePanel("bag", () => ({
+    x: window.innerWidth - 260,
+    y: 16,
+  }));
   if (!open) return null;
   const inventory = snap.self?.inventory ?? [];
 
@@ -95,8 +107,8 @@ export function InventoryPanel() {
     <div
       style={{
         position: "absolute",
-        right: 16,
-        top: 16,
+        left: position.x,
+        top: position.y,
         background: "rgba(11,13,18,0.82)",
         border: "1px solid rgba(255,255,255,0.12)",
         borderRadius: 10,
@@ -108,7 +120,10 @@ export function InventoryPanel() {
         pointerEvents: "auto",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+      <div
+        {...dragHandlers}
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}
+      >
         <b>Bag</b>
         <span style={{ opacity: 0.6, fontSize: 12 }}>B to close</span>
       </div>

@@ -7,6 +7,7 @@
 import { useSyncExternalStore } from "react";
 import { classKit, type ClassId, type SkillDef } from "@depthbreaker/protocol";
 import { useZoneState } from "../net/useZone";
+import { useDraggablePanel } from "./useDraggablePanel";
 
 let bookOpen = false;
 const openListeners = new Set<() => void>();
@@ -15,6 +16,11 @@ function emitOpen(): void {
 }
 export function toggleSkillBook(): void {
   bookOpen = !bookOpen;
+  emitOpen();
+}
+export function closeSkillBook(): void {
+  if (!bookOpen) return;
+  bookOpen = false;
   emitOpen();
 }
 function subscribeOpen(fn: () => void): () => void {
@@ -84,6 +90,10 @@ function SkillRow({ def, level }: { def: SkillDef; level: number }) {
 export function SkillBookPanel() {
   const open = useBookOpen();
   const snap = useZoneState();
+  const { position, dragHandlers } = useDraggablePanel("book", () => ({
+    x: window.innerWidth / 2 - 190,
+    y: Math.max(16, window.innerHeight / 2 - 260),
+  }));
   if (!open || !snap.self) return null;
   const level = snap.self.level;
   const kit = classKit(snap.self.classId as ClassId);
@@ -92,9 +102,8 @@ export function SkillBookPanel() {
     <div
       style={{
         position: "absolute",
-        left: "50%",
-        top: "50%",
-        transform: "translate(-50%, -50%)",
+        left: position.x,
+        top: position.y,
         width: 380,
         maxHeight: "70vh",
         overflowY: "auto",
@@ -109,7 +118,10 @@ export function SkillBookPanel() {
         pointerEvents: "auto",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+      <div
+        {...dragHandlers}
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}
+      >
         <b>
           Skill Book <span style={{ opacity: 0.6, fontWeight: 400 }}>({snap.self.classId} — Lv {level})</span>
         </b>

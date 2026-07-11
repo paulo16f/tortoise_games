@@ -30,6 +30,14 @@ import {
   type GatherNodeMessage,
   type BuyItemMessage,
   type SellItemMessage,
+  type StashDepositMessage,
+  type StashWithdrawMessage,
+  type StashMessage,
+  type ClaimDailyMessage,
+  type DailiesMessage,
+  type BuySkinMessage,
+  type EquipSkinMessage,
+  type SkinsMessage,
   type CombatActionState,
   type CombatEventMessage,
   type LootEventMessage,
@@ -40,6 +48,9 @@ import {
   MARKET_STOCK,
   MARKET_RANGE,
   GATHER_RANGE,
+  GATHER_CAST_SECONDS,
+  STASH_SLOT_CAP,
+  STASH_STACK_CAP,
   type DungeonMapDefinition,
 } from "@depthbreaker/protocol";
 import {
@@ -49,6 +60,10 @@ import {
   levelForTotalXp,
   maxCurrencyForDepth,
   maxXpForDepth,
+  dailyQuestsFor,
+  dateKeyUTC,
+  type DailyQuestKind,
+  skinDef,
   applyHeal,
   POTION_HEAL_FRACTION,
   POTION_COOLDOWN_SECONDS,
@@ -101,9 +116,8 @@ const BOSS_PORTAL_COUNTDOWN_SECONDS = 30;
 // skill table: packages/protocol/src/skills.ts. This file only executes effects.
 const TARGET_SELECTION_RANGE = 18;
 
-// Mining (WoCC pickUpObject-style harvest, with a short cast). Ranges + the
-// stall stock are shared with the client via @depthbreaker/protocol market.ts.
-const GATHER_SECONDS = 1.4;
+// Mining (WoCC pickUpObject-style harvest, with a short cast). Ranges, cast
+// time, and stall stock are shared with the client via protocol market.ts.
 const NODE_RESPAWN_SECONDS = 35;
 /** Ticketless dev joins get a local in-memory wallet so offline play works. */
 const DEV_STARTING_GOLD = 50;
@@ -158,8 +172,12 @@ interface PlayerRuntime {
   accountId: string;
   /** Dev-only in-memory gold used when accountId is "" (no backend wallet). */
   localGold: number;
-  /** Serializes market transactions per player across the backend await. */
+  /** Dev-only in-memory stash used when accountId is "" (no backend stash). */
+  localStash: Map<string, number>;
+  /** Serializes market/stash transactions per player across the backend await. */
   marketBusy: boolean;
+  /** Buffered daily-quest progress (questId -> pending delta), flushed periodically. */
+  dailyBuffer: Map<string, number>;
   /** Persistent total XP from the join ticket; 0 for ticketless dev joins. */
   baseTotalXp: number;
   earnedXp: number;
@@ -272,6 +290,26 @@ export class ZoneRoom extends Room<ZoneState> {
       void this.sellItem(client.sessionId, message?.index ?? -1);
     });
 
+    this.onMessage(CM.StashDeposit, (client, message: StashDepositMessage) => {
+      void this.stashDeposit(client, message?.index ?? -1);
+    });
+
+    this.onMessage(CM.StashWithdraw, (client, message: StashWithdrawMessage) => {
+      void this.stashWithdraw(client, message?.itemId ?? "");
+    });
+
+    this.onMessage(CM.ClaimDaily, (client, message: ClaimDailyMessage) => {
+      void this.claimDaily(client, message?.questId ?? "");
+    });
+
+    this.onMessage(CM.BuySkin, (client, message: BuySkinMessage) => {
+      void this.buySkin(client, message?.skinId ?? "");
+    });
+
+    this.onMessage(CM.EquipSkin, (client, message: EquipSkinMessage) => {
+      void this.equipSkin(client, message?.skinId ?? "");
+    });
+
     this.setSimulationInterval((dt) => this.update(dt / 1000), TICK_MS);
   }
 
@@ -303,6 +341,7 @@ export class ZoneRoom extends Room<ZoneState> {
     player.characterId = auth.claims?.characterId ?? "";
     player.name = auth.name;
     player.classId = auth.classId;
+    player.skinId = auth.claims?.skinId ?? "";
     player.weaponId = defaultWeaponForClass(auth.classId);
     player.maxHp = PLAYER_MAX_HP;
     player.hp = PLAYER_MAX_HP;
@@ -333,7 +372,9 @@ export class ZoneRoom extends Room<ZoneState> {
       characterId: auth.claims?.characterId ?? "",
       accountId: auth.claims?.accountId ?? "",
       localGold: auth.claims ? 0 : DEV_STARTING_GOLD,
+      localStash: new Map(),
       marketBusy: false,
+      dailyBuffer: new Map(),
       baseTotalXp: auth.claims?.totalXp ?? 0,
       earnedXp: 0,
       earnedCurrency: 0,
@@ -357,6 +398,10 @@ export class ZoneRoom extends Room<ZoneState> {
     } else {
       player.gold = runtime.localGold;
     }
+    // Initial private snapshots (targeted): stash, daily quests, skins.
+    void this.sendStash(client, runtime);
+    void this.sendDailies(client, runtime);
+    void this.sendSkins(client, runtime);
 
     const welcome: WelcomeMessage = {
       selfId: client.sessionId,
@@ -405,6 +450,7 @@ export class ZoneRoom extends Room<ZoneState> {
 
   override async onLeave(client: Client, _consented: boolean): Promise<void> {
     const rt = this.runtimes.get(client.sessionId);
+    if (rt) this.flushDaily(rt); // persist any un-flushed quest progress
     for (const enemy of this.enemies) enemy.removeThreat(client.sessionId);
     this.state.players.delete(client.sessionId);
     this.runtimes.delete(client.sessionId);
@@ -439,6 +485,7 @@ export class ZoneRoom extends Room<ZoneState> {
     this.updateRespawns(dt);
     this.updateDeadEnemyDespawn(dt);
     this.updateNodeRespawns(dt);
+    this.updateDailyFlush(dt);
   }
 
   private movePlayers(dt: number): void {
@@ -694,8 +741,8 @@ export class ZoneRoom extends Room<ZoneState> {
     const actionId = this.nextActionId();
     // Action window outlives the impact tick — an impact scheduled exactly at
     // the action's end loses the isCurrentAction race by one frame.
-    this.setAction(p, "skill", GATHER_SECONDS + 0.4, nodeId, actionId);
-    this.scheduleImpact(actionId, GATHER_SECONDS, () => {
+    this.setAction(p, "skill", GATHER_CAST_SECONDS + 0.4, nodeId, actionId);
+    this.scheduleImpact(actionId, GATHER_CAST_SECONDS, () => {
       const source = this.state.players.get(playerId);
       const liveRt = this.runtimes.get(playerId);
       const liveNode = this.state.nodes.get(nodeId);
@@ -721,6 +768,7 @@ export class ZoneRoom extends Room<ZoneState> {
           const def = itemDef(grant.itemId);
           const loot: LootEventMessage = { playerId: source.id, itemId: grant.itemId, rarity: def?.rarity ?? "" };
           this.broadcast(ServerMessage.LootEvent, loot);
+          this.bumpDaily(liveRt, "gather", grant.itemId, deposited);
         }
       }
       this.syncBag(source, liveRt);
@@ -819,6 +867,214 @@ export class ZoneRoom extends Room<ZoneState> {
         this.syncBag(live, rt);
         live.gold = balance;
       }
+    } finally {
+      rt.marketBusy = false;
+    }
+  }
+
+  // --- Daily quests (gold faucet; backend-persisted for ticketed accounts) ---
+
+  private dailyFlushAccum = 0;
+
+  /** Today's active quest defs (UTC). Uses wall-clock — fine, this is the room. */
+  private todaysDailyDefs() {
+    return dailyQuestsFor(dateKeyUTC(new Date()));
+  }
+
+  /** Buffer progress for any of today's quests matching this game event. */
+  private bumpDaily(rt: PlayerRuntime, kind: DailyQuestKind, subject: string, amount: number): void {
+    if (!rt.accountId || amount <= 0) return;
+    for (const def of this.todaysDailyDefs()) {
+      if (def.kind !== kind) continue;
+      if (def.subject !== "" && def.subject !== subject) continue;
+      rt.dailyBuffer.set(def.id, (rt.dailyBuffer.get(def.id) ?? 0) + amount);
+    }
+  }
+
+  /** Flush one player's buffered daily progress to the backend (fire-and-forget). */
+  private flushDaily(rt: PlayerRuntime): void {
+    if (!rt.accountId || rt.dailyBuffer.size === 0) return;
+    const pending = [...rt.dailyBuffer.entries()];
+    rt.dailyBuffer.clear();
+    for (const [questId, delta] of pending) {
+      void this.reporter.dailyProgress(rt.accountId, questId, delta);
+    }
+  }
+
+  private updateDailyFlush(dt: number): void {
+    this.dailyFlushAccum += dt;
+    if (this.dailyFlushAccum < 10) return;
+    this.dailyFlushAccum = 0;
+    this.runtimes.forEach((rt, id) => {
+      const before = rt.dailyBuffer.size;
+      this.flushDaily(rt);
+      // After flushing, push a fresh snapshot so the client's tracker updates.
+      if (before > 0) {
+        const client = this.clients.find((c) => c.sessionId === id);
+        if (client) void this.sendDailies(client, rt);
+      }
+    });
+  }
+
+  /** Send the player their OWN daily quests + progress (targeted). */
+  private async sendDailies(client: Client, rt: PlayerRuntime): Promise<void> {
+    if (!rt.accountId) {
+      // Ticketless dev join: show today's quests with zero progress, un-claimable.
+      const payload: DailiesMessage = {
+        dateKey: dateKeyUTC(new Date()),
+        quests: this.todaysDailyDefs().map((d) => ({ ...d, progress: 0, claimed: false })),
+      };
+      client.send(ServerMessage.Dailies, payload);
+      return;
+    }
+    const res = await this.reporter.dailiesList(rt.accountId);
+    const body = res.json as DailiesMessage | null;
+    if (res.ok && body) client.send(ServerMessage.Dailies, body);
+  }
+
+  /** Claim a completed daily: credit gold, bump the live run's XP, toast. */
+  private async claimDaily(client: Client, questId: string): Promise<void> {
+    const rt = this.runtimes.get(client.sessionId);
+    const p = this.state.players.get(client.sessionId);
+    if (!rt || !p || !rt.accountId) return;
+    this.flushDaily(rt); // make sure just-earned progress is counted first
+    const res = await this.reporter.dailyClaim(rt.accountId, questId);
+    if (!res.ok) return;
+    const live = this.state.players.get(client.sessionId);
+    if (live && res.balance !== undefined) live.gold = res.balance;
+    if (live && res.xp) {
+      rt.earnedXp += res.xp;
+      live.runXp += res.xp;
+      live.level = levelForTotalXp(rt.baseTotalXp + live.runXp);
+      this.emitCombat({ sourceId: live.id, targetId: live.id, amount: -(res.gold ?? 0), kind: "heal", actionId: this.nextActionId() });
+    }
+    await this.sendDailies(client, rt);
+  }
+
+  // --- Cosmetic skins (gold sink; ownership + equip persisted per character) ---
+
+  /** Send the player their OWN owned + equipped skins (targeted). */
+  private async sendSkins(client: Client, rt: PlayerRuntime): Promise<void> {
+    if (!rt.characterId) {
+      client.send(ServerMessage.Skins, { equipped: "", owned: [] } as SkinsMessage);
+      return;
+    }
+    const res = await this.reporter.skinsList(rt.characterId);
+    const payload: SkinsMessage = { equipped: res.equipped ?? "", owned: res.owned ?? [] };
+    client.send(ServerMessage.Skins, payload);
+  }
+
+  private async buySkin(client: Client, skinId: string): Promise<void> {
+    const rt = this.runtimes.get(client.sessionId);
+    const p = this.state.players.get(client.sessionId);
+    if (!rt || !p || !p.alive || rt.marketBusy || !rt.characterId) return;
+    if (!this.nearMarket(p)) return;
+    if (!skinDef(skinId)) return;
+    rt.marketBusy = true;
+    try {
+      const res = await this.reporter.skinBuy(rt.characterId, skinId);
+      const live = this.state.players.get(client.sessionId);
+      if (res.ok && live && res.balance !== undefined) live.gold = res.balance;
+      await this.sendSkins(client, rt);
+    } finally {
+      rt.marketBusy = false;
+    }
+  }
+
+  private async equipSkin(client: Client, skinId: string): Promise<void> {
+    const rt = this.runtimes.get(client.sessionId);
+    const p = this.state.players.get(client.sessionId);
+    if (!rt || !p || !p.alive || rt.marketBusy || !rt.characterId) return;
+    if (skinId !== "" && !skinDef(skinId)) return;
+    rt.marketBusy = true;
+    try {
+      const res = await this.reporter.skinEquip(rt.characterId, skinId);
+      const live = this.state.players.get(client.sessionId);
+      if (res.ok && live) live.skinId = skinId; // synced -> all clients re-render the model
+      await this.sendSkins(client, rt);
+    } finally {
+      rt.marketBusy = false;
+    }
+  }
+
+  /** Send the player their OWN stash contents (targeted — stash is private). */
+  private async sendStash(client: Client, rt: PlayerRuntime): Promise<void> {
+    let items: { itemId: string; count: number }[];
+    if (rt.accountId) {
+      const res = await this.reporter.stashList(rt.accountId);
+      items = res.ok && res.items ? res.items : [];
+    } else {
+      items = [...rt.localStash.entries()].map(([itemId, count]) => ({ itemId, count }));
+    }
+    const payload: StashMessage = { items, slotCap: STASH_SLOT_CAP };
+    client.send(ServerMessage.Stash, payload);
+  }
+
+  /** Dev-local stash mutation mirroring the backend's caps. */
+  private localStashDeposit(rt: PlayerRuntime, itemId: string): boolean {
+    const have = rt.localStash.get(itemId) ?? 0;
+    if (have === 0 && rt.localStash.size >= STASH_SLOT_CAP) return false;
+    if (have + 1 > STASH_STACK_CAP) return false;
+    rt.localStash.set(itemId, have + 1);
+    return true;
+  }
+
+  private localStashWithdraw(rt: PlayerRuntime, itemId: string): boolean {
+    const have = rt.localStash.get(itemId) ?? 0;
+    if (have <= 0) return false;
+    if (have === 1) rt.localStash.delete(itemId);
+    else rt.localStash.set(itemId, have - 1);
+    return true;
+  }
+
+  /** Move one unit bag -> stash (at the stall). Remove-first, restore on failure. */
+  private async stashDeposit(client: Client, index: number): Promise<void> {
+    const rt = this.runtimes.get(client.sessionId);
+    const p = this.state.players.get(client.sessionId);
+    if (!rt || !p || !p.alive || rt.marketBusy) return;
+    if (!this.nearMarket(p)) return;
+    const slot = rt.bag[index];
+    if (!slot || slot.count <= 0 || !itemDef(slot.itemId)) return;
+
+    rt.marketBusy = true;
+    try {
+      const itemId = slot.itemId;
+      if (!removeAt(rt.bag, index, 1)) return;
+      const ok = rt.accountId
+        ? (await this.reporter.stashDeposit(rt.accountId, itemId, 1)).ok
+        : this.localStashDeposit(rt, itemId);
+      if (!ok) addStacked(rt.bag, BAG_CAPACITY, itemId, 1); // stash full / backend down
+      this.syncBag(p, rt);
+      await this.sendStash(client, rt);
+    } finally {
+      rt.marketBusy = false;
+    }
+  }
+
+  /** Move one unit stash -> bag (at the stall). Bag room checked before the call. */
+  private async stashWithdraw(client: Client, itemId: string): Promise<void> {
+    const rt = this.runtimes.get(client.sessionId);
+    const p = this.state.players.get(client.sessionId);
+    if (!rt || !p || !p.alive || rt.marketBusy) return;
+    if (!this.nearMarket(p)) return;
+    if (!itemDef(itemId)) return;
+    if (!this.bagHasRoomFor(rt.bag, itemId)) return;
+
+    rt.marketBusy = true;
+    try {
+      const ok = rt.accountId
+        ? (await this.reporter.stashWithdraw(rt.accountId, itemId, 1)).ok
+        : this.localStashWithdraw(rt, itemId);
+      if (ok) {
+        const leftover = addStacked(rt.bag, BAG_CAPACITY, itemId, 1);
+        if (leftover > 0) {
+          // Bag filled during the await — put it back in the stash.
+          if (rt.accountId) await this.reporter.stashDeposit(rt.accountId, itemId, 1);
+          else this.localStashDeposit(rt, itemId);
+        }
+        this.syncBag(p, rt);
+      }
+      await this.sendStash(client, rt);
     } finally {
       rt.marketBusy = false;
     }
@@ -1108,6 +1364,7 @@ export class ZoneRoom extends Room<ZoneState> {
       this.setAction(enemy.state, "dying", ENEMY_DYING_SECONDS, playerId, actionId);
       this.emitCombat({ sourceId: playerId, targetId: enemy.state.id, amount: 0, kind: "death", actionId });
       this.awardKill(rt, p, enemy.def.xpValue, enemy.def.currencyValue);
+      this.bumpDaily(rt, "kill", enemy.def.id, 1);
       this.rollKillLoot(rt, p, enemy.def.rank as LootRank);
       this.retargetPlayersFromDeadEnemy(enemy.state.id);
       this.scheduleEnemyRemoval(enemy);

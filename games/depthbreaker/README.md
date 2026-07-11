@@ -10,6 +10,7 @@ as one TypeScript package. All TypeScript -- no cross-language mirroring.
 
 - **Design doc (normative):** [`docs/DEPTHBREAKER_TECHNICAL_DESIGN.md`](../../docs/DEPTHBREAKER_TECHNICAL_DESIGN.md)
 - **Launch spec:** [`GAME_LAUNCH_SPEC.md`](GAME_LAUNCH_SPEC.md) -- **LAUNCH BLOCKED** (Solana layer deferred to Phase 2)
+- **Phase 2 token economy (normative):** [`docs/PHASE2_TOKEN_ECONOMY.md`](docs/PHASE2_TOKEN_ECONOMY.md) -- Kintara-style model: game mints gold only; players trade gold for the token P2P; no payout signer
 - **Math contract:** [`shared-spec/GAME_MATH_SPEC.md`](shared-spec/GAME_MATH_SPEC.md) + frozen golden vectors in `shared-spec/vectors/`
 
 ## Layout (npm workspace)

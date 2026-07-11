@@ -19,3 +19,13 @@ export const MARKET_RANGE = 6;
 
 /** Max distance from a resource node for gathering to start. */
 export const GATHER_RANGE = 3;
+
+/** Gather cast duration — shared so the client cast bar matches the server. */
+export const GATHER_CAST_SECONDS = 1.4;
+
+/**
+ * Persistent stash caps. Canonical values — the backend duplicates them in
+ * routes/internal.ts (it doesn't depend on this package); keep in sync.
+ */
+export const STASH_SLOT_CAP = 24;
+export const STASH_STACK_CAP = 999;

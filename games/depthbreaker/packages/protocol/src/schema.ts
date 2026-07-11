@@ -81,6 +81,8 @@ export class PlayerState extends Schema {
   declare characterId: string;
   declare name: string;
   declare classId: string;
+  /** Equipped cosmetic skin id ("" = class default); swaps the rendered model. */
+  declare skinId: string;
 
   declare x: number;
   declare y: number;
@@ -130,6 +132,7 @@ export class PlayerState extends Schema {
     this.characterId = "";
     this.name = "";
     this.classId = "bruiser";
+    this.skinId = "";
     this.x = 0;
     this.y = 0;
     this.z = 0;
@@ -165,6 +168,7 @@ defineTypes(PlayerState, {
   characterId: "string",
   name: "string",
   classId: "string",
+  skinId: "string",
   x: "number",
   y: "number",
   z: "number",

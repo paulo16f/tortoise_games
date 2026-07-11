@@ -23,6 +23,16 @@ export const ClientMessage = {
   BuyItem: "buyItem",
   /** Sell one item from a bag slot to the market stall. */
   SellItem: "sellItem",
+  /** Deposit one unit from a bag slot into the persistent stash (at the stall). */
+  StashDeposit: "stashDeposit",
+  /** Withdraw one unit of an item from the persistent stash into the bag. */
+  StashWithdraw: "stashWithdraw",
+  /** Claim the reward for a completed daily quest. */
+  ClaimDaily: "claimDaily",
+  /** Buy a cosmetic skin with gold (at the market stall). */
+  BuySkin: "buySkin",
+  /** Equip an owned cosmetic skin ("" = class default). */
+  EquipSkin: "equipSkin",
 } as const;
 
 /** Server -> client (state itself syncs automatically; these are events). */
@@ -33,6 +43,12 @@ export const ServerMessage = {
   LootEvent: "lootEvent",
   /** The joining client's own session/entity id, sent once on join. */
   Welcome: "welcome",
+  /** The player's OWN persistent stash contents (targeted send, not room state). */
+  Stash: "stash",
+  /** The player's OWN daily quests + progress (targeted send). */
+  Dailies: "dailies",
+  /** The player's OWN owned + equipped cosmetic skins (targeted send). */
+  Skins: "skins",
 } as const;
 
 export type CombatActionState = "idle" | "attack" | "skill" | "hit" | "dying" | "dead";
@@ -90,6 +106,61 @@ export interface BuyItemMessage {
 export interface SellItemMessage {
   /** Bag slot index; one unit is sold at the item's sellValue. */
   index: number;
+}
+
+export interface StashDepositMessage {
+  /** Bag slot index; one unit moves bag -> stash. */
+  index: number;
+}
+
+export interface StashWithdrawMessage {
+  /** Catalog item id; one unit moves stash -> bag. */
+  itemId: string;
+}
+
+/** Payload of ServerMessage.Stash — the recipient's own stash snapshot. */
+export interface StashMessage {
+  items: { itemId: string; count: number }[];
+  slotCap: number;
+}
+
+export interface ClaimDailyMessage {
+  /** Daily quest id to claim (must be complete + unclaimed server-side). */
+  questId: string;
+}
+
+export interface BuySkinMessage {
+  skinId: string;
+}
+
+export interface EquipSkinMessage {
+  /** Skin id to equip, or "" for the class default. */
+  skinId: string;
+}
+
+/** Payload of ServerMessage.Skins — the recipient's owned + equipped skins. */
+export interface SkinsMessage {
+  equipped: string;
+  owned: string[];
+}
+
+/** One daily quest with the player's progress. */
+export interface DailyQuestView {
+  id: string;
+  kind: "gather" | "kill" | "depth";
+  label: string;
+  target: number;
+  subject: string;
+  goldReward: number;
+  xpReward: number;
+  progress: number;
+  claimed: boolean;
+}
+
+/** Payload of ServerMessage.Dailies — the recipient's own daily quests. */
+export interface DailiesMessage {
+  dateKey: string;
+  quests: DailyQuestView[];
 }
 
 export interface CombatEventMessage {

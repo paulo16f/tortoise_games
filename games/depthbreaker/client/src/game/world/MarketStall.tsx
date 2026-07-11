@@ -12,6 +12,7 @@ import { buildDungeon } from "@depthbreaker/protocol";
 import { useZoneState } from "../../net/useZone";
 import { localPlayerPos } from "../entityRefs";
 import { setClickDestination } from "../input/controls";
+import { setGameCursor } from "../cursors";
 import { toggleMarket } from "../../ui/MarketPanel";
 import { DUNGEON_ASSETS } from "./syntyDungeonAssets";
 
@@ -52,10 +53,10 @@ export function MarketStall() {
   };
   const handleOver = (ev: ThreeEvent<PointerEvent>) => {
     ev.stopPropagation();
-    document.body.style.cursor = "pointer";
+    setGameCursor("trade");
   };
   const handleOut = () => {
-    document.body.style.cursor = "auto";
+    setGameCursor("default");
   };
 
   return (

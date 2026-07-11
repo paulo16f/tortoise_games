@@ -21,6 +21,14 @@ import {
   type GatherNodeMessage,
   type BuyItemMessage,
   type SellItemMessage,
+  type StashDepositMessage,
+  type StashWithdrawMessage,
+  type StashMessage,
+  type ClaimDailyMessage,
+  type DailiesMessage,
+  type BuySkinMessage,
+  type EquipSkinMessage,
+  type SkinsMessage,
   type CombatEventMessage,
   type LootEventMessage,
   type WelcomeMessage,
@@ -80,6 +88,12 @@ export interface ZoneSnapshot {
   combat: CombatFloater[];
   lootToasts: LootToast[];
   bossPortal: BossPortalView;
+  /** The local player's persistent stash (targeted server message). */
+  stash: StashMessage;
+  /** The local player's daily quests + progress (targeted server message). */
+  dailies: DailiesMessage;
+  /** The local player's owned + equipped cosmetic skins (targeted server message). */
+  skins: SkinsMessage;
 }
 
 type Listener = () => void;
@@ -94,6 +108,9 @@ class ZoneStore {
   private combat: CombatFloater[] = [];
   private lootSeq = 0;
   private lootToasts: LootToast[] = [];
+  private stash: StashMessage = { items: [], slotCap: 24 };
+  private dailies: DailiesMessage = { dateKey: "", quests: [] };
+  private skins: SkinsMessage = { equipped: "", owned: [] };
 
   static emptySnapshot(): ZoneSnapshot {
     return {
@@ -108,6 +125,9 @@ class ZoneStore {
       combat: [],
       lootToasts: [],
       bossPortal: { active: false, x: 0, z: 0, countdown: 0 },
+      stash: { items: [], slotCap: 24 },
+      dailies: { dateKey: "", quests: [] },
+      skins: { equipped: "", owned: [] },
     };
   }
 
@@ -169,6 +189,21 @@ class ZoneStore {
       this.refresh();
     });
 
+    room.onMessage(ServerMessage.Stash, (msg: StashMessage) => {
+      this.stash = msg;
+      this.refresh();
+    });
+
+    room.onMessage(ServerMessage.Dailies, (msg: DailiesMessage) => {
+      this.dailies = msg;
+      this.refresh();
+    });
+
+    room.onMessage(ServerMessage.Skins, (msg: SkinsMessage) => {
+      this.skins = msg;
+      this.refresh();
+    });
+
     room.onLeave(() => this.detach());
     this.refresh();
   }
@@ -197,6 +232,9 @@ class ZoneStore {
       roomId: this.room?.roomId ?? "",
       combat: this.combat.slice(),
       lootToasts: this.lootToasts.slice(),
+      stash: this.stash,
+      dailies: this.dailies,
+      skins: this.skins,
     };
     this.emit();
   }
@@ -206,6 +244,9 @@ class ZoneStore {
     this.selfId = "";
     this.combat = [];
     this.lootToasts = [];
+    this.stash = { items: [], slotCap: 24 };
+    this.dailies = { dateKey: "", quests: [] };
+    this.skins = { equipped: "", owned: [] };
     this.snapshot = ZoneStore.emptySnapshot();
     this.emit();
   }
@@ -242,6 +283,31 @@ class ZoneStore {
   sendSell(index: number): void {
     const payload: SellItemMessage = { index };
     this.room?.send(ClientMessage.SellItem, payload);
+  }
+
+  sendStashDeposit(index: number): void {
+    const payload: StashDepositMessage = { index };
+    this.room?.send(ClientMessage.StashDeposit, payload);
+  }
+
+  sendStashWithdraw(itemId: string): void {
+    const payload: StashWithdrawMessage = { itemId };
+    this.room?.send(ClientMessage.StashWithdraw, payload);
+  }
+
+  sendClaimDaily(questId: string): void {
+    const payload: ClaimDailyMessage = { questId };
+    this.room?.send(ClientMessage.ClaimDaily, payload);
+  }
+
+  sendBuySkin(skinId: string): void {
+    const payload: BuySkinMessage = { skinId };
+    this.room?.send(ClientMessage.BuySkin, payload);
+  }
+
+  sendEquipSkin(skinId: string): void {
+    const payload: EquipSkinMessage = { skinId };
+    this.room?.send(ClientMessage.EquipSkin, payload);
   }
 
   sendToggleWeapon(equipped: boolean): void {

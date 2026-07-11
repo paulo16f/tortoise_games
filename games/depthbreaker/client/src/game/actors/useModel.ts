@@ -2,6 +2,7 @@
 
 import { useGLTF } from "@react-three/drei";
 import type { ClassId } from "@depthbreaker/protocol";
+import { skinDef } from "@depthbreaker/sim";
 import type { ClipSet, StrideNorm } from "./AnimatedCharacter";
 import { MOTION_PROFILES, type MotionProfile, type MotionProfileId } from "./motionProfiles";
 import syntyRuntimeManifest from "../../../public/models/synty/runtime/manifest.json";
@@ -128,7 +129,20 @@ const ENEMY_MODELS: Record<string, CharacterModel> = {
   minion: SYNTY_DEPTHBREAKER_MODELS.skeleton,
 };
 
-export function resolvePlayerModel(classId: string): CharacterModel | undefined {
+/** Cosmetic skin id -> the model it renders (SYNTY_DEPTHBREAKER_MODELS key). */
+const SKIN_MODELS: Record<string, CharacterModel> = {
+  skeleton: SYNTY_DEPTHBREAKER_MODELS.skeleton,
+  undeadKnight: SYNTY_DEPTHBREAKER_MODELS.undeadKnight,
+  bossSkeleton: SYNTY_DEPTHBREAKER_MODELS.bossSkeleton,
+};
+
+export function resolvePlayerModel(classId: string, skinId?: string): CharacterModel | undefined {
+  // An equipped "model" skin overrides the class default; the SkinDef.model
+  // string (from @depthbreaker/sim SKIN_CATALOG) names the model to render.
+  if (skinId) {
+    const def = skinDef(skinId);
+    if (def?.kind === "model" && def.model && SKIN_MODELS[def.model]) return SKIN_MODELS[def.model];
+  }
   return PLAYER_MODELS[classId as ClassId];
 }
 

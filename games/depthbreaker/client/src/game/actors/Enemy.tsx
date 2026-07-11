@@ -7,6 +7,7 @@ import type { ThreeEvent } from "@react-three/fiber";
 import { zoneStore } from "../../net/room";
 import { combatBus } from "../../net/combatBus";
 import { clearClickDestination } from "../input/controls";
+import { setGameCursor } from "../cursors";
 import { resolveEnemyModel } from "./useModel";
 import { AnimatedCharacter } from "./AnimatedCharacter";
 import { DEFAULT_MOTION_PROFILE } from "./motionProfiles";
@@ -106,11 +107,11 @@ export function Enemy({ id, isTarget }: EnemyProps) {
     ev.stopPropagation();
     if (!alive) return;
     hovered.current = true;
-    document.body.style.cursor = "pointer";
+    setGameCursor("attack");
   };
   const handleOut = () => {
     hovered.current = false;
-    document.body.style.cursor = "auto";
+    setGameCursor("default");
   };
 
   const color = alive ? ALIVE_COLOR : DEAD_COLOR;

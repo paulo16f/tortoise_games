@@ -24,12 +24,13 @@ export function registerRunRoutes(app: FastifyInstance, ctx: AppContext): void {
     async (request, reply) => {
       const { characterId } = request.body as { characterId: string };
 
-      const owned = await pool.query<{ total_xp: string }>(
-        "SELECT total_xp FROM characters WHERE id = $1 AND account_id = $2 AND deleted_at IS NULL",
+      const owned = await pool.query<{ total_xp: string; skin_id: string }>(
+        "SELECT total_xp, skin_id FROM characters WHERE id = $1 AND account_id = $2 AND deleted_at IS NULL",
         [characterId, request.accountId],
       );
       if (!owned.rowCount) return reply.code(404).send({ error: "character_not_found" });
       const totalXp = Number(owned.rows[0]!.total_xp);
+      const skinId = owned.rows[0]!.skin_id ?? "";
 
       const seed = randomInt(0, 4294967296); // uint32, the zone server's run seed
       const run = await withTransaction(pool, async (client) => {
@@ -47,7 +48,7 @@ export function registerRunRoutes(app: FastifyInstance, ctx: AppContext): void {
       });
 
       const joinTicket = await signJoinTicket(
-        { accountId: request.accountId!, characterId, runId: run.id, seed, totalXp },
+        { accountId: request.accountId!, characterId, runId: run.id, seed, totalXp, skinId },
         config.zoneSharedSecret,
         config.joinTicketTtlSeconds,
       );

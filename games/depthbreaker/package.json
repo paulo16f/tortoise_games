@@ -20,6 +20,7 @@
     "dev:client": "npm run dev --workspace client",
     "smoke:skills": "node tools/smoke_skills.mjs",
     "smoke:auth": "node tools/smoke_auth.mjs",
-    "smoke:market": "node tools/smoke_market.mjs"
+    "smoke:market": "node tools/smoke_market.mjs",
+    "smoke:economy": "node tools/smoke_economy.mjs"
   }
 }

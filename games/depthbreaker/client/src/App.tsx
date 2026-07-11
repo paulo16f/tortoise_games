@@ -9,8 +9,13 @@ import { Hud } from "./ui/Hud";
 import { InventoryPanel } from "./ui/InventoryPanel";
 import { SkillBookPanel } from "./ui/SkillBookPanel";
 import { MarketPanel } from "./ui/MarketPanel";
+import { StashPanel } from "./ui/StashPanel";
+import { DailyQuestPanel } from "./ui/DailyQuestPanel";
 import { PanelDock } from "./ui/PanelDock";
 import { LootToasts } from "./ui/LootToasts";
+import { GoldToasts } from "./ui/GoldToasts";
+import { CastBar } from "./ui/CastBar";
+import { TooltipLayer } from "./ui/Tooltip";
 import { LoginScreen } from "./ui/LoginScreen";
 import { CharacterSelect } from "./ui/CharacterSelect";
 
@@ -27,8 +32,13 @@ function GameCanvas({ onLeave }: { onLeave: () => void }) {
       <InventoryPanel />
       <SkillBookPanel />
       <MarketPanel />
+      <StashPanel />
+      <DailyQuestPanel />
       <PanelDock />
       <LootToasts />
+      <GoldToasts />
+      <CastBar />
+      <TooltipLayer />
       <button onClick={onLeave} title="Leave to character select" style={leaveBtn}>
         ⎋ Leave
       </button>

@@ -69,8 +69,7 @@ async function main() {
 
   const client = new Client(REALTIME_URL);
   const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name: "MarketMiner", classId: "bruiser" });
-  room.onMessage("welcome", () => {});
-  room.onMessage("combatEvent", () => {});
+  for (const t of ["welcome", "combatEvent", "stash", "dailies", "skins"]) room.onMessage(t, () => {});
   const lootSeen = [];
   room.onMessage("lootEvent", (m) => { if (m.playerId === room.sessionId) lootSeen.push(m.itemId); });
   const self = await waitFor(() => room.state?.players?.get(room.sessionId), "self");

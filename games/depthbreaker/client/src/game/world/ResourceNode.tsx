@@ -8,19 +8,25 @@ import { useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { SkeletonUtils } from "three-stdlib";
-import type { Color, Group, Material, Object3D } from "three";
+import type { Color, Group, Material, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D } from "three";
+import { GATHER_RANGE } from "@depthbreaker/protocol";
 import { zoneStore } from "../../net/room";
 import { localPlayerPos } from "../entityRefs";
 import { setClickDestination } from "../input/controls";
+import { setGameCursor } from "../cursors";
+import { startCastBar } from "../../ui/CastBar";
+import { GATHER_CAST_SECONDS } from "@depthbreaker/protocol";
 import { DUNGEON_ASSETS } from "./syntyDungeonAssets";
 
 const GATHER_CLICK_RANGE = 2.8; // client-side convenience; server enforces 3
+const RING_IN_RANGE = "#fbbf24";
+const RING_OUT_OF_RANGE = "#64748b";
 const NODE_STYLE: Record<string, { asset: keyof typeof DUNGEON_ASSETS; tint: string; scale: number }> = {
   crystal_vein: { asset: "crystal_alt", tint: "#7c6fd8", scale: 3.0 },
   iron_vein: { asset: "rocks", tint: "#8a6f52", scale: 2.6 },
 };
 
-function cloneTinted(scene: Group, tint: string): Group {
+function cloneTinted(scene: Group, tint: string, materialsOut: MeshStandardMaterial[]): Group {
   const clone = SkeletonUtils.clone(scene) as Group;
   clone.traverse((object) => {
     object.castShadow = true;
@@ -30,6 +36,7 @@ function cloneTinted(scene: Group, tint: string): Group {
     const retint = (m: Material) => {
       const next = m.clone() as Material & { color?: Color };
       next.color?.set(tint);
+      materialsOut.push(next as MeshStandardMaterial);
       return next;
     };
     mesh.material = Array.isArray(mesh.material) ? mesh.material.map(retint) : retint(mesh.material);
@@ -39,12 +46,18 @@ function cloneTinted(scene: Group, tint: string): Group {
 
 export function ResourceNode({ id }: { id: string }) {
   const group = useRef<Group>(null);
+  const modelGroup = useRef<Group>(null);
+  const ringMesh = useRef<Mesh>(null);
+  const hovered = useRef(false);
   const node = zoneStore.state?.nodes.get(id);
   const style = NODE_STYLE[node?.kind ?? "iron_vein"] ?? NODE_STYLE.iron_vein;
   const { scene } = useGLTF(DUNGEON_ASSETS[style.asset]);
-  const clone = useMemo(() => cloneTinted(scene, style.tint), [scene, style.tint]);
+  const materials = useRef<MeshStandardMaterial[]>([]);
+  const clone = useMemo(() => {
+    materials.current = [];
+    return cloneTinted(scene, style.tint, materials.current);
+  }, [scene, style.tint]);
 
-  // Depleted veins shrink and sink slightly; a cheap but readable state change.
   useFrame(() => {
     const g = group.current;
     if (!g) return;
@@ -54,9 +67,39 @@ export function ResourceNode({ id }: { id: string }) {
       return;
     }
     g.visible = true;
-    const target = live.depleted ? 0.45 : 1;
-    const s = g.scale.x + (target - g.scale.x) * 0.15;
-    g.scale.setScalar(s);
+
+    // Depleted veins shrink; a cheap but readable state change. Only the model
+    // scales — the range ring keeps its world size.
+    const m = modelGroup.current;
+    if (m) {
+      const target = live.depleted ? 0.45 : 1;
+      const s = m.scale.x + (target - m.scale.x) * 0.15;
+      m.scale.setScalar(s);
+    }
+
+    // Gather-range contour: bright amber when the player can mine from here,
+    // faint slate when out of range, hidden entirely while depleted.
+    const ring = ringMesh.current;
+    if (ring) {
+      ring.visible = !live.depleted;
+      const inRange =
+        Math.hypot(localPlayerPos.x - live.x, localPlayerPos.z - live.z) <= GATHER_RANGE;
+      const mat = ring.material as MeshBasicMaterial;
+      mat.color.set(inRange ? RING_IN_RANGE : RING_OUT_OF_RANGE);
+      mat.opacity = inRange ? 0.55 : 0.16;
+    }
+
+    // Hover glow, same pattern as enemies.
+    for (const mat of materials.current) {
+      if (!mat.emissive) continue;
+      if (hovered.current && !live.depleted) {
+        mat.emissive.set(style.tint);
+        mat.emissiveIntensity = 0.55;
+      } else {
+        mat.emissive.set("#000000");
+        mat.emissiveIntensity = 0;
+      }
+    }
   });
 
   if (!node) return null;
@@ -71,18 +114,27 @@ export function ResourceNode({ id }: { id: string }) {
       return;
     }
     zoneStore.sendGather(id);
+    startCastBar("Mining…", GATHER_CAST_SECONDS);
   };
   const handleOver = (ev: ThreeEvent<PointerEvent>) => {
     ev.stopPropagation();
-    if (!zoneStore.state?.nodes.get(id)?.depleted) document.body.style.cursor = "pointer";
+    hovered.current = true;
+    if (!zoneStore.state?.nodes.get(id)?.depleted) setGameCursor("mine");
   };
   const handleOut = () => {
-    document.body.style.cursor = "auto";
+    hovered.current = false;
+    setGameCursor("default");
   };
 
   return (
     <group ref={group} position={[node.x, 0, node.z]}>
-      <primitive object={clone} scale={style.scale} />
+      <group ref={modelGroup}>
+        <primitive object={clone} scale={style.scale} />
+      </group>
+      <mesh ref={ringMesh} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+        <ringGeometry args={[GATHER_RANGE - 0.1, GATHER_RANGE, 48]} />
+        <meshBasicMaterial color={RING_OUT_OF_RANGE} transparent opacity={0.16} depthWrite={false} />
+      </mesh>
       <mesh position={[0, 0.7, 0]} onPointerDown={handleClick} onPointerOver={handleOver} onPointerOut={handleOut}>
         <capsuleGeometry args={[0.8, 0.8, 4, 8]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />

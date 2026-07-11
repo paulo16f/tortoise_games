@@ -32,21 +32,74 @@ export class BackendReporter {
     return this.post(`/internal/characters/${characterId}/checkpoint`, { depthReached });
   }
 
-  // Wallet calls are SYNCHRONOUS (the market transaction awaits the result) and
-  // single-shot: a market click is user-retryable, so no retry loop here.
+  // Wallet/stash calls are SYNCHRONOUS (the transaction awaits the result) and
+  // single-shot: a market/bank click is user-retryable, so no retry loop here.
   async walletBalance(accountId: string): Promise<WalletResult> {
-    return this.call("GET", `/internal/wallet/${accountId}`);
+    const res = await this.call("GET", `/internal/wallet/${accountId}`);
+    return { ok: res.ok, status: res.status, balance: (res.json as { balance?: number } | null)?.balance };
   }
 
   async walletDebit(accountId: string, amount: number, reason: string): Promise<WalletResult> {
-    return this.call("POST", `/internal/wallet/${accountId}/debit`, { amount, reason });
+    const res = await this.call("POST", `/internal/wallet/${accountId}/debit`, { amount, reason });
+    return { ok: res.ok, status: res.status, balance: (res.json as { balance?: number } | null)?.balance };
   }
 
   async walletCredit(accountId: string, amount: number, reason: string): Promise<WalletResult> {
-    return this.call("POST", `/internal/wallet/${accountId}/credit`, { amount, reason });
+    const res = await this.call("POST", `/internal/wallet/${accountId}/credit`, { amount, reason });
+    return { ok: res.ok, status: res.status, balance: (res.json as { balance?: number } | null)?.balance };
   }
 
-  private async call(method: "GET" | "POST", path: string, body?: unknown): Promise<WalletResult> {
+  async stashList(accountId: string): Promise<{ ok: boolean; items?: { itemId: string; count: number }[] }> {
+    const res = await this.call("GET", `/internal/stash/${accountId}`);
+    return { ok: res.ok, items: (res.json as { items?: { itemId: string; count: number }[] } | null)?.items };
+  }
+
+  async stashDeposit(accountId: string, itemId: string, count: number): Promise<{ ok: boolean; status?: number }> {
+    const res = await this.call("POST", `/internal/stash/${accountId}/deposit`, { itemId, count });
+    return { ok: res.ok, status: res.status };
+  }
+
+  async stashWithdraw(accountId: string, itemId: string, count: number): Promise<{ ok: boolean; status?: number }> {
+    const res = await this.call("POST", `/internal/stash/${accountId}/withdraw`, { itemId, count });
+    return { ok: res.ok, status: res.status };
+  }
+
+  async dailiesList(accountId: string): Promise<{ ok: boolean; json: unknown | null }> {
+    return this.call("GET", `/internal/dailies/${accountId}`);
+  }
+
+  /** Fire-and-forget progress bump (backend clamps at target, so replays are safe). */
+  async dailyProgress(accountId: string, questId: string, delta: number): Promise<void> {
+    await this.call("POST", `/internal/dailies/${accountId}/progress`, { questId, delta });
+  }
+
+  async dailyClaim(accountId: string, questId: string): Promise<{ ok: boolean; balance?: number; gold?: number; xp?: number }> {
+    const res = await this.call("POST", `/internal/dailies/${accountId}/claim`, { questId });
+    const j = res.json as { balance?: number; gold?: number; xp?: number } | null;
+    return { ok: res.ok, balance: j?.balance, gold: j?.gold, xp: j?.xp };
+  }
+
+  async skinsList(characterId: string): Promise<{ ok: boolean; equipped?: string; owned?: string[] }> {
+    const res = await this.call("GET", `/internal/characters/${characterId}/skins`);
+    const j = res.json as { equipped?: string; owned?: string[] } | null;
+    return { ok: res.ok, equipped: j?.equipped, owned: j?.owned };
+  }
+
+  async skinBuy(characterId: string, skinId: string): Promise<{ ok: boolean; balance?: number }> {
+    const res = await this.call("POST", `/internal/characters/${characterId}/skins/buy`, { skinId });
+    return { ok: res.ok, balance: (res.json as { balance?: number } | null)?.balance };
+  }
+
+  async skinEquip(characterId: string, skinId: string): Promise<{ ok: boolean }> {
+    const res = await this.call("POST", `/internal/characters/${characterId}/skins/equip`, { skinId });
+    return { ok: res.ok };
+  }
+
+  private async call(
+    method: "GET" | "POST",
+    path: string,
+    body?: unknown,
+  ): Promise<{ ok: boolean; status?: number; json: unknown | null }> {
     try {
       const res = await fetch(`${this.backendUrl}${path}`, {
         method,
@@ -56,15 +109,20 @@ export class BackendReporter {
         },
         body: body === undefined ? undefined : JSON.stringify(body),
       });
+      let json: unknown | null = null;
+      try {
+        json = await res.json();
+      } catch {
+        /* empty body */
+      }
       if (!res.ok) {
         console.warn(`[backend] ${path} -> ${res.status}`);
-        return { ok: false, status: res.status };
+        return { ok: false, status: res.status, json };
       }
-      const json = (await res.json()) as { balance?: number };
-      return { ok: true, balance: json.balance, status: res.status };
+      return { ok: true, status: res.status, json };
     } catch (err) {
       console.warn(`[backend] ${path} unreachable:`, (err as Error).message);
-      return { ok: false };
+      return { ok: false, json: null };
     }
   }
 

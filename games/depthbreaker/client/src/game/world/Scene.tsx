@@ -13,6 +13,7 @@ import { DungeonClickPlane } from "./DungeonClickPlane";
 import { BossPortal } from "./BossPortal";
 import { ResourceNode } from "./ResourceNode";
 import { MarketStall } from "./MarketStall";
+import { ClickMarker } from "./ClickMarker";
 import { RuntimeDungeon } from "./RuntimeDungeon";
 import { SunLight } from "./SunLight";
 import { DungeonGround } from "./DungeonGround";
@@ -73,6 +74,7 @@ export function Scene() {
         <ResourceNode key={id} id={id} />
       ))}
       <MarketStall />
+      <ClickMarker />
 
       <CombatFloaters />
       <Projectiles />

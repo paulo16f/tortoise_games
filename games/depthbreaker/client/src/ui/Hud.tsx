@@ -9,6 +9,7 @@ import { useZoneState } from "../net/useZone";
 import { zoneStore } from "../net/room";
 import { itemName, itemInitials } from "./itemDisplay";
 import { swingTimerState } from "./swingTimer";
+import { tooltipHandlers } from "./Tooltip";
 import type { EnemyView, PlayerView } from "@depthbreaker/protocol";
 
 /** Human-readable enemy AI state for the target frame. */
@@ -81,7 +82,7 @@ function SkillSlot({
   gcd = 0,
   active = false,
   locked = false,
-  lockedHint,
+  tooltip,
 }: {
   hotkey: string;
   label: string;
@@ -92,8 +93,8 @@ function SkillSlot({
   active?: boolean;
   /** True while the skill's learnLevel is above the character's level. */
   locked?: boolean;
-  /** Tooltip for locked slots, e.g. "Whirlwind — unlocks at Lv 6". */
-  lockedHint?: string;
+  /** Rich hover card content (rendered by the singleton TooltipLayer). */
+  tooltip?: () => React.ReactNode;
 }) {
   const frac = max > 0 ? Math.max(0, Math.min(1, cooldown / max)) : 0;
   // The skill's own cooldown always outlasts the ~1s GCD, so only paint the GCD
@@ -105,7 +106,7 @@ function SkillSlot({
   const ready = !locked && cooldown <= 0 && gcd <= 0;
   return (
     <div
-      title={locked ? lockedHint : undefined}
+      {...(tooltip ? tooltipHandlers(tooltip) : {})}
       style={{
         position: "relative",
         width: 52,
@@ -120,7 +121,8 @@ function SkillSlot({
         fontSize: 12,
         fontWeight: 800,
         color: locked ? "rgba(148,163,184,0.45)" : "#f8fafc",
-        pointerEvents: locked ? "auto" : undefined,
+        // The HUD root is pointerEvents:none; slots opt back in for tooltips.
+        pointerEvents: "auto",
       }}
     >
       {label}
@@ -378,6 +380,7 @@ export function Hud() {
               (isAuto && self.autoAttack) ||
               (def.id === "shield_wall" && (self.shieldSeconds ?? 0) > 0) ||
               (def.id === "frost_nova" && (self.frostSeconds ?? 0) > 0);
+            const lockedNow = !slot.unlocked;
             return (
               <SkillSlot
                 key={i}
@@ -387,8 +390,23 @@ export function Hud() {
                 max={def.cooldown || 1}
                 gcd={def.offGcd ? 0 : self.gcdRemaining ?? 0}
                 active={active}
-                locked={!slot.unlocked}
-                lockedHint={`${def.name} — unlocks at Lv ${def.learnLevel}`}
+                locked={lockedNow}
+                tooltip={() => (
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2 }}>
+                      {def.name}
+                      <span style={{ opacity: 0.55, fontWeight: 400 }}> — key {hotkey}</span>
+                    </div>
+                    <div style={{ opacity: 0.8 }}>{def.description}</div>
+                    <div style={{ opacity: 0.6, marginTop: 4 }}>
+                      {def.cooldown > 0 ? `${def.cooldown}s cooldown` : "no cooldown"}
+                      {def.offGcd ? " · off global cooldown" : ""}
+                    </div>
+                    {lockedNow && (
+                      <div style={{ color: "#fbbf24", marginTop: 4 }}>Unlocks at Lv {def.learnLevel}</div>
+                    )}
+                  </div>
+                )}
               />
             );
           })}
@@ -401,7 +419,7 @@ export function Hud() {
           {snap.bossPortal.active && <> | boss in {Math.ceil(snap.bossPortal.countdown)}s</>}
         </div>
         <div style={{ opacity: 0.6, marginTop: 4, fontSize: 12 }}>
-          WASD/click move | click mob auto-attack | click crystal mine | Tab target | 1-0 skills | K skills | B bag | M market | V weapon
+          WASD/click move | click mob auto-attack | click crystal mine | Tab target | 1-0 skills | K skills | B bag | M market | N bank | V weapon
         </div>
       </div>
     </div>

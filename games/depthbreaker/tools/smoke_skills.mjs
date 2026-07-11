@@ -35,9 +35,7 @@ function check(label, ok, detail = "") {
 async function joinRoom(opts) {
   const client = new Client(REALTIME_URL);
   const room = await client.joinOrCreate("zone", opts);
-  room.onMessage("welcome", () => {});
-  room.onMessage("combatEvent", () => {});
-  room.onMessage("lootEvent", () => {});
+  for (const t of ["welcome", "combatEvent", "lootEvent", "stash", "dailies", "skins"]) room.onMessage(t, () => {});
   const self = await waitFor(() => room.state?.players?.get(room.sessionId), "self");
   return { room, self };
 }

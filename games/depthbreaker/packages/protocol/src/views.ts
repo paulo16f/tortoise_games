@@ -21,6 +21,7 @@ export interface PlayerView {
   characterId: string;
   name: string;
   classId: string;
+  skinId: string;
   x: number;
   y: number;
   z: number;

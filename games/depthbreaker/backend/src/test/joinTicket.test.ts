@@ -8,6 +8,7 @@ const CLAIMS = {
   runId: "run-1",
   seed: 3735928559,
   totalXp: 12345,
+  skinId: "undead_knight",
 };
 
 describe("Join tickets (design doc §3)", () => {

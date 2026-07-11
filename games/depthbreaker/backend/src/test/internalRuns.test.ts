@@ -56,6 +56,7 @@ describe.skipIf(!hasTestDb)("Runs + internal reporting (requires TEST_DATABASE_U
       runId: run.runId,
       seed: run.seed,
       totalXp: 0, // fresh character has no persistent XP yet
+      skinId: "", // fresh character wears the class default
     });
   });
 

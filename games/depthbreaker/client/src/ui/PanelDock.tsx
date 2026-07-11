@@ -6,6 +6,9 @@
 import { toggleInventory, useInventoryOpen } from "./InventoryPanel";
 import { toggleSkillBook, useSkillBookOpen } from "./SkillBookPanel";
 import { toggleMarket, useMarketOpen } from "./MarketPanel";
+import { toggleStash, useStashOpen } from "./StashPanel";
+import { toggleDailies, useDailiesOpen } from "./DailyQuestPanel";
+import { tooltipHandlers } from "./Tooltip";
 
 interface DockItem {
   icon: string;
@@ -19,6 +22,8 @@ const DOCK_ITEMS: DockItem[] = [
   { icon: "🎒", label: "Bag", hotkey: "B", toggle: toggleInventory, useOpen: useInventoryOpen },
   { icon: "📖", label: "Skill Book", hotkey: "K", toggle: toggleSkillBook, useOpen: useSkillBookOpen },
   { icon: "🏪", label: "Market", hotkey: "M", toggle: toggleMarket, useOpen: useMarketOpen },
+  { icon: "🏦", label: "Bank", hotkey: "N", toggle: toggleStash, useOpen: useStashOpen },
+  { icon: "📜", label: "Daily Quests", hotkey: "J", toggle: toggleDailies, useOpen: useDailiesOpen },
 ];
 
 function DockButton({ item }: { item: DockItem }) {
@@ -26,7 +31,11 @@ function DockButton({ item }: { item: DockItem }) {
   return (
     <button
       onClick={item.toggle}
-      title={`${item.label} (${item.hotkey})`}
+      {...tooltipHandlers(() => (
+        <span>
+          <b>{item.label}</b> <span style={{ opacity: 0.6 }}>({item.hotkey})</span>
+        </span>
+      ))}
       style={{
         position: "relative",
         width: 46,
