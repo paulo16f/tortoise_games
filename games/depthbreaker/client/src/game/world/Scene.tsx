@@ -11,6 +11,8 @@ import { CombatFloaters } from "../fx/CombatFloaters";
 import { Projectiles } from "../fx/Projectiles";
 import { DungeonClickPlane } from "./DungeonClickPlane";
 import { BossPortal } from "./BossPortal";
+import { ResourceNode } from "./ResourceNode";
+import { MarketStall } from "./MarketStall";
 import { RuntimeDungeon } from "./RuntimeDungeon";
 import { SunLight } from "./SunLight";
 import { DungeonGround } from "./DungeonGround";
@@ -19,15 +21,17 @@ import { Effects } from "./Effects";
 export function Scene() {
   const snap = useZoneState();
 
-  const { playerIds, enemyIds } = useMemo(() => {
+  const { playerIds, enemyIds, nodeIds } = useMemo(() => {
     const players: string[] = [];
     const enemies: string[] = [];
+    const nodes: string[] = [];
     const st = zoneStore.state;
     st?.players.forEach((_v, k) => players.push(k));
     st?.enemies.forEach((_v, k) => enemies.push(k));
-    return { playerIds: players, enemyIds: enemies };
+    st?.nodes.forEach((_v, k) => nodes.push(k));
+    return { playerIds: players, enemyIds: enemies, nodeIds: nodes };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [snap.playerCount, snap.enemyCount]);
+  }, [snap.playerCount, snap.enemyCount, snap.nodeCount]);
 
   const selfId = zoneStore.selfId;
   const targetId = snap.self?.targetId ?? "";
@@ -35,7 +39,11 @@ export function Scene() {
   return (
     <>
       <color attach="background" args={["#08090c"]} />
-      <fog attach="fog" args={["#08090c", 28, 95]} />
+      {/* Fog far sits just past the ~70u room-cull boundary (RuntimeDungeon):
+          rooms are ~90% fogged before they toggle, so no visible pop-in, but
+          the playfield around the camera stays clearly lit (62 was too tight —
+          it blacked out the screen edges under the top-down camera). */}
+      <fog attach="fog" args={["#08090c", 28, 80]} />
 
       {/* Soft cool-over-warm fill instead of flat ambient. */}
       <hemisphereLight args={["#4a5a6a", "#181410", 0.35]} />
@@ -60,6 +68,11 @@ export function Scene() {
       {enemyIds.map((id) => (
         <Enemy key={id} id={id} isTarget={id === targetId} />
       ))}
+
+      {nodeIds.map((id) => (
+        <ResourceNode key={id} id={id} />
+      ))}
+      <MarketStall />
 
       <CombatFloaters />
       <Projectiles />

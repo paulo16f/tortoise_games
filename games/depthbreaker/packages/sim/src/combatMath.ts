@@ -6,6 +6,21 @@ export const CRIT_MULTIPLIER = 1.5;
 export const GCD_SECONDS = 1.0;
 
 /**
+ * Global cooldown gate. A shared cooldown that class skills spend on cast so
+ * instants can't be chained in a single frame; auto-attack and potions are
+ * OFF the GCD (they run on their own timers). `gcdRemaining` counts down toward
+ * 0 (= ready); tick it with `advanceTimer` (combatTimeline.ts).
+ */
+export function isOnGlobalCooldown(gcdRemaining: number): boolean {
+  return gcdRemaining > 0;
+}
+
+/** Seconds to charge the global cooldown when a skill is cast. */
+export function beginGlobalCooldown(): number {
+  return GCD_SECONDS;
+}
+
+/**
  * Round half away from zero for non-negative inputs: floor(x + 0.5).
  * Specified explicitly because JS Math.round and C# Math.Round disagree on .5.
  */

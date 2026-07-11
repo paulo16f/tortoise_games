@@ -37,17 +37,26 @@ export function registerHealthRoutes(app: FastifyInstance, ctx: AppContext): voi
       detail: config.zoneWsUrl,
     };
 
-    // Solana layer is deferred by design; recorded so the launch checklist
-    // can't silently forget it (GAME_LAUNCH_SPEC.md §3).
+    checks.payouts = {
+      ok: true,
+      detail: "disabled for Phase 0 soft launch",
+    };
+
+    // Solana layer is deferred by design; Phase 0 can soft-launch without it,
+    // while Phase 2 still fails closed until the token checks are implemented.
     checks.solana_layer = {
-      ok: !config.isProduction,
-      detail: "not implemented (Phase 2) — public launch blocked",
+      ok: config.launchPhase === "phase0" || !config.isProduction,
+      detail:
+        config.launchPhase === "phase0"
+          ? "not implemented; deferred to Phase 2"
+          : "not implemented (Phase 2) - token launch blocked",
     };
 
     const healthy = Object.values(checks).every((c) => c.ok);
     return reply.code(healthy ? 200 : 503).send({
       status: healthy ? "ok" : "not_ready",
       environment: config.nodeEnv,
+      launchPhase: config.launchPhase,
       checks,
     });
   });

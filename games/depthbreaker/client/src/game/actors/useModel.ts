@@ -1,4 +1,4 @@
-﻿// GLB model registry for animated character assets.
+// GLB model registry for animated character assets.
 
 import { useGLTF } from "@react-three/drei";
 import type { ClassId } from "@depthbreaker/protocol";
@@ -45,7 +45,6 @@ const SYNTY_DEPTHBREAKER_CLIPS: ClipSet = {
   idle: "idle",
   walk: "walk",
   run: "run",
-  sprint: "sprint",
   attack: "attack",
   hit: "hit",
   death: "death",

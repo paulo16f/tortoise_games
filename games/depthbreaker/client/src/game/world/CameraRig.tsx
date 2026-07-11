@@ -16,6 +16,11 @@ export function CameraRig() {
     const o = controlState.orbit;
     const p = localPlayerPos;
     const self = zoneStore.state?.players.get(zoneStore.selfId);
+    // Fixed Diablo camera: pin yaw/pitch to the preset every frame so the view
+    // never rotates behind the player (no chase cam). Only distance (zoom) is
+    // player-controlled.
+    o.yaw = ARPG_CAMERA.yaw;
+    o.pitch = ARPG_CAMERA.pitch;
     const targetHeight = (self ? resolvePlayerModel(self.classId)?.visualHeight : undefined) ?? 1.15;
     const lookHeight = targetHeight * 0.72;
     const cosPitch = Math.cos(o.pitch);

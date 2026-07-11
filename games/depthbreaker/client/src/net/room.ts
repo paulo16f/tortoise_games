@@ -10,12 +10,19 @@ import {
   type PlayerView,
   type EnemyView,
   type BossPortalView,
+  type ResourceNodeView,
   type InputMessage,
   type SetAutoAttackMessage,
   type SetTargetMessage,
   type ToggleWeaponMessage,
+  type EquipWeaponMessage,
+  type UseItemMessage,
   type UseSkillMessage,
+  type GatherNodeMessage,
+  type BuyItemMessage,
+  type SellItemMessage,
   type CombatEventMessage,
+  type LootEventMessage,
   type WelcomeMessage,
 } from "@depthbreaker/protocol";
 import { combatBus } from "./combatBus";
@@ -29,6 +36,7 @@ export interface MapLike<V> {
 export interface ZoneStateLike {
   players: MapLike<PlayerView>;
   enemies: MapLike<EnemyView>;
+  nodes: MapLike<ResourceNodeView>;
   seed: number;
   depth: number;
   bossPortal: BossPortalView;
@@ -52,15 +60,25 @@ export interface CombatFloater {
   delayMs: number;
 }
 
+/** A transient "you looted X" notification for the local player. */
+export interface LootToast {
+  id: number;
+  itemId: string;
+  rarity: string;
+  bornAt: number;
+}
+
 export interface ZoneSnapshot {
   playerCount: number;
   enemyCount: number;
+  nodeCount: number;
   depth: number;
   seed: number;
   self: PlayerView | null;
   target: PlayerView | EnemyView | null;
   roomId: string;
   combat: CombatFloater[];
+  lootToasts: LootToast[];
   bossPortal: BossPortalView;
 }
 
@@ -74,17 +92,21 @@ class ZoneStore {
   private lastEmit = 0;
   private combatSeq = 0;
   private combat: CombatFloater[] = [];
+  private lootSeq = 0;
+  private lootToasts: LootToast[] = [];
 
   static emptySnapshot(): ZoneSnapshot {
     return {
       playerCount: 0,
       enemyCount: 0,
+      nodeCount: 0,
       depth: 0,
       seed: 0,
       self: null,
       target: null,
       roomId: "",
       combat: [],
+      lootToasts: [],
       bossPortal: { active: false, x: 0, z: 0, countdown: 0 },
     };
   }
@@ -138,6 +160,15 @@ class ZoneStore {
       this.refresh();
     });
 
+    room.onMessage(ServerMessage.LootEvent, (msg: LootEventMessage) => {
+      // Server broadcasts to the room; only the killer shows the toast.
+      if (msg.playerId !== this.selfId) return;
+      this.lootToasts.push({ id: this.lootSeq++, itemId: msg.itemId, rarity: msg.rarity, bornAt: performance.now() });
+      const cutoff = performance.now() - 2500;
+      this.lootToasts = this.lootToasts.filter((t) => t.bornAt >= cutoff).slice(-6);
+      this.refresh();
+    });
+
     room.onLeave(() => this.detach());
     this.refresh();
   }
@@ -157,6 +188,7 @@ class ZoneStore {
     this.snapshot = {
       playerCount: st.players.size,
       enemyCount: st.enemies.size,
+      nodeCount: st.nodes?.size ?? 0,
       depth: st.depth ?? 0,
       bossPortal: st.bossPortal ?? { active: false, x: 0, z: 0, countdown: 0 },
       seed: st.seed ?? 0,
@@ -164,6 +196,7 @@ class ZoneStore {
       target,
       roomId: this.room?.roomId ?? "",
       combat: this.combat.slice(),
+      lootToasts: this.lootToasts.slice(),
     };
     this.emit();
   }
@@ -172,6 +205,7 @@ class ZoneStore {
     this.room = null;
     this.selfId = "";
     this.combat = [];
+    this.lootToasts = [];
     this.snapshot = ZoneStore.emptySnapshot();
     this.emit();
   }
@@ -195,9 +229,34 @@ class ZoneStore {
     this.room?.send(ClientMessage.UseSkill, payload);
   }
 
+  sendGather(nodeId: string): void {
+    const payload: GatherNodeMessage = { nodeId };
+    this.room?.send(ClientMessage.GatherNode, payload);
+  }
+
+  sendBuy(itemId: string): void {
+    const payload: BuyItemMessage = { itemId };
+    this.room?.send(ClientMessage.BuyItem, payload);
+  }
+
+  sendSell(index: number): void {
+    const payload: SellItemMessage = { index };
+    this.room?.send(ClientMessage.SellItem, payload);
+  }
+
   sendToggleWeapon(equipped: boolean): void {
     const payload: ToggleWeaponMessage = { equipped };
     this.room?.send(ClientMessage.ToggleWeapon, payload);
+  }
+
+  sendEquipWeapon(itemId: string): void {
+    const payload: EquipWeaponMessage = { itemId };
+    this.room?.send(ClientMessage.EquipWeapon, payload);
+  }
+
+  sendUseItem(index: number): void {
+    const payload: UseItemMessage = { index };
+    this.room?.send(ClientMessage.UseItem, payload);
   }
 }
 

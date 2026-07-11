@@ -1,4 +1,4 @@
-﻿import { useEffect } from "react";
+import { useEffect } from "react";
 import { INPUT_SEND_HZ } from "@depthbreaker/protocol";
 import {
   controlState,
@@ -9,9 +9,25 @@ import {
   clearClickDestination,
   resetCameraOrbit,
 } from "./controls";
-import { ARPG_CAMERA } from "../world/cameraPreset";
 import { zoneStore } from "../../net/room";
+import { toggleInventory } from "../../ui/InventoryPanel";
+import { toggleSkillBook } from "../../ui/SkillBookPanel";
+import { toggleMarket } from "../../ui/MarketPanel";
 import { localPlayerPos } from "../entityRefs";
+
+/** Keys 1-9,0 map to hotbar slots 0-9. */
+const HOTBAR_KEY_SLOTS: Record<string, number> = {
+  Digit1: 0,
+  Digit2: 1,
+  Digit3: 2,
+  Digit4: 3,
+  Digit5: 4,
+  Digit6: 5,
+  Digit7: 6,
+  Digit8: 7,
+  Digit9: 8,
+  Digit0: 9,
+};
 
 const TARGET_SELECTION_RANGE = 18;
 const CLICK_STOP_DISTANCE = 0.35;
@@ -45,21 +61,20 @@ export function useControls(): void {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isMoveKey(e.code)) controlState.keys.add(e.code);
       if (e.repeat) return;
-      if (e.code === "Digit1") {
-        const self = zoneStore.state?.players.get(zoneStore.selfId);
-        if (self?.targetId) {
-          clearClickDestination();
-          zoneStore.sendAutoAttack(!self.autoAttack);
-        }
+      const hotbarSlot = HOTBAR_KEY_SLOTS[e.code];
+      if (hotbarSlot !== undefined) {
+        // Slot 0 is the auto-attack toggle; stop click-to-move so the server's
+        // auto-follow takes over, same as the old Digit1 behavior.
+        if (hotbarSlot === 0) clearClickDestination();
+        zoneStore.sendSkill(hotbarSlot);
       }
-      if (e.code === "Digit2") zoneStore.sendSkill(0);
-      if (e.code === "Digit3") zoneStore.sendSkill(2);
-      if (e.code === "Digit4") zoneStore.sendSkill(0);
-      if (e.code === "Digit5") zoneStore.sendSkill(2);
       if (e.code === "KeyV") {
         const self = zoneStore.state?.players.get(zoneStore.selfId);
         if (self) zoneStore.sendToggleWeapon(!self.weaponId);
       }
+      if (e.code === "KeyB") toggleInventory();
+      if (e.code === "KeyK") toggleSkillBook();
+      if (e.code === "KeyM") toggleMarket();
       if (e.code === "KeyR") resetCameraOrbit();
       if (e.code === "Tab") {
         e.preventDefault();
@@ -85,13 +100,13 @@ export function useControls(): void {
       const target = e.target instanceof Element ? e.target : null;
       target?.releasePointerCapture?.(e.pointerId);
     };
+    // Fixed Diablo camera: right-drag no longer rotates the view (yaw/pitch are
+    // pinned in CameraRig). The handler stays a no-op so right-click still
+    // suppresses the context menu without moving the camera.
     const onPointerMove = (e: PointerEvent) => {
       if (!controlState.dragging) return;
       if (controlState.dragPointerId !== undefined && e.pointerId !== controlState.dragPointerId) return;
       e.preventDefault();
-      const o = controlState.orbit;
-      o.yaw -= e.movementX * ARPG_CAMERA.yawSpeed;
-      o.pitch = clamp(o.pitch + e.movementY * ARPG_CAMERA.pitchSpeed, ARPG_CAMERA.minPitch, ARPG_CAMERA.maxPitch);
     };
     const onWheel = (e: WheelEvent) => {
       const o = controlState.orbit;
@@ -149,8 +164,4 @@ function computeMoveWithClickDestination(): { moveX: number; moveZ: number } {
     return { moveX: 0, moveZ: 0 };
   }
   return { moveX: dx / distance, moveZ: dz / distance };
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }

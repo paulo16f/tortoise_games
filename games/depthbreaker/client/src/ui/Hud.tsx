@@ -3,21 +3,13 @@
 // and a controls legend.
 
 import { useEffect, useRef, useState } from "react";
-import { xpToNext, POTION_COOLDOWN_SECONDS } from "@depthbreaker/sim";
+import { xpToNext, GCD_SECONDS } from "@depthbreaker/sim";
+import { skillDef } from "@depthbreaker/protocol";
 import { useZoneState } from "../net/useZone";
 import { zoneStore } from "../net/room";
+import { itemName, itemInitials } from "./itemDisplay";
+import { swingTimerState } from "./swingTimer";
 import type { EnemyView, PlayerView } from "@depthbreaker/protocol";
-
-const WEAPON_LABELS: Record<string, string> = {
-  iron_sword: "Iron Sword",
-  ash_staff: "Ash Staff",
-};
-
-function weaponIcon(weaponId?: string): string {
-  if (weaponId === "ash_staff") return "ST";
-  if (weaponId === "iron_sword") return "SW";
-  return "--";
-}
 
 /** Human-readable enemy AI state for the target frame. */
 function enemyStatus(fsm: string): string {
@@ -81,85 +73,39 @@ function isEnemy(t: PlayerView | EnemyView | null): t is EnemyView {
   return !!t && "defId" in t;
 }
 
-/**
- * Healing potion slot with a radial cooldown sweep. The server replicates
- * potionCooldown at ~10 Hz; between snapshots we count down locally from the
- * last replicated value so the sweep animates smoothly.
- */
-function PotionSlot({ cooldown }: { cooldown: number }) {
-  const seed = useRef({ value: cooldown, at: performance.now() });
-  const [display, setDisplay] = useState(cooldown);
-
-  useEffect(() => {
-    seed.current = { value: cooldown, at: performance.now() };
-  }, [cooldown]);
-
-  useEffect(() => {
-    let raf = 0;
-    const loop = () => {
-      const s = seed.current;
-      const value = Math.max(0, s.value - (performance.now() - s.at) / 1000);
-      // Only re-render when the sweep moves noticeably.
-      setDisplay((prev) => (Math.abs(prev - value) > 0.05 ? value : prev));
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  const frac = Math.max(0, Math.min(1, display / POTION_COOLDOWN_SECONDS));
-  const ready = display <= 0;
-
-  return (
-    <div
-      style={{
-        position: "relative",
-        width: 48,
-        height: 48,
-        borderRadius: 8,
-        overflow: "hidden",
-        border: `1px solid ${ready ? "rgba(34,197,94,0.6)" : "rgba(255,255,255,0.15)"}`,
-        background: "rgba(11,13,18,0.85)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 12,
-        fontWeight: 800,
-        color: "#f8fafc",
-      }}
-    >
-      POT
-      {!ready && (
-        <>
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: `conic-gradient(rgba(0,0,0,0.7) ${frac * 360}deg, transparent 0deg)`,
-            }}
-          />
-          <span
-            style={{
-              position: "absolute",
-              fontSize: 14,
-              fontWeight: 700,
-              color: "#f8fafc",
-              textShadow: "0 1px 2px #000",
-            }}
-          >
-            {Math.ceil(display)}
-          </span>
-        </>
-      )}
-    </div>
-  );
-}
-
-function SkillSlot({ hotkey, label, cooldown, max, active = false }: { hotkey: string; label: string; cooldown: number; max: number; active?: boolean }) {
+function SkillSlot({
+  hotkey,
+  label,
+  cooldown,
+  max,
+  gcd = 0,
+  active = false,
+  locked = false,
+  lockedHint,
+}: {
+  hotkey: string;
+  label: string;
+  cooldown: number;
+  max: number;
+  /** Shared global-cooldown seconds remaining; drives a shallow sweep when the skill's own cooldown is clear. */
+  gcd?: number;
+  active?: boolean;
+  /** True while the skill's learnLevel is above the character's level. */
+  locked?: boolean;
+  /** Tooltip for locked slots, e.g. "Whirlwind — unlocks at Lv 6". */
+  lockedHint?: string;
+}) {
   const frac = max > 0 ? Math.max(0, Math.min(1, cooldown / max)) : 0;
-  const ready = cooldown <= 0;
+  // The skill's own cooldown always outlasts the ~1s GCD, so only paint the GCD
+  // sweep when the skill itself is off cooldown but the global cooldown is up.
+  const onGcdOnly = cooldown <= 0 && gcd > 0;
+  const sweepFrac = cooldown > 0 ? frac : onGcdOnly ? Math.max(0, Math.min(1, gcd / GCD_SECONDS)) : 0;
+  const sweepColor = cooldown > 0 ? "rgba(0,0,0,0.68)" : "rgba(96,165,250,0.5)";
+  const showSweep = !locked && (cooldown > 0 || onGcdOnly);
+  const ready = !locked && cooldown <= 0 && gcd <= 0;
   return (
     <div
+      title={locked ? lockedHint : undefined}
       style={{
         position: "relative",
         width: 52,
@@ -173,23 +119,95 @@ function SkillSlot({ hotkey, label, cooldown, max, active = false }: { hotkey: s
         justifyContent: "center",
         fontSize: 12,
         fontWeight: 800,
-        color: "#f8fafc",
+        color: locked ? "rgba(148,163,184,0.45)" : "#f8fafc",
+        pointerEvents: locked ? "auto" : undefined,
       }}
     >
       {label}
-      {!ready && (
+      {locked && (
+        <span style={{ position: "absolute", left: 4, top: 2, fontSize: 10, opacity: 0.8 }}>🔒</span>
+      )}
+      {showSweep && (
         <>
           <div
             style={{
               position: "absolute",
               inset: 0,
-              background: `conic-gradient(rgba(0,0,0,0.68) ${frac * 360}deg, transparent 0deg)`,
+              background: `conic-gradient(${sweepColor} ${sweepFrac * 360}deg, transparent 0deg)`,
             }}
           />
-          <span style={{ position: "absolute", fontSize: 14, textShadow: "0 1px 2px #000" }}>{Math.ceil(cooldown)}</span>
+          {cooldown > 0 && (
+            <span style={{ position: "absolute", fontSize: 14, textShadow: "0 1px 2px #000" }}>{Math.ceil(cooldown)}</span>
+          )}
         </>
       )}
       <span style={{ position: "absolute", right: 4, bottom: 2, fontSize: 10, opacity: 0.8 }}>{hotkey}</span>
+    </div>
+  );
+}
+
+/**
+ * Auto-attack swing-timer bar. The server replicates swingCooldown at ~10 Hz;
+ * between snapshots we count down locally from the last replicated value so the
+ * fill animates smoothly (same technique as PotionSlot). The pure
+ * `swingTimerState` derives visibility/fill from the interpolated value.
+ */
+function SwingBar({
+  autoAttack,
+  swingCooldown,
+  swingInterval,
+  targetAlive,
+}: {
+  autoAttack: boolean;
+  swingCooldown: number;
+  swingInterval: number;
+  targetAlive: boolean;
+}) {
+  const seed = useRef({ value: swingCooldown, at: performance.now() });
+  const [display, setDisplay] = useState(swingCooldown);
+
+  useEffect(() => {
+    seed.current = { value: swingCooldown, at: performance.now() };
+  }, [swingCooldown]);
+
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      const s = seed.current;
+      const value = Math.max(0, s.value - (performance.now() - s.at) / 1000);
+      setDisplay((prev) => (Math.abs(prev - value) > 0.02 ? value : prev));
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const state = swingTimerState({ autoAttack, swingCooldown: display, swingInterval }, { alive: targetAlive });
+  if (!state.visible) return null;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", marginTop: 6 }}>
+      <span style={{ width: 40, opacity: 0.7, fontSize: 11, textAlign: "right" }}>swing</span>
+      <div
+        style={{
+          position: "relative",
+          width: 172,
+          height: 8,
+          background: "#1f2937",
+          borderRadius: 4,
+          overflow: "hidden",
+          border: "1px solid rgba(255,255,255,0.12)",
+        }}
+      >
+        <div
+          style={{
+            width: `${state.frac * 100}%`,
+            height: "100%",
+            background: state.ready ? "#fbbf24" : "#f59e0b",
+            transition: "width 60ms linear",
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -228,10 +246,13 @@ export function Hud() {
     >
       {/* Local player panel (bottom-left). */}
       <div style={{ position: "absolute", left: 16, bottom: 16, ...panelStyle }}>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>
-          {self?.name ?? "—"}{" "}
-          <span style={{ opacity: 0.7, fontWeight: 400 }}>
-            ({self?.classId ?? "?"})
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+          <span style={{ fontWeight: 600 }}>
+            {self?.name ?? "—"}{" "}
+            <span style={{ opacity: 0.7, fontWeight: 400 }}>({self?.classId ?? "?"})</span>
+          </span>
+          <span style={{ color: "#fbbf24", fontWeight: 700, fontVariantNumeric: "tabular-nums", marginLeft: 12 }}>
+            🪙 {self?.gold ?? 0}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -262,11 +283,11 @@ export function Hud() {
             }}
             title="Equipped weapon"
           >
-            {weaponIcon(self?.weaponId)}
+            {self?.weaponId ? itemInitials(self.weaponId) : "--"}
           </div>
           <div>
             <div style={{ opacity: 0.65, fontSize: 11 }}>Weapon</div>
-            <div style={{ fontWeight: 700 }}>{WEAPON_LABELS[self?.weaponId ?? ""] ?? self?.weaponId ?? "Unequipped"}</div>
+            <div style={{ fontWeight: 700 }}>{self?.weaponId ? itemName(self.weaponId) : "Unequipped"}</div>
           </div>
         </div>
       </div>
@@ -306,10 +327,18 @@ export function Hud() {
               )}
             </div>
           )}
+          {isEnemy(target) && self && self.targetId === target.id && (
+            <SwingBar
+              autoAttack={self.autoAttack}
+              swingCooldown={self.swingCooldown ?? 0}
+              swingInterval={self.swingInterval ?? 0}
+              targetAlive={target.alive}
+            />
+          )}
         </div>
       )}
 
-      {/* Hotbar (bottom-center). */}
+      {/* Hotbar (bottom-center): 10 slots driven by the synced hotbar array. */}
       {self && (
         <div
           style={{
@@ -321,28 +350,48 @@ export function Hud() {
             gap: 8,
           }}
         >
-          <SkillSlot
-            hotkey="1"
-            label={self.autoAttack ? "AUTO" : "ATK"}
-            cooldown={0}
-            max={1}
-            active={self.autoAttack}
-          />
-          <SkillSlot
-            hotkey="2"
-            label={self.classId === "mage" ? "FIRE" : "SHIELD"}
-            cooldown={self.skillQCooldown ?? 0}
-            max={self.classId === "mage" ? 6 : 10}
-            active={(self.shieldSeconds ?? 0) > 0}
-          />
-          <SkillSlot
-            hotkey="3"
-            label={self.classId === "mage" ? "FROST" : "SLASH"}
-            cooldown={self.skillECooldown ?? 0}
-            max={self.classId === "mage" ? 14 : 7}
-            active={(self.frostSeconds ?? 0) > 0}
-          />
-          <PotionSlot cooldown={self.potionCooldown ?? 0} />
+          {Array.from({ length: 10 }, (_, i) => {
+            const slot = self.hotbar?.[i];
+            const def = slot?.skillId ? skillDef(slot.skillId) : undefined;
+            const hotkey = i === 9 ? "0" : String(i + 1);
+            if (!slot || !def) {
+              return (
+                <div
+                  key={i}
+                  style={{
+                    position: "relative",
+                    width: 52,
+                    height: 52,
+                    borderRadius: 8,
+                    border: "1px dashed rgba(255,255,255,0.10)",
+                    background: "rgba(11,13,18,0.4)",
+                  }}
+                >
+                  <span style={{ position: "absolute", right: 4, bottom: 2, fontSize: 10, opacity: 0.35, color: "#e6e9ef" }}>
+                    {hotkey}
+                  </span>
+                </div>
+              );
+            }
+            const isAuto = def.id === "basic_attack";
+            const active =
+              (isAuto && self.autoAttack) ||
+              (def.id === "shield_wall" && (self.shieldSeconds ?? 0) > 0) ||
+              (def.id === "frost_nova" && (self.frostSeconds ?? 0) > 0);
+            return (
+              <SkillSlot
+                key={i}
+                hotkey={hotkey}
+                label={isAuto && self.autoAttack ? "AUTO" : def.label}
+                cooldown={slot.cooldownRemaining}
+                max={def.cooldown || 1}
+                gcd={def.offGcd ? 0 : self.gcdRemaining ?? 0}
+                active={active}
+                locked={!slot.unlocked}
+                lockedHint={`${def.name} — unlocks at Lv ${def.learnLevel}`}
+              />
+            );
+          })}
         </div>
       )}
       {/* Connection + legend (top-left). */}
@@ -352,7 +401,7 @@ export function Hud() {
           {snap.bossPortal.active && <> | boss in {Math.ceil(snap.bossPortal.countdown)}s</>}
         </div>
         <div style={{ opacity: 0.6, marginTop: 4, fontSize: 12 }}>
-          WASD/click move | hover mob highlight | click mob auto-attack | Tab target | 1 auto | 2-5 skills | V weapon | right-drag rotate
+          WASD/click move | click mob auto-attack | click crystal mine | Tab target | 1-0 skills | K skills | B bag | M market | V weapon
         </div>
       </div>
     </div>

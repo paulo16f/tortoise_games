@@ -55,7 +55,7 @@ export function useCombatAnimState(
     prevYaw.current = e.yaw;
     smoothYawRate.current += (yawRate - smoothYawRate.current) * Math.min(1, delta * YAW_SMOOTH_RATE);
 
-    const base = { speed: loco.speed, moving: loco.moving, yawRate: smoothYawRate.current };
+    const base = { speed: loco.speed, moving: loco.moving, backwards: loco.backwards, yawRate: smoothYawRate.current };
 
     if (e.actionState === "dying" || e.actionState === "dead" || !e.alive) {
       return { ...base, combat: { kind: "death", actionId: e.actionId }, alive: false };

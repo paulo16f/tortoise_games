@@ -24,6 +24,7 @@ import type {
   DungeonRoomId,
   DungeonVisualPlacement,
   Rect,
+  ResourceNodeDef,
   Vec2,
 } from "./map.js";
 
@@ -208,6 +209,26 @@ export function buildDungeon(seed32: number, depth: number): DungeonMapDefinitio
     }
   }
 
+  // Mining nodes: a separate pass AFTER all other dressing draws, so adding
+  // nodes never disturbs the spawn/prop layout an existing seed already has.
+  // 1-2 per combat room, near the room edge; elite rooms bias toward crystal.
+  const resourceNodes: ResourceNodeDef[] = [];
+  for (const room of graph.rooms) {
+    if (room.kind !== "combat") continue;
+    const info = roomInfo.get(room.index)!;
+    const count = 1 + (dress.nextUint32() % 2);
+    for (let i = 0; i < count; i++) {
+      const crystalChance = info.id === "elite" ? 0.7 : 0.25;
+      const kind = dress.nextFloat01() < crystalChance ? "crystal_vein" : "iron_vein";
+      const pos = jitter(info.center, 5, ROOM_HALF - 2);
+      resourceNodes.push({ id: `node-${room.index}-${i}`, kind, x: pos.x, z: pos.z });
+    }
+  }
+
+  // Market stall: a fixed offset inside the start ("market") room, clear of the
+  // player spawn at the room center.
+  const marketStall: Vec2 = { x: startCenter.x + 4, z: startCenter.z + 3 };
+
   return {
     tileSize: TILE,
     rooms,
@@ -222,5 +243,7 @@ export function buildDungeon(seed32: number, depth: number): DungeonMapDefinitio
     bossPortal: bossCenter,
     props,
     visualPlacements: [...floorPlacements, ...propPlacements],
+    resourceNodes,
+    marketStall,
   };
 }

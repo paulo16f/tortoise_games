@@ -1,15 +1,20 @@
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import type { ClassId } from "@depthbreaker/protocol";
-import { REALTIME_URL } from "./config";
-import { connectToZone } from "./net/room";
+import { leaveZone } from "./net/room";
+import { bootstrap } from "./net/session";
 import { useControls } from "./game/input/useControls";
 import { Scene } from "./game/world/Scene";
 import { AnimationDebugView } from "./game/actors/AnimationDebugView";
 import { Hud } from "./ui/Hud";
-import { Menu } from "./ui/Menu";
+import { InventoryPanel } from "./ui/InventoryPanel";
+import { SkillBookPanel } from "./ui/SkillBookPanel";
+import { MarketPanel } from "./ui/MarketPanel";
+import { PanelDock } from "./ui/PanelDock";
+import { LootToasts } from "./ui/LootToasts";
+import { LoginScreen } from "./ui/LoginScreen";
+import { CharacterSelect } from "./ui/CharacterSelect";
 
-function GameCanvas() {
+function GameCanvas({ onLeave }: { onLeave: () => void }) {
   useControls();
   return (
     <>
@@ -19,34 +24,82 @@ function GameCanvas() {
         </Suspense>
       </Canvas>
       <Hud />
+      <InventoryPanel />
+      <SkillBookPanel />
+      <MarketPanel />
+      <PanelDock />
+      <LootToasts />
+      <button onClick={onLeave} title="Leave to character select" style={leaveBtn}>
+        ⎋ Leave
+      </button>
     </>
   );
 }
 
-function GameApp() {
-  const [connected, setConnected] = useState(false);
-  const [connecting, setConnecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+type Phase = "loading" | "auth" | "select" | "in-run";
 
-  const play = async (name: string, classId: ClassId) => {
-    setConnecting(true);
-    setError(null);
-    try {
-      await connectToZone({ url: REALTIME_URL, name, classId });
-      setConnected(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not connect to realtime server.");
-    } finally {
-      setConnecting(false);
-    }
+function GameApp() {
+  const [phase, setPhase] = useState<Phase>("loading");
+
+  // On load, try to restore a session from the refresh cookie. In ticketless
+  // dev mode with no backend, skip straight to a minimal guest select.
+  useEffect(() => {
+    let cancelled = false;
+    void bootstrap().then((ok) => {
+      if (cancelled) return;
+      setPhase(ok ? "select" : "auth");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const leave = () => {
+    leaveZone();
+    setPhase("select");
   };
 
   return (
     <main style={{ position: "fixed", inset: 0, overflow: "hidden", background: "#08090c" }}>
-      {connected ? <GameCanvas /> : <Menu connecting={connecting} error={error} onPlay={play} />}
+      {phase === "loading" && <SplashScreen />}
+      {phase === "auth" && <LoginScreen onAuthed={() => setPhase("select")} />}
+      {phase === "select" && <CharacterSelect onEnterGame={() => setPhase("in-run")} />}
+      {phase === "in-run" && <GameCanvas onLeave={leave} />}
     </main>
   );
 }
+
+function SplashScreen() {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        display: "grid",
+        placeItems: "center",
+        color: "#e6e9ef",
+        fontFamily: "system-ui, sans-serif",
+        background: "radial-gradient(circle at 50% 30%, #131722, #0b0d12)",
+      }}
+    >
+      <div style={{ opacity: 0.7 }}>Depthbreaker — loading…</div>
+    </div>
+  );
+}
+
+const leaveBtn: React.CSSProperties = {
+  position: "absolute",
+  top: 16,
+  right: 16,
+  padding: "8px 12px",
+  borderRadius: 8,
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(11,13,18,0.82)",
+  color: "#e6e9ef",
+  fontSize: 13,
+  cursor: "pointer",
+  pointerEvents: "auto",
+};
 
 export default function App() {
   return new URLSearchParams(window.location.search).has("debugAnim") ? <AnimationDebugView /> : <GameApp />;

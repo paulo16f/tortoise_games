@@ -11,31 +11,33 @@ import {
   MeshStandardMaterial,
   Object3D,
   Group,
+  Euler,
+  Quaternion,
   type AnimationAction,
   type KeyframeTrack,
   type Material,
 } from "three";
+import { localPlayerPos } from "../entityRefs";
 import { useCombatAnimState } from "./useCombatAnimState";
 import { useLocomotion } from "./useLocomotion";
+
+// Distance-tiered mixer throttling: far characters advance their skeleton less
+// often (the state machine above still latches every frame). Squared distances
+// to the local player: near = full rate, mid = every 2nd frame, far = every 4th.
+const MIXER_MID_D2 = 22 * 22;
+const MIXER_FAR_D2 = 42 * 42;
 import { DEFAULT_MOTION_PROFILE, type MotionProfile } from "./motionProfiles";
 import { LocomotionController, type ClipSet, type LocoInputs, type StrideNorm } from "./locomotionController";
 
 export type { ClipSet, StrideNorm } from "./locomotionController";
 
 /** Preview states for the ?debugAnim harness. */
-export type PreviewState = "idle" | "walk" | "run" | "sprint" | "turn" | "attack" | "hit" | "death";
+export type PreviewState = "idle" | "walk" | "run" | "attack" | "hit" | "death";
 
 const DEFAULT_CLIPS: ClipSet = {
   idle: "idle",
   walk: "walk",
   run: "run",
-  sprint: "sprint",
-  walkStart: "walk_start",
-  runStart: "run_start",
-  walkStop: "walk_stop",
-  runStop: "run_stop",
-  turnLeft: "turn_l",
-  turnRight: "turn_r",
   attack: "attack",
   hit: "hit",
   death: "death",
@@ -73,6 +75,8 @@ const DEFAULT_HAND_BONE_NAMES = ["Hand_R", "hand_r", "handslot.r"];
 const MIN_SANE_SCALE = 0.05;
 const MAX_SANE_SCALE = 3;
 const PREVIEW_TURN_RATE = 3;
+const worldQuat = new Quaternion();
+const worldEuler = new Euler(0, 0, 0, "YXZ");
 
 function HeldWeapon({
   bone,
@@ -212,6 +216,8 @@ export function AnimatedCharacter({
   const worldPos = useRef(new Vector3());
   const anim = useCombatAnimState(entityId, kind, Math.max(motionProfile.attackLockMs, 380), motionProfile);
   const locomotion = useLocomotion();
+  const mixerAccum = useRef(0);
+  const mixerTick = useRef(0);
 
   useFrame((_, delta) => {
     let inputs: LocoInputs | null;
@@ -222,16 +228,35 @@ export function AnimatedCharacter({
       // (already interpolated toward the server position by Player/Enemy), not
       // from raw network snapshots - see useLocomotion for why.
       const g = groupRef.current;
-      let loco = { speed: 0, moving: false };
+      let loco = { speed: 0, moving: false, backwards: false };
       if (g) {
         g.getWorldPosition(worldPos.current);
-        loco = locomotion.update(worldPos.current.x, worldPos.current.z, delta);
+        g.getWorldQuaternion(worldQuat);
+        worldEuler.setFromQuaternion(worldQuat);
+        loco = locomotion.update(worldPos.current.x, worldPos.current.z, delta, worldEuler.y);
       }
       inputs = anim.update(delta, loco);
     }
 
+    // State machine runs every frame so attack/hit edges latch immediately.
     if (inputs) controller.update(inputs, delta);
-    mixer.update(delta);
+
+    // Skeleton advance is distance-throttled: accumulate delta and only apply
+    // it every Nth frame for far characters (the local player is at distance ~0
+    // → full rate; preview view is always full rate).
+    mixerAccum.current += delta;
+    let interval = 1;
+    if (!previewState) {
+      const dx = worldPos.current.x - localPlayerPos.x;
+      const dz = worldPos.current.z - localPlayerPos.z;
+      const d2 = dx * dx + dz * dz;
+      interval = d2 > MIXER_FAR_D2 ? 4 : d2 > MIXER_MID_D2 ? 2 : 1;
+    }
+    if (++mixerTick.current >= interval) {
+      mixer.update(mixerAccum.current);
+      mixerAccum.current = 0;
+      mixerTick.current = 0;
+    }
   });
 
   useEffect(
@@ -252,9 +277,6 @@ export function AnimatedCharacter({
 function previewInputs(state: PreviewState, speed: number): LocoInputs {
   if (state === "attack" || state === "hit" || state === "death") {
     return { speed: 0, moving: false, yawRate: 0, combat: { kind: state, actionId: "preview" }, alive: state !== "death" };
-  }
-  if (state === "turn") {
-    return { speed: 0, moving: false, yawRate: PREVIEW_TURN_RATE, combat: null, alive: true };
   }
   const moving = speed > 0.15 && state !== "idle";
   return { speed: state === "idle" ? 0 : speed, moving, yawRate: 0, combat: null, alive: true };

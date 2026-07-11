@@ -29,9 +29,9 @@ export function loadConfig(): RealtimeConfig {
   return {
     // Railway (and most PaaS) inject the listen port as PORT; fall back to
     // REALTIME_PORT then the local default.
-    port: envNumber("PORT", envNumber("REALTIME_PORT", 2567)),
+    port: envNumber("PORT", envNumber("REALTIME_PORT", 2667)),
     zoneSharedSecret: env("ZONE_SHARED_SECRET", DEV_ZONE_SHARED_SECRET),
-    backendUrl: env("BACKEND_URL", "http://localhost:3000"),
+    backendUrl: env("BACKEND_URL", "http://localhost:3100"),
     // Dev default: allow ticketless joins so you can open the client without a
     // full auth round-trip. Production MUST require tickets.
     requireTicket: env("REQUIRE_TICKET", nodeEnv === "production" ? "true" : "false") === "true",

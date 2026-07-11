@@ -1,4 +1,4 @@
-﻿// Client <-> server message contract. Colyseus messages are addressed by a
+// Client <-> server message contract. Colyseus messages are addressed by a
 // string type; these constants + payload interfaces keep both ends in sync.
 
 /** Client -> server. */
@@ -9,16 +9,28 @@ export const ClientMessage = {
   SetTarget: "setTarget",
   /** Toggle server-authoritative auto attack for the current target. */
   SetAutoAttack: "setAutoAttack",
-  /** Use a skill slot. 0/2 are current class skills, 1 is potion legacy. */
+  /** Cast the skill in a hotbar slot. Keys 1-9,0 map to slots 0-9. */
   UseSkill: "useSkill",
   /** Equip or unequip the currently available class weapon. */
   ToggleWeapon: "toggleWeapon",
+  /** Equip a specific weapon out of the bag; the previous weapon returns to the bag. */
+  EquipWeapon: "equipWeapon",
+  /** Consume the potion/food in the bag slot at the given index. */
+  UseItem: "useItem",
+  /** Gather a mining node (short server-side cast; range-checked). */
+  GatherNode: "gatherNode",
+  /** Buy an item from the market stall (server-priced; range-checked). */
+  BuyItem: "buyItem",
+  /** Sell one item from a bag slot to the market stall. */
+  SellItem: "sellItem",
 } as const;
 
 /** Server -> client (state itself syncs automatically; these are events). */
 export const ServerMessage = {
   /** Transient combat feedback for VFX/floating numbers. */
   CombatEvent: "combatEvent",
+  /** A drop landed in a player's bag; drives a pickup toast (killer-only client-side). */
+  LootEvent: "lootEvent",
   /** The joining client's own session/entity id, sent once on join. */
   Welcome: "welcome",
 } as const;
@@ -47,12 +59,37 @@ export interface SetAutoAttackMessage {
 }
 
 export interface UseSkillMessage {
-  /** Skill slot: 0 = first class skill, 2 = second class skill, 1 = potion legacy. */
+  /** Hotbar slot 0-9 (keys 1-9,0). The server resolves the slot's skillId. */
   slot: number;
 }
 
 export interface ToggleWeaponMessage {
   equipped: boolean;
+}
+
+export interface EquipWeaponMessage {
+  /** Catalog weapon id present in the player's bag. */
+  itemId: string;
+}
+
+export interface UseItemMessage {
+  /** Bag slot index of the consumable to use. */
+  index: number;
+}
+
+export interface GatherNodeMessage {
+  /** ResourceNodeState id in ZoneState.nodes. */
+  nodeId: string;
+}
+
+export interface BuyItemMessage {
+  /** Catalog item id; must be in the market stock and have a buyValue. */
+  itemId: string;
+}
+
+export interface SellItemMessage {
+  /** Bag slot index; one unit is sold at the item's sellValue. */
+  index: number;
 }
 
 export interface CombatEventMessage {
@@ -64,6 +101,15 @@ export interface CombatEventMessage {
   actionId?: string;
   /** Milliseconds from this event to the intended visual impact. */
   impactDelayMs?: number;
+}
+
+export interface LootEventMessage {
+  /** Bag owner (the killer). Clients show the toast only when this is their own id. */
+  playerId: string;
+  /** Catalog id of the dropped item. */
+  itemId: string;
+  /** Item rarity for toast tinting. */
+  rarity: string;
 }
 
 export interface WelcomeMessage {

@@ -11,7 +11,9 @@ export function registerCharacterRoutes(app: FastifyInstance, ctx: AppContext): 
 
   app.get("/api/characters", { preHandler: requireAuth }, async (request) => {
     const res = await pool.query(
-      `SELECT id, name, class_id, created_at FROM characters
+      // total_xp is bigint (pg → string); cast to int (value is capped well
+      // under 2^31) so the client gets a number for levelForTotalXp().
+      `SELECT id, name, class_id, total_xp::int AS total_xp, created_at FROM characters
        WHERE account_id = $1 AND deleted_at IS NULL ORDER BY created_at`,
       [request.accountId],
     );
@@ -54,11 +56,25 @@ export function registerCharacterRoutes(app: FastifyInstance, ctx: AppContext): 
   app.get("/api/characters/:id", { preHandler: requireAuth }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const res = await pool.query(
-      `SELECT id, name, class_id, created_at FROM characters
+      `SELECT id, name, class_id, total_xp::int AS total_xp, created_at FROM characters
        WHERE id = $1 AND account_id = $2 AND deleted_at IS NULL`,
       [id, request.accountId],
     );
     if (!res.rowCount) return reply.code(404).send({ error: "not_found" });
     return { character: res.rows[0] };
+  });
+
+  // Soft delete: sets deleted_at so every other query (which filters
+  // deleted_at IS NULL) stops seeing it, freeing a character slot. Runs/wallet
+  // history stay intact. Only the owner can delete their own character.
+  app.delete("/api/characters/:id", { preHandler: requireAuth }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const res = await pool.query(
+      `UPDATE characters SET deleted_at = now()
+       WHERE id = $1 AND account_id = $2 AND deleted_at IS NULL`,
+      [id, request.accountId],
+    );
+    if (!res.rowCount) return reply.code(404).send({ error: "not_found" });
+    return reply.code(204).send();
   });
 }

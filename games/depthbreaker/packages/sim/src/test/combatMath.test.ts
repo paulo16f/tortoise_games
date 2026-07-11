@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   CRIT_MULTIPLIER,
+  GCD_SECONDS,
   MAX_DAMAGE_REDUCTION,
+  beginGlobalCooldown,
   damageReduction,
+  isOnGlobalCooldown,
   resolveDamage,
   roundHalfUp,
 } from "../combatMath.js";
@@ -55,5 +58,18 @@ describe("Damage model (GAME_MATH_SPEC §3)", () => {
   it("clamps hostile inputs: negative armor as 0, level floor of 1", () => {
     expect(damageReduction(-500, 5)).toBe(0);
     expect(damageReduction(100, 0)).toBe(damageReduction(100, 1));
+  });
+});
+
+describe("Global cooldown gate", () => {
+  it("is ready at exactly 0 and blocked while any time remains", () => {
+    expect(isOnGlobalCooldown(0)).toBe(false);
+    expect(isOnGlobalCooldown(-0.1)).toBe(false);
+    expect(isOnGlobalCooldown(0.001)).toBe(true);
+    expect(isOnGlobalCooldown(GCD_SECONDS)).toBe(true);
+  });
+
+  it("charges the cooldown to GCD_SECONDS on cast", () => {
+    expect(beginGlobalCooldown()).toBe(GCD_SECONDS);
   });
 });

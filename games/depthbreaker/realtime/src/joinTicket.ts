@@ -12,6 +12,8 @@ export interface JoinTicketClaims {
   characterId: string;
   runId: string;
   seed: number;
+  /** Character's persistent total XP at run start; drives the base level. */
+  totalXp: number;
 }
 
 export async function verifyJoinTicket(
@@ -35,6 +37,8 @@ export async function verifyJoinTicket(
       characterId: payload.cid,
       runId: payload.rid,
       seed: payload.seed,
+      // Tolerate tickets without txp (pre-progression signers) as level 1.
+      totalXp: typeof payload.txp === "number" ? payload.txp : 0,
     };
   } catch {
     return null;

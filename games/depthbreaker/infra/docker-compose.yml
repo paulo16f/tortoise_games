@@ -27,12 +27,12 @@ services:
     command: sh -c "npm ci && npm run start"
     environment:
       NODE_ENV: development
-      PORT: "3000"
+      PORT: "3100"
       DATABASE_URL: postgres://depthbreaker:depthbreaker@postgres:5432/depthbreaker
       SESSION_SECRET: ${SESSION_SECRET:-dev-session-secret-change-me}
       ZONE_SHARED_SECRET: ${ZONE_SHARED_SECRET:-dev-zone-shared-secret-change-me}
-      ZONE_WS_URL: ${ZONE_WS_URL:-wss://localhost/game}
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://localhost}
+      ZONE_WS_URL: ${ZONE_WS_URL:-ws://localhost:2667}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5184}
     volumes:
       # Mount the repo root: backend imports ../../../../shared/lib/config.ts.
       - ../../..:/repo
@@ -40,7 +40,7 @@ services:
       postgres:
         condition: service_healthy
     expose:
-      - "3000"
+      - "3100"
 
   nginx:
     image: nginx:alpine
@@ -63,7 +63,7 @@ services:
   #  environment:
   #    ZONE_PORT: "7770"
   #    ZONE_ID: hub
-  #    BACKEND_URL: http://backend:3000
+  #    BACKEND_URL: http://backend:3100
   #    ZONE_SHARED_SECRET: ${ZONE_SHARED_SECRET:-dev-zone-shared-secret-change-me}
   #  expose:
   #    - "7770"

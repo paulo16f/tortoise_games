@@ -3,6 +3,18 @@
 
 import type { CombatActionState } from "./messages.js";
 
+export interface ItemSlotView {
+  itemId: string;
+  count: number;
+  rarity: string;
+}
+
+export interface SkillSlotView {
+  skillId: string;
+  cooldownRemaining: number;
+  unlocked: boolean;
+}
+
 export interface PlayerView {
   id: string;
   accountId: string;
@@ -17,6 +29,7 @@ export interface PlayerView {
   maxHp: number;
   level: number;
   runXp: number;
+  gold: number;
   targetId: string;
   autoAttack: boolean;
   weaponId: string;
@@ -27,10 +40,15 @@ export interface PlayerView {
   actionTargetId: string;
   actionId: string;
   potionCooldown: number;
-  skillQCooldown: number;
-  skillECooldown: number;
+  gcdRemaining: number;
+  swingCooldown: number;
+  swingInterval: number;
   shieldSeconds: number;
   frostSeconds: number;
+  /** Fixed-length bag; ArraySchema at runtime, read-only array-like here. */
+  inventory: ReadonlyArray<ItemSlotView>;
+  /** Fixed 10-slot hotbar; ArraySchema at runtime, read-only array-like here. */
+  hotbar: ReadonlyArray<SkillSlotView>;
 }
 
 export interface EnemyView {
@@ -58,4 +76,12 @@ export interface BossPortalView {
   x: number;
   z: number;
   countdown: number;
+}
+
+export interface ResourceNodeView {
+  id: string;
+  kind: string;
+  x: number;
+  z: number;
+  depleted: boolean;
 }

@@ -294,7 +294,6 @@
         "idle": "idle",
         "walk": "walk",
         "run": "run",
-        "sprint": "sprint",
         "attack": "attack",
         "hit": "hit",
         "death": "death"
@@ -304,13 +303,12 @@
       "walkRuntimeApproved": true,
       "runtimeApproved": true,
       "fallback": "/models/kaykit/characters/kaykit_knight.glb",
-      "naturalHeight": 0.00351,
-      "restMinY": -0.00152,
-      "assetVersion": "522b7862f512",
+      "naturalHeight": 1.79117,
+      "restMinY": -0.00312,
+      "assetVersion": "744e94eb4955",
       "strideNorm": {
         "walk": 0.83745,
-        "run": 1.01034,
-        "sprint": 2.42626
+        "run": 1.01034
       }
     },
     {
@@ -330,7 +328,6 @@
         "idle": "idle",
         "walk": "walk",
         "run": "run",
-        "sprint": "sprint",
         "attack": "attack",
         "hit": "hit",
         "death": "death"
@@ -340,13 +337,12 @@
       "walkRuntimeApproved": true,
       "runtimeApproved": true,
       "fallback": "/models/kaykit/characters/kaykit_knight.glb",
-      "naturalHeight": 0.00348,
-      "restMinY": -0.00172,
-      "assetVersion": "96ebe921f364",
+      "naturalHeight": 1.78695,
+      "restMinY": 0.0011,
+      "assetVersion": "5ff0c1d9f486",
       "strideNorm": {
         "walk": 0.96747,
-        "run": 1.16719,
-        "sprint": 2.80292
+        "run": 1.16719
       }
     },
     {
@@ -366,7 +362,6 @@
         "idle": "idle",
         "walk": "walk",
         "run": "run",
-        "sprint": "sprint",
         "attack": "attack",
         "hit": "hit",
         "death": "death"
@@ -376,13 +371,12 @@
       "walkRuntimeApproved": true,
       "runtimeApproved": true,
       "fallback": "/models/kaykit/characters/kaykit_mage.glb",
-      "naturalHeight": 0.00344,
-      "restMinY": -0.00164,
-      "assetVersion": "8684d4235eef",
+      "naturalHeight": 1.79399,
+      "restMinY": -0.00547,
+      "assetVersion": "41e12a1f7522",
       "strideNorm": {
         "walk": 0.96108,
-        "run": 1.15949,
-        "sprint": 2.78443
+        "run": 1.15949
       }
     },
     {
@@ -402,7 +396,6 @@
         "idle": "idle",
         "walk": "walk",
         "run": "run",
-        "sprint": "sprint",
         "attack": "attack",
         "hit": "hit",
         "death": "death"
@@ -412,13 +405,12 @@
       "walkRuntimeApproved": true,
       "runtimeApproved": true,
       "fallback": "/models/kaykit/characters/kaykit_skeleton_warrior.glb",
-      "naturalHeight": 0.00382,
-      "restMinY": -0.00207,
-      "assetVersion": "284476a69445",
+      "naturalHeight": 1.83556,
+      "restMinY": -0.00033,
+      "assetVersion": "8a6550636606",
       "strideNorm": {
         "walk": 0.96554,
-        "run": 1.16487,
-        "sprint": 2.79735
+        "run": 1.16487
       }
     },
     {
@@ -438,7 +430,6 @@
         "idle": "idle",
         "walk": "walk",
         "run": "run",
-        "sprint": "sprint",
         "attack": "attack",
         "hit": "hit",
         "death": "death"
@@ -448,13 +439,12 @@
       "walkRuntimeApproved": true,
       "runtimeApproved": true,
       "fallback": "/models/kaykit/characters/kaykit_skeleton_warrior.glb",
-      "naturalHeight": 0.00413,
-      "restMinY": -0.00211,
-      "assetVersion": "0f90650b73e3",
+      "naturalHeight": 1.62796,
+      "restMinY": -0.00797,
+      "assetVersion": "9af9ca63fee0",
       "strideNorm": {
         "walk": 0.95481,
-        "run": 1.15192,
-        "sprint": 2.76626
+        "run": 1.15192
       }
     },
     {
@@ -474,7 +464,6 @@
         "idle": "idle",
         "walk": "walk",
         "run": "run",
-        "sprint": "sprint",
         "attack": "attack",
         "hit": "hit",
         "death": "death"
@@ -484,13 +473,12 @@
       "walkRuntimeApproved": true,
       "runtimeApproved": true,
       "fallback": "/models/kaykit/characters/kaykit_skeleton_minion.glb",
-      "naturalHeight": 0.00324,
-      "restMinY": -0.0015,
-      "assetVersion": "226f12eca5e3",
+      "naturalHeight": 1.82552,
+      "restMinY": -0.00033,
+      "assetVersion": "e2eaa9ebec29",
       "strideNorm": {
         "walk": 0.9655,
-        "run": 1.16482,
-        "sprint": 2.79723
+        "run": 1.16482
       }
     }
   ]

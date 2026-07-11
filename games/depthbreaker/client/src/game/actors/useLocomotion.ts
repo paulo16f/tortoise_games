@@ -5,6 +5,8 @@ export interface LocomotionSample {
   speed: number;
   /** True while latched as moving (survives brief per-frame speed dips). */
   moving: boolean;
+  /** True when render-space movement is mostly opposite the current facing. */
+  backwards: boolean;
 }
 
 // Ported from world-of-claudecraft's src/render/locomotion.ts. The core idea:
@@ -26,12 +28,15 @@ export function useLocomotion() {
   const prev = useRef<{ x: number; z: number } | null>(null);
   const smoothSpeed = useRef(0);
   const moveHold = useRef(0);
+  const movingBackwards = useRef(false);
 
-  const update = (x: number, z: number, dt: number): LocomotionSample => {
+  const update = (x: number, z: number, dt: number, facing?: number): LocomotionSample => {
     let speed = 0;
+    let dx = 0;
+    let dz = 0;
     if (prev.current) {
-      const dx = x - prev.current.x;
-      const dz = z - prev.current.z;
+      dx = x - prev.current.x;
+      dz = z - prev.current.z;
       speed = Math.hypot(dx, dz) / Math.max(dt, 1e-4);
     }
     prev.current = { x, z };
@@ -47,7 +52,14 @@ export function useLocomotion() {
       smoothSpeed.current += (speed - smoothSpeed.current) * Math.min(1, dt * SPEED_SMOOTH_RATE);
     }
 
-    return { speed: smoothSpeed.current, moving };
+    const dist = Math.hypot(dx, dz);
+    if (facing !== undefined && speed > MOVE_ENTER_SPEED && dist > 1e-6) {
+      movingBackwards.current = (dx * Math.sin(facing) + dz * Math.cos(facing)) / dist < -0.3;
+    } else if (!moving) {
+      movingBackwards.current = false;
+    }
+
+    return { speed: smoothSpeed.current, moving, backwards: moving && movingBackwards.current };
   };
 
   return { update };

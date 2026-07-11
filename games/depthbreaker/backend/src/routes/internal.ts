@@ -76,6 +76,14 @@ export function registerInternalRoutes(app: FastifyInstance, ctx: AppContext): v
           ],
         );
 
+        // Persistent progression: run XP accumulates on the character forever
+        // (level derives from total_xp via levelForTotalXp). Same idempotent
+        // transaction as the wallet credit — a run finishes exactly once.
+        await client.query(
+          "UPDATE characters SET total_xp = total_xp + $2 WHERE id = $1",
+          [run.character_id, body.xpEarned],
+        );
+
         const walletRes = await client.query<{ currency: string }>(
           `UPDATE meta_wallets SET currency = currency + $2, updated_at = now()
            WHERE account_id = (SELECT account_id FROM characters WHERE id = $1)
@@ -119,6 +127,76 @@ export function registerInternalRoutes(app: FastifyInstance, ctx: AppContext): v
       );
       if (!res.rowCount) return reply.code(404).send({ error: "no_active_run" });
       return reply.send({ ok: true });
+    },
+  );
+
+  // --- Wallet (market transactions from the zone server) ---
+  // The zone server is the only caller (shared secret). Amounts are derived
+  // from server-side item defs, never from the client. Debits are conditional
+  // (never below zero); credits are capped per call to bound the blast radius
+  // of a leaked secret, mirroring the run-finish plausibility caps.
+
+  const walletAmountSchema = {
+    body: {
+      type: "object",
+      required: ["amount"],
+      properties: {
+        amount: { type: "integer", minimum: 1, maximum: 5000 },
+        reason: { type: "string", maxLength: 64 },
+      },
+    },
+  };
+  const MAX_CREDIT_PER_CALL = 2000;
+
+  app.get("/internal/wallet/:accountId", { preHandler: requireZoneSecret }, async (request, reply) => {
+    const { accountId } = request.params as { accountId: string };
+    const res = await pool.query<{ currency: string }>(
+      "SELECT currency FROM meta_wallets WHERE account_id = $1",
+      [accountId],
+    );
+    if (!res.rowCount) return reply.code(404).send({ error: "wallet_not_found" });
+    return reply.send({ balance: Number(res.rows[0]!.currency) });
+  });
+
+  app.post(
+    "/internal/wallet/:accountId/debit",
+    { preHandler: requireZoneSecret, schema: walletAmountSchema },
+    async (request, reply) => {
+      const { accountId } = request.params as { accountId: string };
+      const { amount } = request.body as { amount: number };
+      // Conditional debit: the WHERE clause is the balance check, so two
+      // concurrent debits can never drive the wallet negative.
+      const res = await pool.query<{ currency: string }>(
+        `UPDATE meta_wallets SET currency = currency - $2, updated_at = now()
+         WHERE account_id = $1 AND currency >= $2 RETURNING currency`,
+        [accountId, amount],
+      );
+      if (!res.rowCount) {
+        const exists = await pool.query("SELECT 1 FROM meta_wallets WHERE account_id = $1", [accountId]);
+        if (!exists.rowCount) return reply.code(404).send({ error: "wallet_not_found" });
+        return reply.code(402).send({ error: "insufficient_currency" });
+      }
+      return reply.send({ balance: Number(res.rows[0]!.currency) });
+    },
+  );
+
+  app.post(
+    "/internal/wallet/:accountId/credit",
+    { preHandler: requireZoneSecret, schema: walletAmountSchema },
+    async (request, reply) => {
+      const { accountId } = request.params as { accountId: string };
+      const { amount } = request.body as { amount: number };
+      if (amount > MAX_CREDIT_PER_CALL) {
+        request.log.warn({ accountId, amount }, "implausible wallet credit rejected");
+        return reply.code(422).send({ error: "implausible_credit" });
+      }
+      const res = await pool.query<{ currency: string }>(
+        `UPDATE meta_wallets SET currency = currency + $2, updated_at = now()
+         WHERE account_id = $1 RETURNING currency`,
+        [accountId, amount],
+      );
+      if (!res.rowCount) return reply.code(404).send({ error: "wallet_not_found" });
+      return reply.send({ balance: Number(res.rows[0]!.currency) });
     },
   );
 }

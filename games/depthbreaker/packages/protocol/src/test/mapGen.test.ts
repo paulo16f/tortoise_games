@@ -79,6 +79,31 @@ describe("buildDungeon", () => {
     }
   });
 
+  it("places resource nodes on walkable ground inside combat rooms, deterministically", () => {
+    for (const seed of SEEDS) {
+      const map = buildDungeon(seed, 2);
+      expect(map.resourceNodes.length).toBeGreaterThan(0);
+      for (const node of map.resourceNodes) {
+        expect(["iron_vein", "crystal_vein"]).toContain(node.kind);
+        expect(isDungeonWalkable(node.x, node.z, 0.45, map)).toBe(true);
+        // Nodes never spawn in the start (market) room.
+        expect(isPointInRect(node.x, node.z, map.rooms[0]!.rect)).toBe(false);
+      }
+      const ids = map.resourceNodes.map((n) => n.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(buildDungeon(seed, 2).resourceNodes).toEqual(map.resourceNodes);
+    }
+  });
+
+  it("puts the market stall inside the start room, clear of the player spawn", () => {
+    for (const seed of SEEDS) {
+      const map = buildDungeon(seed, 2);
+      expect(isPointInRect(map.marketStall.x, map.marketStall.z, map.rooms[0]!.rect)).toBe(true);
+      const d = Math.hypot(map.marketStall.x - map.playerSpawn.x, map.marketStall.z - map.playerSpawn.z);
+      expect(d).toBeGreaterThan(2);
+    }
+  });
+
   it("projects off-map click points to the nearest walkable point", () => {
     const rect: Rect = { minX: -10, maxX: 10, minZ: -5, maxZ: 5 };
     const map = { ...buildDungeon(42, 1), collision: [rect], playerSpawn: { x: 0, z: 0 } };

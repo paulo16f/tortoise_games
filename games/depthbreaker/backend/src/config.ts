@@ -9,9 +9,12 @@ export { ProductionReadinessError };
 export const DEV_SESSION_SECRET = "dev-session-secret-change-me";
 export const DEV_ZONE_SHARED_SECRET = "dev-zone-shared-secret-change-me";
 
+export type LaunchPhase = "phase0" | "phase2";
+
 export interface AppConfig {
   nodeEnv: string;
   isProduction: boolean;
+  launchPhase: LaunchPhase;
   port: number;
   databaseUrl: string;
   sessionSecret: string;
@@ -28,22 +31,29 @@ export interface AppConfig {
 
 export function loadConfig(): AppConfig {
   const nodeEnv = env("NODE_ENV") || "development";
+  const launchPhase = parseLaunchPhase(env("DEPTHBREAKER_LAUNCH_PHASE") || "phase0");
   return {
     nodeEnv,
     isProduction: nodeEnv === "production",
-    port: envNumber(3000, "PORT"),
+    launchPhase,
+    port: envNumber(3100, "PORT"),
     databaseUrl:
       env("DATABASE_URL") || "postgres://depthbreaker:depthbreaker@localhost:5432/depthbreaker",
     sessionSecret: env("SESSION_SECRET") || DEV_SESSION_SECRET,
     zoneSharedSecret: env("ZONE_SHARED_SECRET") || DEV_ZONE_SHARED_SECRET,
     // Points at the Colyseus realtime server (the "zone server" in the web stack).
-    zoneWsUrl: env("ZONE_WS_URL") || "ws://localhost:2567",
+    zoneWsUrl: env("ZONE_WS_URL") || "ws://localhost:2667",
     // Default to the Vite client dev origin so credentialed fetches work locally.
-    corsOrigin: env("CORS_ORIGIN") || "http://localhost:5173",
+    corsOrigin: env("CORS_ORIGIN") || "http://localhost:5184",
     accessTokenTtlSeconds: envNumber(900, "ACCESS_TOKEN_TTL_SECONDS"),
     refreshTtlGuestSeconds: envNumber(30 * 24 * 3600, "REFRESH_TTL_GUEST_SECONDS"),
     refreshTtlEmailSeconds: envNumber(7 * 24 * 3600, "REFRESH_TTL_EMAIL_SECONDS"),
     joinTicketTtlSeconds: envNumber(60, "JOIN_TICKET_TTL_SECONDS"),
     refreshCookieName: "db_refresh",
   };
+}
+
+function parseLaunchPhase(value: string): LaunchPhase {
+  if (value === "phase2") return "phase2";
+  return "phase0";
 }

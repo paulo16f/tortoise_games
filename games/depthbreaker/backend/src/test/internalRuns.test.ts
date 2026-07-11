@@ -55,6 +55,7 @@ describe.skipIf(!hasTestDb)("Runs + internal reporting (requires TEST_DATABASE_U
       characterId,
       runId: run.runId,
       seed: run.seed,
+      totalXp: 0, // fresh character has no persistent XP yet
     });
   });
 
@@ -116,6 +117,13 @@ describe.skipIf(!hasTestDb)("Runs + internal reporting (requires TEST_DATABASE_U
     expect(ok.statusCode).toBe(200);
     expect(ok.json()).toMatchObject({ credited: 150, balance: 150 });
 
+    // Persistent progression: the finish credited the character's total_xp...
+    const xpRow = await t.pool.query<{ total_xp: string }>(
+      "SELECT total_xp FROM characters WHERE id = $1",
+      [characterId],
+    );
+    expect(Number(xpRow.rows[0]!.total_xp)).toBe(4000);
+
     const again = await finish(run.runId, t.config.zoneSharedSecret, {
       outcome: "dead",
       depthReached: 2,
@@ -123,6 +131,24 @@ describe.skipIf(!hasTestDb)("Runs + internal reporting (requires TEST_DATABASE_U
       currencyEarned: 150,
     });
     expect(again.statusCode).toBe(409);
+
+    // ...exactly once — the 409 replay must not double-credit it.
+    const xpAfterReplay = await t.pool.query<{ total_xp: string }>(
+      "SELECT total_xp FROM characters WHERE id = $1",
+      [characterId],
+    );
+    expect(Number(xpAfterReplay.rows[0]!.total_xp)).toBe(4000);
+
+    // A new run's ticket now carries the accumulated XP as the base level.
+    const nextRun = await t.app.inject({
+      method: "POST",
+      url: "/api/runs/start",
+      headers: auth,
+      payload: { characterId },
+    });
+    expect(nextRun.statusCode).toBe(201);
+    const nextClaims = await verifyJoinTicket(nextRun.json().joinTicket, t.config.zoneSharedSecret);
+    expect(nextClaims?.totalXp).toBe(4000);
 
     const meta = await t.app.inject({ method: "GET", url: "/api/meta", headers: auth });
     expect(meta.json().currency).toBe(150);

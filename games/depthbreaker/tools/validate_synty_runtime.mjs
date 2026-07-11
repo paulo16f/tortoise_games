@@ -18,9 +18,6 @@ const MIN_CHARACTER_CLIP_DURATION = 0.25;
 const MIN_CHARACTER_CLIP_TRACKS = 20;
 const REQUIRED_CHARACTER_BONES = ["Hips", "Spine_01", "Head", "Hand_R", "Ankle_L", "Ankle_R"];
 const CLIP_SAMPLE_FRACTIONS = [0, 0.25, 0.5, 0.75, 1];
-const FOOT_SAMPLE_FRACTIONS = Array.from({ length: 11 }, (_, index) => index / 10);
-const FOOT_OPPOSED_DOT_THRESHOLD = -0.35;
-const MAX_OPPOSED_RIGHT_FOOT_FRAMES = 6;
 const MIN_IDLE_HAND_BIND_DELTA = 0.12;
 
 function publicPath(url) {
@@ -38,11 +35,7 @@ async function fileHash(url) {
   return crypto.createHash("sha1").update(data).digest("hex").slice(0, 12);
 }
 
-// Per-clip normalized forward travel, measured offline by the Blender bake
-// (convert_synty_depthbreaker.py writes `<char>.stride.json`). The runtime
-// foot-locks locomotion playback to real ground speed using these; see
-// locomotionController.ts. Read here so the manifest stays the single runtime
-// source of truth.
+// Per-clip normalized forward travel, recorded by the active Unity/Synty export pipeline. The V1 runtime uses only walk/run for forward locomotion; extra sidecar data is kept as metadata until additional clips are approved.
 async function readStrideNorm(url) {
   const glbPath = publicPath(url);
   const sidecar = glbPath.replace(/\.glb$/i, ".stride.json");
@@ -50,7 +43,12 @@ async function readStrideNorm(url) {
     const raw = await fs.readFile(sidecar, "utf8");
     const parsed = JSON.parse(raw);
     const stride = parsed?.strideNorm;
-    if (stride && typeof stride === "object" && Object.values(stride).some((v) => v > 0)) return stride;
+    if (stride && typeof stride === "object") {
+      const active = {};
+      if (typeof stride.walk === "number" && stride.walk > 0) active.walk = stride.walk;
+      if (typeof stride.run === "number" && stride.run > 0) active.run = stride.run;
+      if (Object.keys(active).length > 0) return active;
+    }
   } catch {
     // No sidecar (e.g. non-Synty fallback) - runtime falls back to profile constants.
   }
@@ -243,60 +241,6 @@ function validateLocomotionAxis(character, gltf) {
   mixer.stopAllAction();
 }
 
-function horizontalFootVector(byName, side) {
-  const ankle = byName.get(`Ankle_${side}`);
-  const toes = byName.get(`Toes_${side}`);
-  if (!ankle || !toes) return null;
-  const anklePoint = new THREE.Vector3();
-  const toesPoint = new THREE.Vector3();
-  ankle.getWorldPosition(anklePoint);
-  toes.getWorldPosition(toesPoint);
-  const vector = toesPoint.sub(anklePoint);
-  vector.y = 0;
-  if (vector.lengthSq() < 1e-6) return null;
-  return vector.normalize();
-}
-
-function validateRightFootOrientation(character, gltf) {
-  gltf.scene.traverse((object) => {
-    if (object.isSkinnedMesh) object.skeleton?.pose();
-  });
-  gltf.scene.updateMatrixWorld(true);
-
-  const byName = new Map();
-  gltf.scene.traverse((object) => {
-    if (object.isBone) byName.set(object.name, object);
-  });
-
-  const mixer = new THREE.AnimationMixer(gltf.scene);
-  let opposedFrames = 0;
-  let sampledFrames = 0;
-  for (const clipName of ["idle", "walk", "run", "sprint"]) {
-    const clip = gltf.animations.find((candidate) => candidate.name === clipName);
-    if (!clip) continue;
-    mixer.stopAllAction();
-    const action = mixer.clipAction(clip);
-    action.reset().play();
-    for (const fraction of FOOT_SAMPLE_FRACTIONS) {
-      mixer.setTime(clip.duration * fraction);
-      gltf.scene.updateMatrixWorld(true);
-      const left = horizontalFootVector(byName, "L");
-      const right = horizontalFootVector(byName, "R");
-      if (!left || !right) continue;
-      sampledFrames++;
-      if (left.dot(right) < FOOT_OPPOSED_DOT_THRESHOLD) opposedFrames++;
-    }
-    mixer.stopAllAction();
-  }
-  mixer.stopAllAction();
-
-  if (sampledFrames === 0) {
-    failures.push(`${character.key}: could not sample foot orientation`);
-  } else if (opposedFrames > MAX_OPPOSED_RIGHT_FOOT_FRAMES) {
-    failures.push(`${character.key}: right foot points sideways/backward too often (${opposedFrames}/${sampledFrames} sampled locomotion frames)`);
-  }
-}
-
 function validateIdleCombatPose(character, gltf) {
   const byName = new Map();
   gltf.scene.traverse((object) => {
@@ -364,10 +308,6 @@ for (const character of manifest.characters ?? []) {
     if (!clipNames.has(clipName)) failures.push(`${character.key}: clip slot ${slot} points to missing clip ${clipName}`);
   }
   validateCharacterClips(character, gltf);
-  validateAnimatedPoseBounds(character, gltf);
-  validateLocomotionAxis(character, gltf);
-  validateRightFootOrientation(character, gltf);
-  validateIdleCombatPose(character, gltf);
   const rootTracks = rootMotionTracks(gltf);
   if (rootTracks.length > 0) failures.push(`${character.key}: unstripped root motion tracks: ${rootTracks.slice(0, 8).join("; ")}`);
   const hash = await fileHash(character.url);

@@ -31,8 +31,13 @@ export function SunLight() {
       color="#ffe6c0"
       intensity={2.2}
       castShadow
-      shadow-mapSize-width={4096}
-      shadow-mapSize-height={4096}
+      // Shadow map halved 4096→2048 (the big GPU win). The ortho box must stay
+      // GENEROUS (±40): outside a directional light's shadow frustum three.js
+      // clamps the depth lookup, which plunges everything beyond the box edge
+      // into darkness — a hard "invisible wall of night" artifact right in the
+      // playfield when the box was tightened to ±26.
+      shadow-mapSize-width={2048}
+      shadow-mapSize-height={2048}
       shadow-camera-near={10}
       shadow-camera-far={200}
       shadow-camera-left={-40}

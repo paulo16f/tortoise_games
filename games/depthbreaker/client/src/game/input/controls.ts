@@ -44,6 +44,13 @@ export function isMoveKey(code: string): boolean {
   return MOVE_KEYS.has(code);
 }
 
+export function hasMoveIntent(state: ControlState): boolean {
+  for (const code of MOVE_KEYS) {
+    if (state.keys.has(code)) return true;
+  }
+  return state.clickDestination !== undefined;
+}
+
 export function computeMove(state: ControlState): { moveX: number; moveZ: number } {
   const k = state.keys;
   let forward = 0;
