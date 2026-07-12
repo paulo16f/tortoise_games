@@ -4,6 +4,7 @@
 // and range-checks the stall, so this panel can never set a price. Same
 // external-store pattern as InventoryPanel.
 
+import { framedPanel, frameTitle } from "./frames";
 import { ItemGlyph } from "./ItemGlyph";
 import { useState, useSyncExternalStore } from "react";
 import { itemDef, SKIN_CATALOG } from "@depthbreaker/sim";
@@ -72,11 +73,8 @@ export function MarketPanel() {
         left: position.x,
         top: position.y,
         width: 300,
-        background: "rgba(11,13,18,0.88)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: 10,
+        ...framedPanel,
         padding: 12,
-        backdropFilter: "blur(4px)",
         color: "#e6e9ef",
         fontFamily: "system-ui, sans-serif",
         userSelect: "none",
@@ -87,7 +85,7 @@ export function MarketPanel() {
         {...dragHandlers}
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}
       >
-        <b>Market</b>
+        <span style={frameTitle}>Market</span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <GoldChip amount={gold} />
           <PanelClose onClose={closeMarket} />

@@ -2,6 +2,7 @@
 // local player and issues equip/use commands. The bag is a fixed grid; empty
 // slots have itemId "". Weapons equip on click; potions/food are consumed.
 
+import { framedPanel, frameTitle } from "./frames";
 import { ItemGlyph } from "./ItemGlyph";
 import { useSyncExternalStore } from "react";
 import { itemDef } from "@depthbreaker/sim";
@@ -111,11 +112,8 @@ export function InventoryPanel() {
         position: "absolute",
         left: position.x,
         top: position.y,
-        background: "rgba(11,13,18,0.82)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: 10,
+        ...framedPanel,
         padding: 12,
-        backdropFilter: "blur(4px)",
         color: "#e6e9ef",
         fontFamily: "system-ui, sans-serif",
         userSelect: "none",
@@ -126,7 +124,7 @@ export function InventoryPanel() {
         {...dragHandlers}
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}
       >
-        <b>Bag</b>
+        <span style={frameTitle}>Bag</span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ opacity: 0.6, fontSize: 12 }}>B / Esc</span>
           <PanelClose onClose={closeInventory} />

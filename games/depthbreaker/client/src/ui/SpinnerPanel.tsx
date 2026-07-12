@@ -4,6 +4,7 @@
 // last prize. The wheel lands on a segment matching the server's result — since
 // several segments can share a prize, it picks any matching one (cosmetic only).
 
+import { framedPanel, frameTitle } from "./frames";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { SPINNER_PRIZES, SPINNER_SEGMENTS } from "@depthbreaker/sim";
 import { useZoneState } from "../net/useZone";
@@ -116,11 +117,8 @@ export function SpinnerPanel() {
         left: position.x,
         top: position.y,
         width: 260,
-        background: "rgba(11,13,18,0.9)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: 10,
+        ...framedPanel,
         padding: 12,
-        backdropFilter: "blur(4px)",
         color: "#e6e9ef",
         fontFamily: "system-ui, sans-serif",
         userSelect: "none",
@@ -128,7 +126,7 @@ export function SpinnerPanel() {
       }}
     >
       <div {...dragHandlers} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, ...dragHandlers.style }}>
-        <b>Fortune Wheel</b>
+        <span style={frameTitle}>Fortune Wheel</span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ opacity: 0.6, fontSize: 12 }}>free daily</span>
           <PanelClose onClose={closeSpinner} />

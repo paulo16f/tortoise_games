@@ -5,6 +5,7 @@
 // server range-checks the stall on every op. Same external-store + drag-hook +
 // tooltip pattern as the other panels.
 
+import { framedPanel, frameTitle } from "./frames";
 import { ItemGlyph } from "./ItemGlyph";
 import { useSyncExternalStore } from "react";
 import { itemDef } from "@depthbreaker/sim";
@@ -101,11 +102,8 @@ export function StashPanel() {
         position: "absolute",
         left: position.x,
         top: position.y,
-        background: "rgba(11,13,18,0.9)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: 10,
+        ...framedPanel,
         padding: 12,
-        backdropFilter: "blur(4px)",
         color: "#e6e9ef",
         fontFamily: "system-ui, sans-serif",
         userSelect: "none",
@@ -113,7 +111,7 @@ export function StashPanel() {
       }}
     >
       <div {...dragHandlers} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}>
-        <b>Bank</b>
+        <span style={frameTitle}>Bank</span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ opacity: 0.6, fontSize: 12 }}>click to move · persists</span>
           <PanelClose onClose={closeStash} />

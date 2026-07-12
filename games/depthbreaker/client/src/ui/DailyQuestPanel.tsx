@@ -3,6 +3,7 @@
 // progress arrive via the targeted ServerMessage.Dailies; claiming credits
 // gold server-side. Same external-store + drag-hook pattern as the others.
 
+import { framedPanel, frameTitle } from "./frames";
 import { useSyncExternalStore } from "react";
 import { useZoneState } from "../net/useZone";
 import { zoneStore } from "../net/room";
@@ -46,11 +47,8 @@ export function DailyQuestPanel() {
         left: position.x,
         top: position.y,
         width: 280,
-        background: "rgba(11,13,18,0.9)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: 10,
+        ...framedPanel,
         padding: 12,
-        backdropFilter: "blur(4px)",
         color: "#e6e9ef",
         fontFamily: "system-ui, sans-serif",
         userSelect: "none",
@@ -58,7 +56,7 @@ export function DailyQuestPanel() {
       }}
     >
       <div {...dragHandlers} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, ...dragHandlers.style }}>
-        <b>Daily Quests</b>
+        <span style={frameTitle}>Daily Quests</span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ opacity: 0.6, fontSize: 12 }}>resets daily</span>
           <PanelClose onClose={closeDailies} />

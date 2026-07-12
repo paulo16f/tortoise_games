@@ -4,6 +4,7 @@
 // is no learn action to click. Same external-store pattern as InventoryPanel
 // so the window keydown in useControls can toggle it without prop drilling.
 
+import { framedPanel, frameTitle } from "./frames";
 import { useSyncExternalStore } from "react";
 import { classKit, type ClassId, type SkillDef } from "@depthbreaker/protocol";
 import { useZoneState } from "../net/useZone";
@@ -108,11 +109,8 @@ export function SkillBookPanel() {
         width: 380,
         maxHeight: "70vh",
         overflowY: "auto",
-        background: "rgba(11,13,18,0.88)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: 10,
+        ...framedPanel,
         padding: 12,
-        backdropFilter: "blur(4px)",
         color: "#e6e9ef",
         fontFamily: "system-ui, sans-serif",
         userSelect: "none",
@@ -123,9 +121,9 @@ export function SkillBookPanel() {
         {...dragHandlers}
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}
       >
-        <b>
-          Skill Book <span style={{ opacity: 0.6, fontWeight: 400 }}>({snap.self.classId} — Lv {level})</span>
-        </b>
+        <span style={frameTitle}>
+          Skill Book <span style={{ opacity: 0.6, fontWeight: 400, fontSize: 13 }}>({snap.self.classId} — Lv {level})</span>
+        </span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ opacity: 0.6, fontSize: 12 }}>K / Esc</span>
           <PanelClose onClose={closeSkillBook} />

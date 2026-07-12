@@ -5,6 +5,7 @@
 // (escrow on list, gold+item swap on buy; see backend/routes/market.ts). After
 // any op we call sendRefreshPrivate so the in-game gold/stash re-sync.
 
+import { framedPanel, frameTitle } from "./frames";
 import { ItemGlyph } from "./ItemGlyph";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { itemDef } from "@depthbreaker/sim";
@@ -107,11 +108,8 @@ export function TradePanel() {
         left: position.x,
         top: position.y,
         width: 360,
-        background: "rgba(11,13,18,0.9)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: 10,
+        ...framedPanel,
         padding: 12,
-        backdropFilter: "blur(4px)",
         color: "#e6e9ef",
         fontFamily: "system-ui, sans-serif",
         userSelect: "none",
@@ -119,7 +117,7 @@ export function TradePanel() {
       }}
     >
       <div {...dragHandlers} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}>
-        <b>Trading Post</b>
+        <span style={frameTitle}>Trading Post</span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={() => void reload()} disabled={busy} title="Refresh listings" aria-label="Refresh listings" style={refreshBtn}>
             ⟳
