@@ -416,8 +416,13 @@ export class ZoneRoom extends Room<ZoneState> {
 
   override onJoin(client: Client, _options: unknown, auth: AuthData): void {
     // Lock in the run seed and build the map before anything reads a spawn
-    // point (ringSpawn below depends on the seeded playerSpawn).
-    if (auth.claims) this.state.seed = auth.claims.seed;
+    // point (ringSpawn below depends on the seeded playerSpawn). Only the
+    // FIRST joiner's seed counts: later joiners arrive with their own run
+    // seeds, and overwriting the shared state.seed here re-pointed every
+    // client at a map the server was not simulating (invisible walls,
+    // unreachable boss) — the dungeon is built exactly once, so the synced
+    // seed must be frozen with it.
+    if (auth.claims && !this.initialSpawnsDone) this.state.seed = auth.claims.seed;
     this.ensureSeeded();
 
     const profile = classProfile(auth.classId);
@@ -501,7 +506,9 @@ export class ZoneRoom extends Room<ZoneState> {
     const welcome: WelcomeMessage = {
       selfId: client.sessionId,
       runId: auth.claims?.runId ?? "",
-      seed: auth.claims?.seed ?? 0,
+      // The ROOM's frozen seed, not the joiner's own run seed — late joiners
+      // must render the map the server is actually simulating.
+      seed: this.state.seed,
     };
     client.send(ServerMessage.Welcome, welcome);
   }
