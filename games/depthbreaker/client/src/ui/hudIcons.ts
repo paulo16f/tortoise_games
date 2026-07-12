@@ -11,6 +11,9 @@ const ICON_SKILLS = [
   "basic_attack", "cleave", "whirlwind", "charge", "soul_reap", "execute", "taunt",
   "shield_wall", "bulwark", "fireball", "frost_nova", "corruption", "smite", "mend",
   "renew", "blessing",
+  // Kit-completion additions (rupture→Wounded, holy_nova→Up, sanctuary→DefenseUp,
+  // drain_life→Thirst, bone_spear→BrokenBones, bone_armor→FortifiedDefense).
+  "rupture", "holy_nova", "sanctuary", "drain_life", "bone_spear", "bone_armor",
 ];
 export const SKILL_ICONS: Record<string, string> = Object.fromEntries(
   ICON_SKILLS.map((id) => [id, `/ui/synty/icons/skill_${id}.png`]),

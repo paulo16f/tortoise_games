@@ -80,6 +80,15 @@ export const SKILL_VFX: Record<string, VfxSpec> = {
     impact: { count: 8, color: SHADOW, speed: 2.2, size: 0.13, life: 0.42 },
     ground: { kind: "pool", color: "#6b2fb3", radius: 1.5, at: "target", life: 1.0 },
   },
+  drain_life: {
+    impact: { count: 9, color: "#7cf5b1", speed: 2.4, size: 0.13, life: 0.42, up: 1.2 },
+    cast: { color: SHADOW },
+  },
+  bone_spear: {
+    impact: { count: 13, color: "#e7e5e4", speed: 4.4, size: 0.15, life: 0.4, up: 1.6 },
+    projectile: { color: "#e7e5e4", core: "#ffffff", size: 0.18, trail: "#a8a29e" },
+  },
+  bone_armor: { ground: { kind: "shout", color: "#d6d3d1", radius: 1.8, at: "caster" }, cast: { color: "#d6d3d1" } },
 
   // --- Cleric ---
   smite: {
@@ -90,6 +99,12 @@ export const SKILL_VFX: Record<string, VfxSpec> = {
   mend: { ground: { kind: "nova", color: HEAL, radius: 1.5, at: "target" }, cast: { color: HEAL } },
   renew: { ground: { kind: "nova", color: HEAL, radius: 1.5, at: "target" }, cast: { color: HEAL } },
   blessing: { ground: { kind: "shout", color: "#fde68a", radius: 1.8, at: "caster" }, cast: { color: "#fde68a" } },
+  holy_nova: {
+    impact: { count: 10, color: HOLY_SOFT, speed: 3.4, size: 0.14, life: 0.38 },
+    ground: { kind: "nova", color: HOLY, radius: 3.5, at: "caster" },
+    cast: { color: HOLY },
+  },
+  sanctuary: { ground: { kind: "ring", color: HOLY, radius: 2.0, at: "caster", life: 0.6 }, cast: { color: HOLY } },
 
   // --- Knight ---
   cleave: {
@@ -108,6 +123,10 @@ export const SKILL_VFX: Record<string, VfxSpec> = {
   // --- Reaper ---
   soul_reap: {
     impact: { count: 11, color: BLOOD, speed: 3.6, size: 0.15, life: 0.44 },
+  },
+  rupture: {
+    impact: { count: 10, color: BLOOD, speed: 3.2, size: 0.14, life: 0.4 },
+    ground: { kind: "pool", color: BLOOD, radius: 1.3, at: "target", life: 0.9 },
   },
   charge: { impact: { count: 8, color: "#fbbf24", speed: 4.0, size: 0.14, life: 0.34 } },
 

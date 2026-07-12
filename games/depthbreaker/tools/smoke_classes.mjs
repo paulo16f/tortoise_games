@@ -1,11 +1,13 @@
 // Headless verification of the distinct 4-class kits against the running
-// realtime (:2667) + backend (:3100). Each class is leveled to 6 (via a
-// zone-secret run-finish XP grant, so every new skill is unlocked), joined, and
-// its signature mechanic is exercised end-to-end:
-//   Cleric      — solo-viable: Smite deals ranged damage; Blessing buffs damage
-//                 (ampSeconds); Mend self-heals after taking a hit.
-//   Necromancer — Corruption applies a DoT that keeps ticking with no further action.
-//   Reaper      — Soul Reap lifesteals (heals the reaper when it strikes).
+// realtime (:2667) + backend (:3100). Each class is leveled to 9 (via
+// zone-secret run-finish XP grants, so the FULL 7-skill kit is unlocked),
+// joined, and its signature mechanics are exercised end-to-end:
+//   Cleric      — solo-viable: Smite deals ranged damage; Holy Nova deals
+//                 point-blank AoE damage; Blessing buffs damage (ampSeconds);
+//                 Mend self-heals after taking a hit; Sanctuary unlocked.
+//   Necromancer — Corruption DoT keeps ticking; Bone Spear nukes at range;
+//                 Drain Life heals the necromancer from afar; Bone Armor unlocked.
+//   Reaper      — Soul Reap lifesteals; Rupture's bleed keeps ticking.
 //   Knight      — Taunt forces a nearby enemy to target the knight.
 import { Client } from "colyseus.js";
 
@@ -67,19 +69,22 @@ async function walkNear(room, self, enemyId, stopDist = 12, timeoutMs = 25000) {
   await wait(120);
 }
 
-// guest → character(classId) → grant ~8000 XP via a run-finish (level 6, all
-// new skills unlocked) → start a fresh run → join the zone.
+// guest → character(classId) → grant 30000 XP via three run-finishes (level 9,
+// the full 7-skill kit unlocked) → start a fresh run → join the zone.
 async function leveledClass(classId, name) {
   const guest = await api("/api/auth/guest", { method: "POST", body: {} });
   const token = guest.json.accessToken, accountId = guest.json.accountId;
   const made = await api("/api/characters", { method: "POST", token, body: { name, classId } });
   const characterId = made.json.character.id;
-  // Grant XP through the plausible run-finish path (depth 2 caps XP at 10000).
-  const runA = await api("/api/runs/start", { method: "POST", token, body: { characterId } });
-  await api(`/internal/runs/${runA.json.runId}/finish`, {
-    method: "POST", secret: ZONE_SECRET,
-    body: { outcome: "complete", depthReached: 2, xpEarned: 8000, currencyEarned: 0, loot: [] },
-  });
+  // Grant XP through the plausible run-finish path (depth 2 caps XP at 10000
+  // per run, so three runs reach the 29,323 total XP that level 9 needs).
+  for (let i = 0; i < 3; i++) {
+    const runA = await api("/api/runs/start", { method: "POST", token, body: { characterId } });
+    await api(`/internal/runs/${runA.json.runId}/finish`, {
+      method: "POST", secret: ZONE_SECRET,
+      body: { outcome: "complete", depthReached: 2, xpEarned: 10000, currencyEarned: 0, loot: [] },
+    });
+  }
   const runB = await api("/api/runs/start", { method: "POST", token, body: { characterId } });
   const client = new Client(REALTIME_URL);
   const room = await client.joinOrCreate("zone", { ticket: runB.json.joinTicket, name, classId });
@@ -113,12 +118,14 @@ async function takeAHit(room, self, enemyId, timeoutMs = 9000) {
 }
 
 async function testCleric() {
-  console.log("--- Cleric (solo-viable: damage + heals + buff) ---");
+  console.log("--- Cleric (solo-viable: damage + heals + buff + ward) ---");
   const { room, self } = await leveledClass("cleric", "Priestess");
-  check("cleric reached Lv6", self.level >= 6, `level=${self.level}`);
+  check("cleric reached Lv9 (full kit)", self.level >= 9, `level=${self.level}`);
   check("Smite (damage) is unlocked", slotUnlocked(self, "smite"));
   check("Renew (ally heal) is unlocked", slotUnlocked(self, "renew"));
   check("Blessing (damage buff) is unlocked", slotUnlocked(self, "blessing"));
+  check("Holy Nova (AoE damage) is unlocked", slotUnlocked(self, "holy_nova"));
+  check("Sanctuary (ward) is unlocked", slotUnlocked(self, "sanctuary"));
 
   // Blessing: pure self-buff, no combat needed — the most reliable buff proof.
   await cast(room, 5); // blessing = slot 5
@@ -136,6 +143,22 @@ async function testCleric() {
     await waitFor(() => !room.state.enemies.get(foe.id)?.alive || (room.state.enemies.get(foe.id)?.hp ?? hp0) < hp0, "smite lands", 6000).catch(() => {});
     const live = room.state.enemies.get(foe.id);
     check("Smite deals ranged damage", !live?.alive || live.hp < hp0, `hp ${hp0}->${live?.hp ?? "dead"}`);
+
+    // Holy Nova: walk into point-blank range and burst. The aggroed enemy is
+    // often already adjacent, so walkNear returns instantly — wait out smite's
+    // GCD first or the cast is dropped (input buffer only spans 0.6s).
+    const novaFoe = nearestAliveEnemy(room, self);
+    if (novaFoe) {
+      await walkNear(room, self, novaFoe.id, 2.5);
+      await waitFor(() => (self.gcdRemaining ?? 0) === 0, "gcd clear", 4000).catch(() => {});
+      const nHp0 = room.state.enemies.get(novaFoe.id)?.hp ?? novaFoe.hp;
+      await cast(room, 4); // holy_nova = slot 4
+      await waitFor(() => !room.state.enemies.get(novaFoe.id)?.alive || (room.state.enemies.get(novaFoe.id)?.hp ?? nHp0) < nHp0, "holy nova lands", 6000).catch(() => {});
+      const nLive = room.state.enemies.get(novaFoe.id);
+      check("Holy Nova damages a point-blank enemy", !nLive?.alive || nLive.hp < nHp0, `hp ${nHp0}->${nLive?.hp ?? "dead"}`);
+    } else {
+      check("Holy Nova test (skipped — no enemy reachable)", true);
+    }
 
     // Mend: get hit, then self-heal.
     const foe2 = nearestAliveEnemy(room, self) ?? foe;
@@ -155,10 +178,13 @@ async function testCleric() {
 }
 
 async function testNecromancer() {
-  console.log("--- Necromancer (Corruption damage-over-time) ---");
+  console.log("--- Necromancer (affliction caster: DoT + nuke + ranged drain) ---");
   const { room, self } = await leveledClass("necromancer", "Bonelord");
-  check("necromancer reached Lv6", self.level >= 6, `level=${self.level}`);
+  check("necromancer reached Lv9 (full kit)", self.level >= 9, `level=${self.level}`);
   check("Corruption (DoT) is unlocked", slotUnlocked(self, "corruption"));
+  check("Drain Life (ranged lifesteal) is unlocked", slotUnlocked(self, "drain_life"));
+  check("Bone Spear (nuke) is unlocked", slotUnlocked(self, "bone_spear"));
+  check("Bone Armor (ward) is unlocked", slotUnlocked(self, "bone_armor"));
 
   const foe = nearestAliveEnemy(room, self);
   if (foe) {
@@ -173,6 +199,37 @@ async function testNecromancer() {
     const hpLater = room.state.enemies.get(foe.id)?.hp ?? 0;
     const live = room.state.enemies.get(foe.id);
     check("Corruption keeps ticking with no further action", !live?.alive || hpLater < hpAfterCast, `hp ${hpAfterCast}->${live?.alive ? hpLater : "dead"}`);
+
+    // Bone Spear: heavy single-target projectile on whatever is still alive.
+    const spearFoe = room.state.enemies.get(foe.id)?.alive ? foe : nearestAliveEnemy(room, self);
+    if (spearFoe) {
+      await walkNear(room, self, spearFoe.id, 12);
+      room.send("setTarget", { targetId: spearFoe.id, autoAttack: false });
+      await wait(200);
+      const sHp0 = room.state.enemies.get(spearFoe.id)?.hp ?? spearFoe.hp;
+      await cast(room, 5); // bone_spear = slot 5
+      await waitFor(() => !room.state.enemies.get(spearFoe.id)?.alive || (room.state.enemies.get(spearFoe.id)?.hp ?? sHp0) < sHp0, "bone spear lands", 6000).catch(() => {});
+      const sLive = room.state.enemies.get(spearFoe.id);
+      check("Bone Spear nukes the target at range", !sLive?.alive || sLive.hp < sHp0, `hp ${sHp0}->${sLive?.hp ?? "dead"}`);
+    } else {
+      check("Bone Spear test (skipped — no enemy reachable)", true);
+    }
+
+    // Drain Life: take a hit so there's missing HP, then siphon from range.
+    const drainFoe = nearestAliveEnemy(room, self);
+    const damaged = drainFoe ? await takeAHit(room, self, drainFoe.id, 10000) : false;
+    const drainTarget = drainFoe && room.state.enemies.get(drainFoe.id)?.alive ? drainFoe : nearestAliveEnemy(room, self);
+    if (damaged && drainTarget) {
+      await walkNear(room, self, drainTarget.id, 10); // inside drain's 12u range, outside melee
+      room.send("setTarget", { targetId: drainTarget.id, autoAttack: false });
+      await wait(200);
+      const hpBefore = self.hp;
+      await cast(room, 4); // drain_life = slot 4
+      await waitFor(() => self.hp > hpBefore, "drain life heals", 4000).catch(() => {});
+      check("Drain Life heals the necromancer from afar", self.hp > hpBefore, `hp ${hpBefore}->${self.hp}`);
+    } else {
+      check("Drain Life (skipped — necromancer not damaged / no target)", true);
+    }
   } else {
     check("Corruption test (skipped — no enemy reachable)", true);
   }
@@ -180,10 +237,11 @@ async function testNecromancer() {
 }
 
 async function testReaper() {
-  console.log("--- Reaper (Soul Reap lifesteal) ---");
+  console.log("--- Reaper (Soul Reap lifesteal + Rupture bleed) ---");
   const { room, self } = await leveledClass("reaper", "Grimscythe");
-  check("reaper reached Lv6", self.level >= 6, `level=${self.level}`);
+  check("reaper reached Lv9 (full kit)", self.level >= 9, `level=${self.level}`);
   check("Soul Reap (lifesteal) is unlocked", slotUnlocked(self, "soul_reap"));
+  check("Rupture (bleed) is unlocked", slotUnlocked(self, "rupture"));
 
   const foe = nearestAliveEnemy(room, self, "normal");
   if (foe) {
@@ -198,6 +256,22 @@ async function testReaper() {
       await cast(room, 2); // soul_reap = slot 2
       await waitFor(() => self.hp > hpBefore, "soul reap heals", 4000).catch(() => {});
       check("Soul Reap heals the reaper on a strike (lifesteal)", self.hp > hpBefore, `hp ${hpBefore}->${self.hp}`);
+
+      // Rupture: melee bleed — strike, then verify the dot keeps ticking hands-off.
+      const bleedFoe = room.state.enemies.get(target.id)?.alive ? target : nearestAliveEnemy(room, self, "normal");
+      if (bleedFoe) {
+        await walkNear(room, self, bleedFoe.id, 2.4);
+        room.send("setTarget", { targetId: bleedFoe.id, autoAttack: false });
+        await wait(200);
+        await cast(room, 6); // rupture = slot 6
+        await wait(900); // strike + first bleed tick
+        const bHp0 = room.state.enemies.get(bleedFoe.id)?.hp ?? 0;
+        await wait(2600); // hands off: only the bleed can lower HP now
+        const bLive = room.state.enemies.get(bleedFoe.id);
+        check("Rupture's bleed keeps ticking with no further action", !bLive?.alive || bLive.hp < bHp0, `hp ${bHp0}->${bLive?.alive ? bLive.hp : "dead"}`);
+      } else {
+        check("Rupture test (skipped — no enemy reachable)", true);
+      }
     } else {
       check("Soul Reap lifesteal (skipped — reaper not damaged / no target)", true);
     }
@@ -210,7 +284,7 @@ async function testReaper() {
 async function testKnight() {
   console.log("--- Knight (Taunt threat control) ---");
   const { room, self } = await leveledClass("knight", "Bulwarken");
-  check("knight reached Lv6", self.level >= 6, `level=${self.level}`);
+  check("knight reached Lv9 (full kit)", self.level >= 9, `level=${self.level}`);
   check("Taunt is unlocked", slotUnlocked(self, "taunt"));
 
   const foe = nearestAliveEnemy(room, self);

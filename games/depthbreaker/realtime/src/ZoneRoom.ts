@@ -1465,10 +1465,14 @@ export class ZoneRoom extends Room<ZoneState> {
       target = this.enemies.find((e) => e.state.id === p.targetId && e.state.alive) ?? null;
       if (!target) return;
       // Melee strikes reject an out-of-reach target; ranged casts (projectile,
-      // curse) land at any range on the current target.
-      if (targeted.type === "dash_strike" || targeted.type === "execute" || targeted.type === "lifesteal_strike") {
-        const d = Math.hypot(target.state.x - p.x, target.state.z - p.z);
-        if (d > targeted.range + 0.5) return;
+      // curse) land at any range on the current target. Scan the WHOLE effect
+      // list, not just the first targeted effect — a composite like rupture
+      // (dot + melee strike) must still be gated by its melee component.
+      for (const e of def.effects) {
+        if (e.type === "dash_strike" || e.type === "execute" || e.type === "lifesteal_strike") {
+          const d = Math.hypot(target.state.x - p.x, target.state.z - p.z);
+          if (d > e.range + 0.5) return;
+        }
       }
     }
 
@@ -1810,7 +1814,12 @@ export class ZoneRoom extends Room<ZoneState> {
       dmg = Math.max(1, Math.round(dmg * (1 - rt.bulwarkValue)));
     }
     p.hp = Math.max(0, p.hp - dmg);
-    this.setAction(p, "hit", 0.3, enemy.state.id, actionId);
+    // Hit-react only when it won't cancel an in-flight swing/cast: overwriting
+    // a "skill"/"attack" action here made the pending impact fail its
+    // isCurrentAction check — the skill ate cooldown + GCD but never landed
+    // (guaranteed vs fast-hitting elites in melee). Death below still cancels.
+    const midAction = (p.actionState === "skill" || p.actionState === "attack") && this.elapsedSeconds < p.actionEndsAt;
+    if (!midAction) this.setAction(p, "hit", 0.3, enemy.state.id, actionId);
     this.emitCombat({ sourceId: enemy.state.id, targetId: p.id, amount: dmg, kind: "hit", actionId });
     if (p.hp <= 0) {
       p.alive = false;

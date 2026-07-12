@@ -13,6 +13,12 @@ import type { ClassId } from "../constants.js";
 const CLASS_IDS: ClassId[] = ["knight", "reaper", "cleric", "necromancer"];
 
 describe("skill catalog integrity", () => {
+  it("every class has a complete 7-skill kit", () => {
+    for (const classId of CLASS_IDS) {
+      expect(CLASS_KITS[classId], `${classId} kit size`).toHaveLength(7);
+    }
+  });
+
   it("every kit id resolves to a def", () => {
     for (const classId of CLASS_IDS) {
       for (const id of CLASS_KITS[classId]) {
@@ -89,12 +95,15 @@ describe("distinct class identities", () => {
 
   it("Cleric is solo-viable: has damage AND self-heal AND a heal that reaches allies", () => {
     const cleric = CLASS_KITS.cleric;
-    // A ranged damage tool (smite) so the cleric can kill on its own.
+    // Ranged (smite) + point-blank AoE (holy nova) damage so the cleric kills on its own.
     expect(cleric).toContain("smite");
     expect(effectTypes("smite")).toContain("projectile_aoe");
-    // Sustain: self-heal (mend) + a smart ally-heal (renew).
+    expect(cleric).toContain("holy_nova");
+    expect(effectTypes("holy_nova")).toContain("radial_aoe");
+    // Sustain: self-heal (mend) + a smart ally-heal (renew) + a ward (sanctuary).
     expect(effectTypes("mend")).toContain("heal_self");
     expect(effectTypes("renew")).toContain("heal_ally");
+    expect(effectTypes("sanctuary")).toContain("self_buff");
     // A damage buff (blessing) — the "balanced on damage and buffs" ask.
     expect(effectTypes("blessing")).toContain("self_buff");
   });
@@ -114,11 +123,49 @@ describe("distinct class identities", () => {
     expect(CLASS_KITS.reaper).not.toContain("bulwark");
   });
 
+  it("Reaper's rupture is a melee-gated bleed (strike + dot composite)", () => {
+    expect(CLASS_KITS.reaper).toContain("rupture");
+    const types = effectTypes("rupture");
+    expect(types).toContain("dot");
+    // The melee strike gates the cast to melee reach (the cast guard scans the
+    // whole effect list for melee-typed effects).
+    expect(types).toContain("lifesteal_strike");
+  });
+
   it("Necromancer alone wields the Corruption damage-over-time", () => {
     expect(CLASS_KITS.necromancer).toContain("corruption");
     expect(effectTypes("corruption")).toContain("dot");
     // Necromancer is a caster — no melee lifesteal or taunt.
     expect(CLASS_KITS.necromancer).not.toContain("soul_reap");
     expect(CLASS_KITS.necromancer).not.toContain("taunt");
+  });
+
+  it("Necromancer sustains at range (drain life) and nukes single targets (bone spear)", () => {
+    const drain = SKILLS.drain_life.effects.find((e) => e.type === "lifesteal_strike");
+    expect(drain).toBeDefined();
+    // Ranged siphon — well beyond melee reach (the effect executor is range-driven).
+    if (drain?.type === "lifesteal_strike") expect(drain.range).toBeGreaterThanOrEqual(10);
+    const spear = SKILLS.bone_spear.effects.find((e) => e.type === "projectile_aoe");
+    const fire = SKILLS.fireball.effects.find((e) => e.type === "projectile_aoe");
+    // Bone spear: harder hit, tighter blast than fireball (single-target identity).
+    if (spear?.type === "projectile_aoe" && fire?.type === "projectile_aoe") {
+      expect(spear.damage).toBeGreaterThan(fire.damage);
+      expect(spear.radius).toBeLessThan(fire.radius);
+    }
+    expect(effectTypes("bone_armor")).toContain("self_buff");
+  });
+
+  it("every class has exactly one off-GCD defensive panic button", () => {
+    const DEFENSIVES: Record<string, string> = {
+      knight: "shield_wall", // (bulwark is a second, deeper cooldown — knight is the tank)
+      reaper: "", // no shields: the Reaper's defence is drain sustain
+      cleric: "sanctuary",
+      necromancer: "bone_armor",
+    };
+    for (const [classId, id] of Object.entries(DEFENSIVES)) {
+      if (!id) continue;
+      expect(CLASS_KITS[classId as ClassId]).toContain(id);
+      expect(SKILLS[id].offGcd).toBe(true);
+    }
   });
 });

@@ -204,6 +204,25 @@ export const SKILLS: Record<string, SkillDef> = {
     label: "REAP",
     description: "Tear at your target, healing you for 70% of the damage dealt.",
   },
+  rupture: {
+    id: "rupture",
+    name: "Rupture",
+    slot: 6,
+    learnLevel: 8,
+    cooldown: 9,
+    // Composite bleed. The cast guard range-checks every melee effect in the
+    // list, so the strike gates the whole cast to melee reach. The strike is
+    // listed LAST so its action owns the swing (each targeted effect calls
+    // setAction; the strike's scheduled impact must stay the current action).
+    // The small drain keeps the Reaper's sustain identity while the bleed does
+    // the real work over time.
+    effects: [
+      { type: "dot", damage: 6, tick: 1, duration: 6 },
+      { type: "lifesteal_strike", range: 3, damage: 14, lifesteal: 0.25 },
+    ],
+    label: "RPTR",
+    description: "Tear a bleeding wound: strike for 14, then 6 damage every second for 6s.",
+  },
   // --- Cleric: holy magic — sustain (mend/renew), damage (smite), buff (blessing) ---
   mend: {
     id: "mend",
@@ -249,6 +268,31 @@ export const SKILLS: Record<string, SkillDef> = {
     description: "Empower yourself, dealing 35% more damage for 8s.",
     clip: "cast",
   },
+  holy_nova: {
+    id: "holy_nova",
+    name: "Holy Nova",
+    slot: 4,
+    learnLevel: 4,
+    cooldown: 9,
+    effects: [{ type: "radial_aoe", radius: 3.5, damage: 20 }],
+    label: "NOVA",
+    description: "Erupt with holy light, searing every enemy around you.",
+    clip: "cast",
+  },
+  sanctuary: {
+    id: "sanctuary",
+    name: "Sanctuary",
+    slot: 6,
+    learnLevel: 8,
+    cooldown: 18,
+    // Reactive defensive cooldown, same contract as shield_wall/bulwark: off the
+    // GCD so the panic button never eats a global lock.
+    offGcd: true,
+    effects: [{ type: "self_buff", kind: "damage_reduction", value: 0.35, duration: 5 }],
+    label: "SANC",
+    description: "A holy ward surrounds you, reducing damage taken by 35% for 5s.",
+    clip: "cast",
+  },
   // --- Necromancer: affliction — a single-target damage-over-time curse ---
   corruption: {
     id: "corruption",
@@ -261,24 +305,64 @@ export const SKILLS: Record<string, SkillDef> = {
     description: "Curse your target, draining 7 health every second for 8s.",
     clip: "cast",
   },
+  drain_life: {
+    id: "drain_life",
+    name: "Drain Life",
+    slot: 4,
+    learnLevel: 4,
+    cooldown: 6,
+    // lifesteal_strike is fully range-driven in the effect executor, so a long
+    // range turns the Reaper's melee drain into the Necromancer's ranged siphon.
+    effects: [{ type: "lifesteal_strike", range: 12, damage: 16, lifesteal: 0.6 }],
+    label: "DRAN",
+    description: "Siphon your target's life from afar, healing you for 60% of the damage.",
+    clip: "cast",
+  },
+  bone_spear: {
+    id: "bone_spear",
+    name: "Bone Spear",
+    slot: 5,
+    learnLevel: 7,
+    cooldown: 8,
+    // Tiny blast radius = a single-target nuke, distinct from fireball's AoE.
+    effects: [{ type: "projectile_aoe", radius: 1.2, damage: 30 }],
+    label: "BONE",
+    description: "Launch a spear of bone that impales your target for heavy damage.",
+    clip: "cast",
+  },
+  bone_armor: {
+    id: "bone_armor",
+    name: "Bone Armor",
+    slot: 6,
+    learnLevel: 9,
+    cooldown: 20,
+    // Reactive defensive cooldown, same contract as shield_wall/bulwark/sanctuary.
+    offGcd: true,
+    effects: [{ type: "self_buff", kind: "damage_reduction", value: 0.45, duration: 6 }],
+    label: "ARMR",
+    description: "Shards of bone whirl around you, reducing damage taken by 45% for 6s.",
+    clip: "cast",
+  },
 };
 
 /**
  * Ordered per-class kits (learn order). Kits are the authority on who knows what
  * — defs are shared, so classes can reuse the same skill in different kits.
- * Four Dark Fortress heroes, each with a distinct identity:
+ * Four Dark Fortress heroes, each a complete 7-skill kit with a distinct identity:
  *   Knight — defensive tank: shields, AoE, and a taunt to hold threat.
- *   Reaper — offensive melee: gap-close + lifesteal drain, no shields.
- *   Cleric — holy hybrid: ranged smite damage + self/ally heals + a damage buff,
- *            deliberately solo-viable (kills on its own) as well as a group healer.
- *   Necromancer — ranged caster: burst (fireball), affliction (corruption DoT),
- *            and an AoE chill (frost nova).
+ *   Reaper — offensive melee: gap-close + lifesteal drain + a bleed, no shields.
+ *   Cleric — holy hybrid: ranged smite + point-blank nova damage, self/ally heals,
+ *            a damage buff, and a ward — deliberately solo-viable (kills on its
+ *            own) as well as a group healer.
+ *   Necromancer — ranged affliction caster: burst (fireball/bone spear), curse
+ *            (corruption DoT), chill (frost nova), ranged drain sustain
+ *            (drain life), and a bone ward.
  */
 export const CLASS_KITS: Record<ClassId, readonly string[]> = {
   knight: ["basic_attack", "cleave", "shield_wall", "whirlwind", "taunt", "execute", "bulwark"],
-  reaper: ["basic_attack", "cleave", "soul_reap", "whirlwind", "charge", "execute"],
-  cleric: ["basic_attack", "smite", "mend", "renew", "blessing"],
-  necromancer: ["basic_attack", "fireball", "frost_nova", "corruption"],
+  reaper: ["basic_attack", "cleave", "soul_reap", "whirlwind", "charge", "execute", "rupture"],
+  cleric: ["basic_attack", "smite", "mend", "renew", "holy_nova", "blessing", "sanctuary"],
+  necromancer: ["basic_attack", "fireball", "frost_nova", "corruption", "drain_life", "bone_spear", "bone_armor"],
 };
 
 export function skillDef(id: string): SkillDef | undefined {

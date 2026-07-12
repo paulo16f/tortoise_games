@@ -29,7 +29,9 @@ const listOnly = outArg === "--list";
 
 const tmp = mkdtempSync(join(tmpdir(), "unitypkg-"));
 // Extract only the small pathname + raw asset members (skip previews/metas).
-execFileSync("tar", ["--force-local", "-xzf", pkg, "-C", tmp, "--wildcards", "*/asset", "*/pathname"], { stdio: "inherit" });
+// MSYS/GNU tar on Windows rejects backslash paths — normalize to forward slashes.
+const fwd = (p) => p.replace(/\\/g, "/");
+execFileSync("tar", ["--force-local", "-xzf", fwd(pkg), "-C", fwd(tmp), "--wildcards", "*/asset", "*/pathname"], { stdio: "inherit" });
 
 const rows = [];
 for (const guid of readdirSync(tmp)) {
