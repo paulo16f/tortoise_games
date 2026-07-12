@@ -17,6 +17,7 @@ import { SpinnerPanel } from "./ui/SpinnerPanel";
 import { ChatPanel } from "./ui/ChatPanel";
 import { CookingPanel } from "./ui/CookingPanel";
 import { PanelDock } from "./ui/PanelDock";
+import { Minimap } from "./ui/Minimap";
 import { LootToasts } from "./ui/LootToasts";
 import { GoldToasts } from "./ui/GoldToasts";
 import { CastBar } from "./ui/CastBar";
@@ -50,6 +51,7 @@ function GameCanvas({ onLeave }: { onLeave: () => void }) {
       <ChatPanel />
       <CookingPanel />
       <PanelDock />
+      <Minimap />
       <LootToasts />
       <GoldToasts />
       <CastBar />
