@@ -183,6 +183,12 @@ class ZoneStore {
 
   getSnapshot = (): ZoneSnapshot => this.snapshot;
 
+  /** Dev-only: seed a mock snapshot for the canvas-free HUD preview (?hud). */
+  __setMockSnapshot = (snap: ZoneSnapshot): void => {
+    this.snapshot = snap;
+    for (const fn of this.listeners) fn();
+  };
+
   private emit(): void {
     for (const fn of this.listeners) fn();
   }

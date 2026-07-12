@@ -23,6 +23,7 @@ import { CastBar } from "./ui/CastBar";
 import { TooltipLayer } from "./ui/Tooltip";
 import { LoginScreen } from "./ui/LoginScreen";
 import { CharacterSelect } from "./ui/CharacterSelect";
+import { HudPreview } from "./ui/HudPreview";
 
 function GameCanvas({ onLeave }: { onLeave: () => void }) {
   useControls();
@@ -166,5 +167,7 @@ const muteBtn: React.CSSProperties = {
 };
 
 export default function App() {
-  return new URLSearchParams(window.location.search).has("debugAnim") ? <AnimationDebugView /> : <GameApp />;
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("hud")) return <HudPreview />;
+  return params.has("debugAnim") ? <AnimationDebugView /> : <GameApp />;
 }

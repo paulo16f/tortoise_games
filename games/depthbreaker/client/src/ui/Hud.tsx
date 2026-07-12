@@ -10,7 +10,8 @@ import { zoneStore } from "../net/room";
 import { itemName, itemInitials } from "./itemDisplay";
 import { swingTimerState } from "./swingTimer";
 import { tooltipHandlers } from "./Tooltip";
-import { SpriteBar, slotFrame } from "./spriteKit";
+import { StatOrb } from "./hudOrbs";
+import { iconForSkill } from "./hudIcons";
 import type { EnemyView, PlayerView } from "@depthbreaker/protocol";
 
 /** Human-readable enemy AI state for the target frame. */
@@ -47,9 +48,11 @@ function Bar({
   height?: number;
 }) {
   const frac = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
-  void bg;
-  // Ornate Synty Dark Fantasy bar frame + coloured fill (spriteKit.SpriteBar).
-  return <SpriteBar frac={frac} color={color} width={224} height={Math.max(18, height + 6)} />;
+  return (
+    <div style={{ position: "relative", width: 200, height, background: bg, borderRadius: 4, overflow: "hidden", border: "1px solid rgba(255,255,255,0.14)" }}>
+      <div style={{ width: `${frac * 100}%`, height: "100%", background: color, transition: "width 120ms linear" }} />
+    </div>
+  );
 }
 
 function isEnemy(t: PlayerView | EnemyView | null): t is EnemyView {
@@ -59,6 +62,7 @@ function isEnemy(t: PlayerView | EnemyView | null): t is EnemyView {
 function SkillSlot({
   hotkey,
   label,
+  icon,
   cooldown,
   max,
   gcd = 0,
@@ -68,6 +72,8 @@ function SkillSlot({
 }: {
   hotkey: string;
   label: string;
+  /** Optional icon sprite; falls back to the text label. */
+  icon?: string;
   cooldown: number;
   max: number;
   /** Shared global-cooldown seconds remaining; drives a shallow sweep when the skill's own cooldown is clear. */
@@ -90,56 +96,39 @@ function SkillSlot({
     <div
       {...(tooltip ? tooltipHandlers(tooltip) : {})}
       style={{
-        // Ornate Synty slot frame (spriteKit); state shows as an inset glow on
-        // the inner opening so the metal frame stays intact.
+        // Clean Diablo-style action slot: dark inset well, gold rim that brightens
+        // when active/ready. Icon-ready (falls back to the text label).
         position: "relative",
-        width: 56,
-        height: 56,
-        ...slotFrame(),
+        width: 50,
+        height: 50,
+        borderRadius: 6,
+        overflow: "hidden",
+        border: `1px solid ${active ? "#e8c874" : ready ? "rgba(201,165,74,0.55)" : "rgba(255,255,255,0.12)"}`,
+        background: active
+          ? "linear-gradient(180deg, rgba(201,165,74,0.22), rgba(10,11,15,0.92))"
+          : "linear-gradient(180deg, rgba(30,34,44,0.9), rgba(8,9,13,0.95))",
+        boxShadow: active ? "0 0 10px rgba(201,165,74,0.5), inset 0 0 8px rgba(201,165,74,0.22)" : "inset 0 1px 0 rgba(255,255,255,0.06)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        filter: locked ? "grayscale(0.6) brightness(0.72)" : "none",
+        filter: locked ? "grayscale(0.7) brightness(0.6)" : "none",
         // The HUD root is pointerEvents:none; slots opt back in for tooltips.
         pointerEvents: "auto",
       }}
     >
-      <div
-        style={{
-          position: "absolute",
-          inset: 9,
-          borderRadius: 4,
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 12,
-          fontWeight: 800,
-          color: locked ? "rgba(148,163,184,0.6)" : "#f8fafc",
-          background: active ? "rgba(14,116,144,0.5)" : "rgba(8,9,13,0.45)",
-          boxShadow: active
-            ? "inset 0 0 10px rgba(147,197,253,0.85)"
-            : ready
-              ? "inset 0 0 6px rgba(255,255,255,0.14)"
-              : "none",
-        }}
-      >
-        {label}
-        {showSweep && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: `conic-gradient(${sweepColor} ${sweepFrac * 360}deg, transparent 0deg)`,
-            }}
-          />
-        )}
-        {cooldown > 0 && (
-          <span style={{ position: "absolute", fontSize: 14, textShadow: "0 1px 2px #000" }}>{Math.ceil(cooldown)}</span>
-        )}
-      </div>
-      {locked && <span style={{ position: "absolute", left: 6, top: 3, fontSize: 10, opacity: 0.85, zIndex: 2 }}>🔒</span>}
-      <span style={{ position: "absolute", right: 6, bottom: 3, fontSize: 10, opacity: 0.85, zIndex: 2, textShadow: "0 1px 2px #000" }}>{hotkey}</span>
+      {icon ? (
+        <img src={icon} alt="" draggable={false} style={{ width: "86%", height: "86%", objectFit: "contain" }} />
+      ) : (
+        <span style={{ fontSize: 12, fontWeight: 800, color: locked ? "rgba(148,163,184,0.6)" : "#f1e9d0" }}>{label}</span>
+      )}
+      {showSweep && (
+        <div style={{ position: "absolute", inset: 0, background: `conic-gradient(${sweepColor} ${sweepFrac * 360}deg, transparent 0deg)`, pointerEvents: "none" }} />
+      )}
+      {cooldown > 0 && (
+        <span style={{ position: "absolute", fontSize: 15, fontWeight: 800, textShadow: "0 1px 2px #000" }}>{Math.ceil(cooldown)}</span>
+      )}
+      {locked && <span style={{ position: "absolute", left: 4, top: 2, fontSize: 10, opacity: 0.85, zIndex: 2 }}>🔒</span>}
+      <span style={{ position: "absolute", right: 4, bottom: 1, fontSize: 10, opacity: 0.8, zIndex: 2, textShadow: "0 1px 2px #000" }}>{hotkey}</span>
     </div>
   );
 }
@@ -243,51 +232,32 @@ export function Hud() {
       }}
     >
       {/* Local player panel (bottom-left). */}
-      <div style={{ position: "absolute", left: 16, bottom: 16, ...panelStyle }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-          <span style={{ fontWeight: 600 }}>
-            {self?.name ?? "—"}{" "}
-            <span style={{ opacity: 0.7, fontWeight: 400 }}>({self?.classId ?? "?"})</span>
-          </span>
-          <span style={{ color: "#fbbf24", fontWeight: 700, fontVariantNumeric: "tabular-nums", marginLeft: 12 }}>
-            🪙 {self?.gold ?? 0}
-          </span>
+      {/* Health orb (bottom-left, Diablo globe) */}
+      <div style={{ position: "absolute", left: 22, bottom: 18, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+        <div style={{ fontSize: 12.5, color: "#e2e8f0", textShadow: "0 1px 2px #000", pointerEvents: "none", whiteSpace: "nowrap" }}>
+          {self?.name ?? "—"} <span style={{ opacity: 0.6 }}>· {self?.classId ?? "?"}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <span style={{ width: 28, opacity: 0.75 }}>HP</span>
-          <Bar value={self?.hp ?? 0} max={self?.maxHp ?? 1} color="#22c55e" />
-          <span style={{ opacity: 0.85, fontVariantNumeric: "tabular-nums" }}>
-            {Math.round(self?.hp ?? 0)}/{self?.maxHp ?? 0}
-          </span>
+        <StatOrb
+          frac={self ? (self.hp ?? 0) / Math.max(1, self.maxHp ?? 1) : 0}
+          fill="linear-gradient(0deg, #7f1d1d, #ef4444 85%)"
+          glow="rgba(239,68,68,0.6)"
+          big={Math.round(self?.hp ?? 0)}
+          small={`${Math.round(self?.hp ?? 0)} / ${self?.maxHp ?? 0}`}
+        />
+      </div>
+
+      {/* Experience orb + gold (bottom-right) */}
+      <div style={{ position: "absolute", right: 22, bottom: 18, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+        <div style={{ fontSize: 12.5, color: "#fbbf24", fontWeight: 700, fontVariantNumeric: "tabular-nums", textShadow: "0 1px 2px #000", pointerEvents: "none" }}>
+          🪙 {self?.gold ?? 0}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ width: 28, opacity: 0.75 }}>Lv{level}</span>
-          <Bar value={xpIntoLevel} max={need || 1} color="#3b82f6" height={10} />
-          <span style={{ opacity: 0.7, fontVariantNumeric: "tabular-nums" }}>
-            {need > 0 ? `${xpIntoLevel}/${need}` : "MAX"}
-          </span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              display: "grid",
-              placeItems: "center",
-              borderRadius: 6,
-              border: "1px solid rgba(255,255,255,0.2)",
-              background: "rgba(15,23,42,0.86)",
-              fontSize: 18,
-            }}
-            title="Equipped weapon"
-          >
-            {self?.weaponId ? itemInitials(self.weaponId) : "--"}
-          </div>
-          <div>
-            <div style={{ opacity: 0.65, fontSize: 11 }}>Weapon</div>
-            <div style={{ fontWeight: 700 }}>{self?.weaponId ? itemName(self.weaponId) : "Unequipped"}</div>
-          </div>
-        </div>
+        <StatOrb
+          frac={need > 0 ? xpIntoLevel / need : 1}
+          fill="linear-gradient(0deg, #1e3a8a, #60a5fa 85%)"
+          glow="rgba(96,165,250,0.55)"
+          big={`Lv${level}`}
+          small={need > 0 ? `${xpIntoLevel}/${need}` : "MAX"}
+        />
       </div>
 
       {/* Target panel (top-center) while targeting a living entity. */}
@@ -336,16 +306,23 @@ export function Hud() {
         </div>
       )}
 
-      {/* Hotbar (bottom-center): 10 slots driven by the synced hotbar array. */}
+      {/* Action bar (bottom-center): the skill tray, 10 slots from the hotbar. */}
       {self && (
         <div
           style={{
             position: "absolute",
-            bottom: 16,
+            bottom: 24,
             left: "50%",
             transform: "translateX(-50%)",
             display: "flex",
-            gap: 8,
+            gap: 7,
+            padding: "9px 12px",
+            borderRadius: 12,
+            background: "linear-gradient(180deg, rgba(18,20,27,0.92), rgba(6,7,10,0.96))",
+            border: "1px solid rgba(201,165,74,0.35)",
+            borderTop: "2px solid rgba(201,165,74,0.6)",
+            boxShadow: "0 -2px 18px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+            pointerEvents: "auto",
           }}
         >
           {Array.from({ length: 10 }, (_, i) => {
@@ -358,11 +335,12 @@ export function Hud() {
                   key={i}
                   style={{
                     position: "relative",
-                    width: 52,
-                    height: 52,
-                    borderRadius: 8,
-                    border: "1px dashed rgba(255,255,255,0.10)",
-                    background: "rgba(11,13,18,0.4)",
+                    width: 50,
+                    height: 50,
+                    borderRadius: 6,
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(8,9,13,0.55)",
+                    boxShadow: "inset 0 0 8px rgba(0,0,0,0.5)",
                   }}
                 >
                   <span style={{ position: "absolute", right: 4, bottom: 2, fontSize: 10, opacity: 0.35, color: "#e6e9ef" }}>
@@ -383,6 +361,7 @@ export function Hud() {
                 key={i}
                 hotkey={hotkey}
                 label={isAuto && self.autoAttack ? "AUTO" : def.label}
+                icon={iconForSkill(def.id)}
                 cooldown={slot.cooldownRemaining}
                 max={def.cooldown || 1}
                 gcd={def.offGcd ? 0 : self.gcdRemaining ?? 0}
