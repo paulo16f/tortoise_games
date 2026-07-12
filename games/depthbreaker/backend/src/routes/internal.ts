@@ -13,6 +13,9 @@ import {
   dailyQuestDef,
   dateKeyUTC,
   skinDef,
+  spinPrizeAt,
+  SPINNER_SEGMENTS,
+  itemDef,
 } from "@depthbreaker/sim";
 
 const OUTCOMES = ["dead", "complete", "abandoned"] as const;
@@ -287,6 +290,69 @@ export function registerInternalRoutes(app: FastifyInstance, ctx: AppContext): v
       return reply.send({ ok: true, equipped: skinId });
     },
   );
+
+  // --- Spinner wheel (free daily spin; gold faucet with a 24h cooldown) ---
+
+  app.get("/internal/spinner/:accountId", { preHandler: requireZoneSecret }, async (request, reply) => {
+    const { accountId } = request.params as { accountId: string };
+    const res = await pool.query<{ remaining: string | null }>(
+      `SELECT GREATEST(0, EXTRACT(EPOCH FROM (last_free_spin_at + interval '24 hours' - now())))::int AS remaining
+       FROM account_spins WHERE account_id = $1`,
+      [accountId],
+    );
+    return reply.send({ cooldownRemaining: res.rowCount ? Number(res.rows[0]!.remaining ?? 0) : 0 });
+  });
+
+  app.post("/internal/spinner/:accountId/spin", { preHandler: requireZoneSecret }, async (request, reply) => {
+    const { accountId } = request.params as { accountId: string };
+    const result = await withTransaction(pool, async (client) => {
+      const acct = await client.query("SELECT 1 FROM accounts WHERE id = $1", [accountId]);
+      if (!acct.rowCount) return { code: 404 as const, error: "account_not_found" };
+      // Lock the spin row (upsert first so FOR UPDATE has a row to hold).
+      await client.query(
+        "INSERT INTO account_spins (account_id) VALUES ($1) ON CONFLICT (account_id) DO NOTHING",
+        [accountId],
+      );
+      const row = await client.query<{ ready: boolean; remaining: string }>(
+        `SELECT (last_free_spin_at IS NULL OR last_free_spin_at <= now() - interval '24 hours') AS ready,
+                GREATEST(0, EXTRACT(EPOCH FROM (last_free_spin_at + interval '24 hours' - now())))::int AS remaining
+         FROM account_spins WHERE account_id = $1 FOR UPDATE`,
+        [accountId],
+      );
+      if (!row.rows[0]!.ready) return { code: 429 as const, error: "on_cooldown", remaining: Number(row.rows[0]!.remaining) };
+      await client.query("UPDATE account_spins SET last_free_spin_at = now() WHERE account_id = $1", [accountId]);
+
+      // Server rolls the segment; prize is gold (wallet) or an item (stash,
+      // falling back to its gold sellValue if the stash can't hold it — a spin
+      // never pays nothing).
+      const prize = spinPrizeAt(Math.floor(Math.random() * SPINNER_SEGMENTS));
+      if (prize.kind === "gold") {
+        await client.query("UPDATE meta_wallets SET currency = currency + $2, updated_at = now() WHERE account_id = $1", [accountId, prize.count]);
+        return { code: 200 as const, itemId: "gold", count: prize.count, isGold: true };
+      }
+      const stash = await client.query<{ item_id: string; count: number }>(
+        "SELECT item_id, count FROM stash_items WHERE account_id = $1 FOR UPDATE",
+        [accountId],
+      );
+      const existing = stash.rows.find((r) => r.item_id === prize.itemId);
+      const canStash = existing ? existing.count + prize.count <= 999 : stash.rowCount! < 24;
+      if (canStash) {
+        await client.query(
+          `INSERT INTO stash_items (account_id, item_id, count) VALUES ($1, $2, $3)
+           ON CONFLICT (account_id, item_id) DO UPDATE SET count = stash_items.count + $3, updated_at = now()`,
+          [accountId, prize.itemId, prize.count],
+        );
+        return { code: 200 as const, itemId: prize.itemId, count: prize.count, isGold: false };
+      }
+      // Stash full: convert to gold so the spin still pays.
+      const goldValue = (itemDef(prize.itemId)?.sellValue ?? 1) * prize.count;
+      await client.query("UPDATE meta_wallets SET currency = currency + $2, updated_at = now() WHERE account_id = $1", [accountId, goldValue]);
+      return { code: 200 as const, itemId: "gold", count: goldValue, isGold: true };
+    });
+    if (result.code === 429) return reply.code(429).send({ error: result.error, cooldownRemaining: result.remaining });
+    if (result.code !== 200) return reply.code(result.code).send({ error: result.error });
+    return reply.send({ itemId: result.itemId, count: result.count, isGold: result.isGold, cooldownRemaining: 86400 });
+  });
 
   app.post(
     "/internal/characters/:id/checkpoint",

@@ -24,6 +24,14 @@ export const GATHER_RANGE = 3;
 export const GATHER_CAST_SECONDS = 1.4;
 
 /**
+ * Town fountain: a safe heal pad at the player spawn. Any player standing
+ * within FOUNTAIN_RADIUS regenerates FOUNTAIN_HEAL_PER_SECOND HP. Shared so the
+ * client can draw the pad at the same footprint the server heals over.
+ */
+export const FOUNTAIN_RADIUS = 4;
+export const FOUNTAIN_HEAL_PER_SECOND = 14;
+
+/**
  * Persistent stash caps. Canonical values — the backend duplicates them in
  * routes/internal.ts (it doesn't depend on this package); keep in sync.
  */

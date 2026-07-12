@@ -15,6 +15,9 @@ import { closeSkillBook, toggleSkillBook } from "../../ui/SkillBookPanel";
 import { closeMarket, toggleMarket } from "../../ui/MarketPanel";
 import { closeStash, toggleStash } from "../../ui/StashPanel";
 import { closeDailies, toggleDailies } from "../../ui/DailyQuestPanel";
+import { closeSpinner, toggleSpinner } from "../../ui/SpinnerPanel";
+import { closeTrade, toggleTrade } from "../../ui/TradePanel";
+import { focusChat } from "../../ui/ChatPanel";
 import { localPlayerPos } from "../entityRefs";
 
 /** Keys 1-9,0 map to hotbar slots 0-9. */
@@ -33,6 +36,15 @@ const HOTBAR_KEY_SLOTS: Record<string, number> = {
 
 const TARGET_SELECTION_RANGE = 18;
 const CLICK_STOP_DISTANCE = 0.35;
+
+/** True when a text field (e.g. the chat input) is focused, so game keybinds
+ *  should stand down and let the field receive the keystroke. */
+function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
+}
 
 function targetNextEnemyInRange(): void {
   const st = zoneStore.state;
@@ -61,6 +73,15 @@ function targetNextEnemyInRange(): void {
 export function useControls(): void {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // While typing in a field (chat), the field owns the keyboard. Enter and
+      // Escape are handled by the input itself; everything else is ignored here.
+      if (isTypingTarget(e.target)) return;
+      // Enter (when not already typing) opens the chat input.
+      if (e.code === "Enter") {
+        e.preventDefault();
+        focusChat();
+        return;
+      }
       if (isMoveKey(e.code)) controlState.keys.add(e.code);
       if (e.repeat) return;
       const hotbarSlot = HOTBAR_KEY_SLOTS[e.code];
@@ -79,12 +100,17 @@ export function useControls(): void {
       if (e.code === "KeyM") toggleMarket();
       if (e.code === "KeyN") toggleStash();
       if (e.code === "KeyJ") toggleDailies();
+      if (e.code === "KeyG") toggleSpinner();
+      if (e.code === "KeyT") toggleTrade();
+      if (e.code === "KeyC") focusChat();
       if (e.code === "Escape") {
         closeInventory();
         closeSkillBook();
         closeMarket();
         closeStash();
         closeDailies();
+        closeSpinner();
+        closeTrade();
       }
       if (e.code === "KeyR") resetCameraOrbit();
       if (e.code === "Tab") {

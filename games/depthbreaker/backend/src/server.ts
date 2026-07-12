@@ -9,6 +9,7 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerCharacterRoutes } from "./routes/characters.js";
 import { registerRunRoutes } from "./routes/runs.js";
 import { registerMetaRoutes } from "./routes/meta.js";
+import { registerMarketRoutes } from "./routes/market.js";
 import { registerInternalRoutes } from "./routes/internal.js";
 import { registerHealthRoutes } from "./routes/health.js";
 
@@ -39,7 +40,7 @@ export function buildServer(options: BuildServerOptions = {}): FastifyInstance &
     reply.header("access-control-allow-credentials", "true");
     reply.header("vary", "origin");
     if (request.method === "OPTIONS") {
-      reply.header("access-control-allow-methods", "GET,POST,OPTIONS");
+      reply.header("access-control-allow-methods", "GET,POST,DELETE,OPTIONS");
       reply.header("access-control-allow-headers", "authorization,content-type");
       return reply.code(204).send();
     }
@@ -49,6 +50,7 @@ export function buildServer(options: BuildServerOptions = {}): FastifyInstance &
   registerCharacterRoutes(app, ctx);
   registerRunRoutes(app, ctx);
   registerMetaRoutes(app, ctx);
+  registerMarketRoutes(app, ctx);
   registerInternalRoutes(app, ctx);
   registerHealthRoutes(app, ctx);
 

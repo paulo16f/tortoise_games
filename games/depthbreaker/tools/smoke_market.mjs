@@ -44,12 +44,42 @@ function bagCount(self, itemId) {
 async function walkTo(room, self, x, z, stopAt = 1.2, timeoutMs = 45000) {
   let seq = 1000;
   const deadline = Date.now() + timeoutMs;
+  // Naive straight-line walk with a wall-slide "unstick": the server rejects
+  // moves into walls (isDungeonWalkable), so a corridor corner would stall a
+  // pure beeline. When progress stalls, steer perpendicular for a few steps to
+  // slide along the obstacle (classic bug-navigation), alternating sides.
+  let lastD = Infinity;
+  let stalled = 0;
+  let slideDir = 1;
+  let slideSteps = 0;
   while (Date.now() < deadline) {
     const dx = x - self.x;
     const dz = z - self.z;
     const d = Math.hypot(dx, dz);
     if (d <= stopAt) break;
-    room.send("input", { seq: seq++, moveX: dx / d, moveZ: dz / d, yaw: Math.atan2(dx, dz) });
+
+    if (d > lastD - 0.03) stalled++;
+    else stalled = 0;
+    lastD = d;
+
+    let mx = dx / d;
+    let mz = dz / d;
+    if (slideSteps > 0) {
+      // Perpendicular to the goal direction (rotate 90°), blended toward goal.
+      const px = -mz * slideDir;
+      const pz = mx * slideDir;
+      mx = px * 0.85 + mx * 0.15;
+      mz = pz * 0.85 + mz * 0.15;
+      const l = Math.hypot(mx, mz) || 1;
+      mx /= l;
+      mz /= l;
+      slideSteps--;
+    } else if (stalled >= 6) {
+      slideSteps = 8; // begin a slide burst
+      slideDir *= -1; // alternate the side we try each time we re-stall
+      stalled = 0;
+    }
+    room.send("input", { seq: seq++, moveX: mx, moveZ: mz, yaw: Math.atan2(dx, dz) });
     await wait(50);
   }
   room.send("input", { seq: seq++, moveX: 0, moveZ: 0, yaw: 0 });
@@ -69,7 +99,7 @@ async function main() {
 
   const client = new Client(REALTIME_URL);
   const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name: "MarketMiner", classId: "bruiser" });
-  for (const t of ["welcome", "combatEvent", "stash", "dailies", "skins"]) room.onMessage(t, () => {});
+  for (const t of ["welcome", "combatEvent", "stash", "dailies", "skins", "spinner", "spinResult", "chat"]) room.onMessage(t, () => {});
   const lootSeen = [];
   room.onMessage("lootEvent", (m) => { if (m.playerId === room.sessionId) lootSeen.push(m.itemId); });
   const self = await waitFor(() => room.state?.players?.get(room.sessionId), "self");

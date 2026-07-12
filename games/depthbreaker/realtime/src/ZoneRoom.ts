@@ -38,6 +38,9 @@ import {
   type BuySkinMessage,
   type EquipSkinMessage,
   type SkinsMessage,
+  type ChatMessage,
+  type SpinnerMessage,
+  type SpinResultMessage,
   type CombatActionState,
   type CombatEventMessage,
   type LootEventMessage,
@@ -51,6 +54,8 @@ import {
   GATHER_CAST_SECONDS,
   STASH_SLOT_CAP,
   STASH_STACK_CAP,
+  FOUNTAIN_RADIUS,
+  FOUNTAIN_HEAL_PER_SECOND,
   type DungeonMapDefinition,
 } from "@depthbreaker/protocol";
 import {
@@ -176,6 +181,10 @@ interface PlayerRuntime {
   localStash: Map<string, number>;
   /** Serializes market/stash transactions per player across the backend await. */
   marketBusy: boolean;
+  /** Serializes spin requests per player across the backend await (anti double-spin). */
+  spinBusy: boolean;
+  /** elapsedSeconds of the player's last accepted chat line (rate limit). */
+  lastChatAt: number;
   /** Buffered daily-quest progress (questId -> pending delta), flushed periodically. */
   dailyBuffer: Map<string, number>;
   /** Persistent total XP from the join ticket; 0 for ticketless dev joins. */
@@ -310,6 +319,18 @@ export class ZoneRoom extends Room<ZoneState> {
       void this.equipSkin(client, message?.skinId ?? "");
     });
 
+    this.onMessage(CM.Chat, (client, message: ChatMessage) => {
+      this.handleChat(client, message?.text ?? "");
+    });
+
+    this.onMessage(CM.Spin, (client) => {
+      void this.handleSpin(client);
+    });
+
+    this.onMessage(CM.RefreshPrivate, (client) => {
+      void this.refreshPrivate(client);
+    });
+
     this.setSimulationInterval((dt) => this.update(dt / 1000), TICK_MS);
   }
 
@@ -374,6 +395,8 @@ export class ZoneRoom extends Room<ZoneState> {
       localGold: auth.claims ? 0 : DEV_STARTING_GOLD,
       localStash: new Map(),
       marketBusy: false,
+      spinBusy: false,
+      lastChatAt: -100,
       dailyBuffer: new Map(),
       baseTotalXp: auth.claims?.totalXp ?? 0,
       earnedXp: 0,
@@ -398,10 +421,11 @@ export class ZoneRoom extends Room<ZoneState> {
     } else {
       player.gold = runtime.localGold;
     }
-    // Initial private snapshots (targeted): stash, daily quests, skins.
+    // Initial private snapshots (targeted): stash, daily quests, skins, spin.
     void this.sendStash(client, runtime);
     void this.sendDailies(client, runtime);
     void this.sendSkins(client, runtime);
+    void this.sendSpinner(client, runtime);
 
     const welcome: WelcomeMessage = {
       selfId: client.sessionId,
@@ -486,6 +510,22 @@ export class ZoneRoom extends Room<ZoneState> {
     this.updateDeadEnemyDespawn(dt);
     this.updateNodeRespawns(dt);
     this.updateDailyFlush(dt);
+    this.updateFountain(dt);
+  }
+
+  /**
+   * Town fountain: regen HP for any living player standing on the spawn pad.
+   * A safe recovery spot so players don't have to burn potions between runs —
+   * heals only, never while a player is out in the dungeon.
+   */
+  private updateFountain(dt: number): void {
+    const pad = this.dungeon.playerSpawn;
+    const heal = FOUNTAIN_HEAL_PER_SECOND * dt;
+    this.state.players.forEach((p) => {
+      if (!p.alive || p.hp >= p.maxHp) return;
+      if (Math.hypot(p.x - pad.x, p.z - pad.z) > FOUNTAIN_RADIUS) return;
+      p.hp = Math.min(p.maxHp, p.hp + heal);
+    });
   }
 
   private movePlayers(dt: number): void {
@@ -1078,6 +1118,97 @@ export class ZoneRoom extends Room<ZoneState> {
     } finally {
       rt.marketBusy = false;
     }
+  }
+
+  // --- Town social: world chat, free spinner, private re-sync ---
+
+  private static readonly CHAT_MIN_INTERVAL = 1.0;
+  private static readonly CHAT_MAX_LEN = 200;
+
+  /** Broadcast a world-chat line, rate-limited and length-capped server-side. */
+  private handleChat(client: Client, rawText: string): void {
+    const rt = this.runtimes.get(client.sessionId);
+    const p = this.state.players.get(client.sessionId);
+    if (!rt || !p) return;
+    const text = rawText.replace(/\s+/g, " ").trim().slice(0, ZoneRoom.CHAT_MAX_LEN);
+    if (!text) return;
+    if (this.elapsedSeconds - rt.lastChatAt < ZoneRoom.CHAT_MIN_INTERVAL) return;
+    rt.lastChatAt = this.elapsedSeconds;
+    const payload: ChatMessage = { text, from: p.name };
+    this.broadcast(ServerMessage.Chat, payload);
+  }
+
+  /** Send the player their own free-spin availability (targeted). */
+  private async sendSpinner(client: Client, rt: PlayerRuntime): Promise<void> {
+    if (!rt.accountId) {
+      // Ticketless dev join: no persistent cooldown, always ready.
+      client.send(ServerMessage.Spinner, { cooldownRemaining: 0 } as SpinnerMessage);
+      return;
+    }
+    const res = await this.reporter.spinnerStatus(rt.accountId);
+    client.send(ServerMessage.Spinner, { cooldownRemaining: res.cooldownRemaining ?? 0 } as SpinnerMessage);
+  }
+
+  /**
+   * Take the free daily spin. The backend owns the cooldown + prize roll and
+   * credits gold/stash itself; we relay the result and re-sync the affected
+   * private panels (wallet via state, stash snapshot).
+   */
+  private async handleSpin(client: Client): Promise<void> {
+    const rt = this.runtimes.get(client.sessionId);
+    if (!rt || rt.spinBusy) return;
+    if (!rt.accountId) {
+      // Ticketless dev join: spinning has nowhere to persist; report not-ready.
+      client.send(ServerMessage.Spinner, { cooldownRemaining: 0 } as SpinnerMessage);
+      return;
+    }
+    rt.spinBusy = true;
+    try {
+      const res = await this.reporter.spinnerSpin(rt.accountId);
+      if (res.status === 429) {
+        client.send(ServerMessage.Spinner, { cooldownRemaining: res.cooldownRemaining ?? 0 } as SpinnerMessage);
+        return;
+      }
+      if (!res.ok || res.itemId === undefined || res.count === undefined) return;
+      const prize: SpinResultMessage = {
+        itemId: res.itemId,
+        count: res.count,
+        isGold: !!res.isGold,
+        cooldownRemaining: res.cooldownRemaining ?? 86400,
+      };
+      client.send(ServerMessage.SpinResult, prize);
+      client.send(ServerMessage.Spinner, { cooldownRemaining: prize.cooldownRemaining } as SpinnerMessage);
+      // Reflect the reward: gold shows on the HUD immediately; an item lives in
+      // the (private) stash, so push a fresh stash snapshot.
+      if (prize.isGold) {
+        const bal = await this.reporter.walletBalance(rt.accountId);
+        const live = this.state.players.get(client.sessionId);
+        if (live && bal.ok && bal.balance !== undefined) live.gold = bal.balance;
+      } else {
+        await this.sendStash(client, rt);
+      }
+    } finally {
+      rt.spinBusy = false;
+    }
+  }
+
+  /**
+   * Re-pull everything the client holds privately after an out-of-band REST
+   * change (e.g. a P2P marketplace buy/sell in the web UI): wallet, stash,
+   * dailies, skins, spin availability.
+   */
+  private async refreshPrivate(client: Client): Promise<void> {
+    const rt = this.runtimes.get(client.sessionId);
+    if (!rt) return;
+    if (rt.accountId) {
+      const bal = await this.reporter.walletBalance(rt.accountId);
+      const live = this.state.players.get(client.sessionId);
+      if (live && bal.ok && bal.balance !== undefined) live.gold = bal.balance;
+    }
+    await this.sendStash(client, rt);
+    await this.sendDailies(client, rt);
+    await this.sendSkins(client, rt);
+    await this.sendSpinner(client, rt);
   }
 
   /** Seed the synced 10-slot hotbar from the class's fixed layout. */

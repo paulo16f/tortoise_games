@@ -8,6 +8,9 @@ import { toggleSkillBook, useSkillBookOpen } from "./SkillBookPanel";
 import { toggleMarket, useMarketOpen } from "./MarketPanel";
 import { toggleStash, useStashOpen } from "./StashPanel";
 import { toggleDailies, useDailiesOpen } from "./DailyQuestPanel";
+import { toggleTrade, useTradeOpen } from "./TradePanel";
+import { toggleSpinner, useSpinnerOpen } from "./SpinnerPanel";
+import { focusChat, useChatFocused } from "./ChatPanel";
 import { tooltipHandlers } from "./Tooltip";
 
 interface DockItem {
@@ -22,8 +25,11 @@ const DOCK_ITEMS: DockItem[] = [
   { icon: "🎒", label: "Bag", hotkey: "B", toggle: toggleInventory, useOpen: useInventoryOpen },
   { icon: "📖", label: "Skill Book", hotkey: "K", toggle: toggleSkillBook, useOpen: useSkillBookOpen },
   { icon: "🏪", label: "Market", hotkey: "M", toggle: toggleMarket, useOpen: useMarketOpen },
+  { icon: "🤝", label: "Trading Post", hotkey: "T", toggle: toggleTrade, useOpen: useTradeOpen },
   { icon: "🏦", label: "Bank", hotkey: "N", toggle: toggleStash, useOpen: useStashOpen },
   { icon: "📜", label: "Daily Quests", hotkey: "J", toggle: toggleDailies, useOpen: useDailiesOpen },
+  { icon: "🎡", label: "Fortune Wheel", hotkey: "G", toggle: toggleSpinner, useOpen: useSpinnerOpen },
+  { icon: "💬", label: "World Chat", hotkey: "C", toggle: focusChat, useOpen: useChatFocused },
 ];
 
 function DockButton({ item }: { item: DockItem }) {

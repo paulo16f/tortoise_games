@@ -419,7 +419,7 @@ export function Hud() {
           {snap.bossPortal.active && <> | boss in {Math.ceil(snap.bossPortal.countdown)}s</>}
         </div>
         <div style={{ opacity: 0.6, marginTop: 4, fontSize: 12 }}>
-          WASD/click move | click mob auto-attack | click crystal mine | Tab target | 1-0 skills | K skills | B bag | M market | N bank | V weapon
+          WASD/click move | click mob auto-attack | click crystal mine | Tab target | 1-0 skills | K skills | B bag | M market | T trade | N bank | J quests | G wheel | Enter/C chat | V weapon
         </div>
       </div>
     </div>

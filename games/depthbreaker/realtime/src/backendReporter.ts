@@ -95,6 +95,19 @@ export class BackendReporter {
     return { ok: res.ok };
   }
 
+  async spinnerStatus(accountId: string): Promise<{ ok: boolean; cooldownRemaining?: number }> {
+    const res = await this.call("GET", `/internal/spinner/${accountId}`);
+    return { ok: res.ok, cooldownRemaining: (res.json as { cooldownRemaining?: number } | null)?.cooldownRemaining };
+  }
+
+  async spinnerSpin(
+    accountId: string,
+  ): Promise<{ ok: boolean; status?: number; itemId?: string; count?: number; isGold?: boolean; cooldownRemaining?: number }> {
+    const res = await this.call("POST", `/internal/spinner/${accountId}/spin`);
+    const j = res.json as { itemId?: string; count?: number; isGold?: boolean; cooldownRemaining?: number } | null;
+    return { ok: res.ok, status: res.status, itemId: j?.itemId, count: j?.count, isGold: j?.isGold, cooldownRemaining: j?.cooldownRemaining };
+  }
+
   private async call(
     method: "GET" | "POST",
     path: string,

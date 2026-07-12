@@ -33,6 +33,13 @@ export const ClientMessage = {
   BuySkin: "buySkin",
   /** Equip an owned cosmetic skin ("" = class default). */
   EquipSkin: "equipSkin",
+  /** Ask the zone to re-pull wallet/stash/dailies/skins after an out-of-band
+   *  REST change (e.g. a P2P marketplace buy) so the in-game HUD is current. */
+  RefreshPrivate: "refreshPrivate",
+  /** Send a world-chat message (broadcast to the room, rate-limited). */
+  Chat: "chat",
+  /** Take the free daily spin (server-rolled prize). */
+  Spin: "spin",
 } as const;
 
 /** Server -> client (state itself syncs automatically; these are events). */
@@ -49,6 +56,12 @@ export const ServerMessage = {
   Dailies: "dailies",
   /** The player's OWN owned + equipped cosmetic skins (targeted send). */
   Skins: "skins",
+  /** A world-chat line broadcast to the room. */
+  Chat: "chat",
+  /** Result of a spin (targeted): the prize + next-free-spin time. */
+  SpinResult: "spinResult",
+  /** The player's OWN spinner state (targeted): whether a free spin is ready. */
+  Spinner: "spinner",
 } as const;
 
 export type CombatActionState = "idle" | "attack" | "skill" | "hit" | "dying" | "dead";
@@ -142,6 +155,28 @@ export interface EquipSkinMessage {
 export interface SkinsMessage {
   equipped: string;
   owned: string[];
+}
+
+export interface ChatMessage {
+  /** Chat body (client sends this; server echoes it with `from` populated). */
+  text: string;
+  /** Sender display name — set by the server on broadcast, ignored on send. */
+  from?: string;
+}
+
+/** Payload of ServerMessage.Spinner — whether the free spin is available. */
+export interface SpinnerMessage {
+  /** Seconds until the next free spin (0 = ready now). */
+  cooldownRemaining: number;
+}
+
+/** Payload of ServerMessage.SpinResult — the prize a spin awarded. */
+export interface SpinResultMessage {
+  itemId: string;
+  count: number;
+  /** True when the prize was gold (credited to the wallet, not the bag). */
+  isGold: boolean;
+  cooldownRemaining: number;
 }
 
 /** One daily quest with the player's progress. */

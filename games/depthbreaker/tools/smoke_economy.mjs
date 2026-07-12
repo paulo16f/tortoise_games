@@ -50,7 +50,7 @@ async function joinRun(token, characterId, name = "EcoTester") {
   const run = await api("/api/runs/start", { method: "POST", token, body: { characterId } });
   const client = new Client(REALTIME_URL);
   const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name, classId: "bruiser" });
-  for (const t of ["welcome", "combatEvent", "lootEvent"]) room.onMessage(t, () => {});
+  for (const t of ["welcome", "combatEvent", "lootEvent", "spinner", "spinResult", "chat"]) room.onMessage(t, () => {});
   const box = { stash: null, dailies: null, skins: null };
   room.onMessage("stash", (m) => { box.stash = m; });
   room.onMessage("dailies", (m) => { box.dailies = m; });

@@ -108,3 +108,36 @@ export function deleteCharacter(token: string, id: string): Promise<void> {
 export function startRun(token: string, characterId: string): Promise<StartRunResult> {
   return request<StartRunResult>("/api/runs/start", { method: "POST", body: JSON.stringify({ characterId }) }, token);
 }
+
+// --- P2P marketplace (authed REST; items escrow from the persistent stash) ---
+
+export interface MarketListing {
+  id: string;
+  itemId: string;
+  count: number;
+  price: number;
+  status: string;
+  mine: boolean;
+  seller: string;
+  createdAt: string;
+}
+
+export async function marketListings(token: string): Promise<MarketListing[]> {
+  return (await request<{ listings: MarketListing[] }>("/api/market/listings", { method: "GET" }, token)).listings;
+}
+
+export async function marketMine(token: string): Promise<MarketListing[]> {
+  return (await request<{ listings: MarketListing[] }>("/api/market/mine", { method: "GET" }, token)).listings;
+}
+
+export function marketList(token: string, itemId: string, count: number, price: number): Promise<{ id: string }> {
+  return request<{ id: string }>("/api/market/list", { method: "POST", body: JSON.stringify({ itemId, count, price }) }, token);
+}
+
+export function marketBuy(token: string, listingId: string): Promise<{ balance: number }> {
+  return request<{ balance: number }>("/api/market/buy", { method: "POST", body: JSON.stringify({ listingId }) }, token);
+}
+
+export function marketCancel(token: string, listingId: string): Promise<void> {
+  return request<void>("/api/market/cancel", { method: "POST", body: JSON.stringify({ listingId }) }, token);
+}

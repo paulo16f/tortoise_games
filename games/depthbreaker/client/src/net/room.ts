@@ -29,6 +29,9 @@ import {
   type BuySkinMessage,
   type EquipSkinMessage,
   type SkinsMessage,
+  type ChatMessage,
+  type SpinnerMessage,
+  type SpinResultMessage,
   type CombatEventMessage,
   type LootEventMessage,
   type WelcomeMessage,
@@ -76,6 +79,25 @@ export interface LootToast {
   bornAt: number;
 }
 
+/** One world-chat line in the rolling client-side log. */
+export interface ChatLine {
+  id: number;
+  from: string;
+  text: string;
+}
+
+/** Free-spin availability, timestamped so the panel can count down locally. */
+export interface SpinnerSnapshot {
+  cooldownRemaining: number;
+  /** performance.now() when this value arrived, for a smooth local countdown. */
+  updatedAt: number;
+}
+
+/** The most recent spin result (drives the wheel animation), with a bump id. */
+export interface SpinResultEvent extends SpinResultMessage {
+  id: number;
+}
+
 export interface ZoneSnapshot {
   playerCount: number;
   enemyCount: number;
@@ -94,6 +116,12 @@ export interface ZoneSnapshot {
   dailies: DailiesMessage;
   /** The local player's owned + equipped cosmetic skins (targeted server message). */
   skins: SkinsMessage;
+  /** Rolling world-chat log (most recent last). */
+  chat: ChatLine[];
+  /** Free-spin availability for the local player. */
+  spinner: SpinnerSnapshot;
+  /** Latest spin result, or null before the first spin this session. */
+  spinResult: SpinResultEvent | null;
 }
 
 type Listener = () => void;
@@ -111,6 +139,11 @@ class ZoneStore {
   private stash: StashMessage = { items: [], slotCap: 24 };
   private dailies: DailiesMessage = { dateKey: "", quests: [] };
   private skins: SkinsMessage = { equipped: "", owned: [] };
+  private chatSeq = 0;
+  private chat: ChatLine[] = [];
+  private spinner: SpinnerSnapshot = { cooldownRemaining: 0, updatedAt: 0 };
+  private spinSeq = 0;
+  private spinResult: SpinResultEvent | null = null;
 
   static emptySnapshot(): ZoneSnapshot {
     return {
@@ -128,6 +161,9 @@ class ZoneStore {
       stash: { items: [], slotCap: 24 },
       dailies: { dateKey: "", quests: [] },
       skins: { equipped: "", owned: [] },
+      chat: [],
+      spinner: { cooldownRemaining: 0, updatedAt: 0 },
+      spinResult: null,
     };
   }
 
@@ -204,6 +240,23 @@ class ZoneStore {
       this.refresh();
     });
 
+    room.onMessage(ServerMessage.Chat, (msg: ChatMessage) => {
+      this.chat.push({ id: this.chatSeq++, from: msg.from ?? "?", text: msg.text });
+      this.chat = this.chat.slice(-50); // keep the log bounded
+      this.refresh();
+    });
+
+    room.onMessage(ServerMessage.Spinner, (msg: SpinnerMessage) => {
+      this.spinner = { cooldownRemaining: msg.cooldownRemaining, updatedAt: performance.now() };
+      this.refresh();
+    });
+
+    room.onMessage(ServerMessage.SpinResult, (msg: SpinResultMessage) => {
+      this.spinResult = { ...msg, id: this.spinSeq++ };
+      this.spinner = { cooldownRemaining: msg.cooldownRemaining, updatedAt: performance.now() };
+      this.refresh();
+    });
+
     room.onLeave(() => this.detach());
     this.refresh();
   }
@@ -235,6 +288,9 @@ class ZoneStore {
       stash: this.stash,
       dailies: this.dailies,
       skins: this.skins,
+      chat: this.chat.slice(),
+      spinner: this.spinner,
+      spinResult: this.spinResult,
     };
     this.emit();
   }
@@ -247,6 +303,9 @@ class ZoneStore {
     this.stash = { items: [], slotCap: 24 };
     this.dailies = { dateKey: "", quests: [] };
     this.skins = { equipped: "", owned: [] };
+    this.chat = [];
+    this.spinner = { cooldownRemaining: 0, updatedAt: 0 };
+    this.spinResult = null;
     this.snapshot = ZoneStore.emptySnapshot();
     this.emit();
   }
@@ -323,6 +382,20 @@ class ZoneStore {
   sendUseItem(index: number): void {
     const payload: UseItemMessage = { index };
     this.room?.send(ClientMessage.UseItem, payload);
+  }
+
+  sendChat(text: string): void {
+    const payload: ChatMessage = { text };
+    this.room?.send(ClientMessage.Chat, payload);
+  }
+
+  sendSpin(): void {
+    this.room?.send(ClientMessage.Spin, {});
+  }
+
+  /** Ask the zone to re-pull wallet/stash/dailies/skins after a REST-side change. */
+  sendRefreshPrivate(): void {
+    this.room?.send(ClientMessage.RefreshPrivate, {});
   }
 }
 

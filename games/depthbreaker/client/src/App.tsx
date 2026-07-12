@@ -11,6 +11,9 @@ import { SkillBookPanel } from "./ui/SkillBookPanel";
 import { MarketPanel } from "./ui/MarketPanel";
 import { StashPanel } from "./ui/StashPanel";
 import { DailyQuestPanel } from "./ui/DailyQuestPanel";
+import { TradePanel } from "./ui/TradePanel";
+import { SpinnerPanel } from "./ui/SpinnerPanel";
+import { ChatPanel } from "./ui/ChatPanel";
 import { PanelDock } from "./ui/PanelDock";
 import { LootToasts } from "./ui/LootToasts";
 import { GoldToasts } from "./ui/GoldToasts";
@@ -34,6 +37,9 @@ function GameCanvas({ onLeave }: { onLeave: () => void }) {
       <MarketPanel />
       <StashPanel />
       <DailyQuestPanel />
+      <TradePanel />
+      <SpinnerPanel />
+      <ChatPanel />
       <PanelDock />
       <LootToasts />
       <GoldToasts />
