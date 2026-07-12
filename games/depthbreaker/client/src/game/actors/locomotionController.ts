@@ -25,7 +25,7 @@ export interface LocoInputs {
   moving: boolean;
   backwards?: boolean;
   yawRate: number;
-  combat: { kind: "attack" | "hit" | "death"; actionId?: string } | null;
+  combat: { kind: "attack" | "hit" | "death"; actionId?: string; clip?: string } | null;
   alive: boolean;
 }
 
@@ -110,8 +110,8 @@ export class LocomotionController {
     this.phaseNames = [];
 
     if (inputs.combat) {
-      const clipName = this.combatClip(inputs.combat.kind);
-      const key = `${inputs.combat.kind}:${inputs.combat.actionId ?? inputs.combat.kind}`;
+      const clipName = this.combatClip(inputs.combat.kind, inputs.combat.clip);
+      const key = `${inputs.combat.kind}:${inputs.combat.clip ?? ""}:${inputs.combat.actionId ?? inputs.combat.kind}`;
       if (clipName && this.combatKey !== key) {
         this.triggerOneShot(clipName);
         this.combatKey = key;
@@ -228,7 +228,11 @@ export class LocomotionController {
     return name === this.idleName || this.locoTiers.some((tier) => tier.name === name);
   }
 
-  private combatClip(kind: "attack" | "hit" | "death"): string | undefined {
+  private combatClip(kind: "attack" | "hit" | "death", preferred?: string): string | undefined {
+    // A skill can request its own clip (e.g. "cast"); honor it only if the GLB
+    // actually bakes that action, otherwise fall back to the generic swing —
+    // so setting a skill's `clip` ahead of the art never breaks animation.
+    if (preferred && this.actions[preferred]) return preferred;
     const name = kind === "attack" ? this.clips.attack : kind === "hit" ? this.clips.hit : this.clips.death;
     return this.actions[name] ? name : undefined;
   }

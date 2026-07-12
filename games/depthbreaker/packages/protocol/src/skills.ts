@@ -73,6 +73,13 @@ export interface SkillDef {
   /** Short uppercase hotbar label (slot chip). */
   label: string;
   description: string;
+  /**
+   * Optional animation clip the caster should play instead of the generic
+   * "attack" swing (e.g. "cast"). The client falls back to "attack" until the
+   * GLBs actually bake this clip, so it's safe to set ahead of the art — see
+   * the Unity exporter's Clips[] list. Casters use "cast".
+   */
+  clip?: string;
 }
 
 /** Flat catalog. Kits below decide which class knows which skill. */
@@ -162,6 +169,7 @@ export const SKILLS: Record<string, SkillDef> = {
     effects: [{ type: "projectile_aoe", radius: 3.2, damage: 24 }],
     label: "FIRE",
     description: "Hurl a fireball that explodes on your target.",
+    clip: "cast",
   },
   frost_nova: {
     id: "frost_nova",
@@ -172,6 +180,7 @@ export const SKILLS: Record<string, SkillDef> = {
     effects: [{ type: "aura_dot", radius: 5.0, tick: 0.5, damage: 6, duration: 6 }],
     label: "FRST",
     description: "Orbiting frost shards chill nearby enemies for 6s.",
+    clip: "cast",
   },
   // --- Knight: threat control ---
   taunt: {
@@ -205,6 +214,7 @@ export const SKILLS: Record<string, SkillDef> = {
     effects: [{ type: "heal_self", fraction: 0.35 }],
     label: "MEND",
     description: "Channel holy light, restoring 35% of your health.",
+    clip: "cast",
   },
   smite: {
     id: "smite",
@@ -215,6 +225,7 @@ export const SKILLS: Record<string, SkillDef> = {
     effects: [{ type: "projectile_aoe", radius: 1.6, damage: 18 }],
     label: "SMTE",
     description: "Hurl a bolt of holy light that sears your target.",
+    clip: "cast",
   },
   renew: {
     id: "renew",
@@ -225,6 +236,7 @@ export const SKILLS: Record<string, SkillDef> = {
     effects: [{ type: "heal_ally", fraction: 0.25, radius: 12 }],
     label: "RNEW",
     description: "Mend the most wounded ally near you (or yourself) for 25% health.",
+    clip: "cast",
   },
   blessing: {
     id: "blessing",
@@ -235,6 +247,7 @@ export const SKILLS: Record<string, SkillDef> = {
     effects: [{ type: "self_buff", kind: "damage_amp", value: 0.35, duration: 8 }],
     label: "BLES",
     description: "Empower yourself, dealing 35% more damage for 8s.",
+    clip: "cast",
   },
   // --- Necromancer: affliction — a single-target damage-over-time curse ---
   corruption: {
@@ -246,6 +259,7 @@ export const SKILLS: Record<string, SkillDef> = {
     effects: [{ type: "dot", damage: 7, tick: 1, duration: 8 }],
     label: "CORR",
     description: "Curse your target, draining 7 health every second for 8s.",
+    clip: "cast",
   },
 };
 

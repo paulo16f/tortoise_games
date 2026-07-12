@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { skillDef } from "@depthbreaker/protocol";
 import { zoneStore } from "../../net/room";
 import { combatBus } from "../../net/combatBus";
 
@@ -29,9 +30,13 @@ export function useCombatAnimState(
   const hitUntil = useRef(0);
   const prevYaw = useRef<number | null>(null);
   const smoothYawRate = useRef(0);
+  // Last skill this entity cast, so the controller can pick a per-skill clip
+  // (e.g. "cast") for the "skill" action state; falls back to the swing.
+  const lastSkillId = useRef("");
 
   useEffect(() => {
     return combatBus.subscribe((f) => {
+      if (f.sourceId === entityId && f.kind === "skill" && f.skillId) lastSkillId.current = f.skillId;
       const damaging = f.kind === "hit" || f.kind === "crit" || (f.kind === "skill" && f.amount > 0);
       if (!damaging) return;
       if (f.sourceId === entityId) attackUntil.current = performance.now() + f.delayMs + attackDurationMs;
@@ -61,7 +66,9 @@ export function useCombatAnimState(
       return { ...base, combat: { kind: "death", actionId: e.actionId }, alive: false };
     }
     if (e.actionState === "attack" || e.actionState === "skill") {
-      return { ...base, combat: { kind: "attack", actionId: e.actionId }, alive: true };
+      // A skill can request its own clip (casters → "cast"); basic attacks swing.
+      const clip = e.actionState === "skill" ? skillDef(lastSkillId.current)?.clip : undefined;
+      return { ...base, combat: { kind: "attack", actionId: e.actionId, clip }, alive: true };
     }
     if (e.actionState === "hit") {
       return { ...base, combat: { kind: "hit", actionId: e.actionId }, alive: true };
