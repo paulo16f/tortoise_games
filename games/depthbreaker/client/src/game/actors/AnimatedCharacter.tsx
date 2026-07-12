@@ -18,6 +18,7 @@ import {
   type Material,
 } from "three";
 import { localPlayerPos } from "../entityRefs";
+import { zoneStore } from "../../net/room";
 import { useCombatAnimState } from "./useCombatAnimState";
 import { useLocomotion } from "./useLocomotion";
 
@@ -247,10 +248,15 @@ export function AnimatedCharacter({
     mixerAccum.current += delta;
     let interval = 1;
     if (!previewState) {
-      const dx = worldPos.current.x - localPlayerPos.x;
-      const dz = worldPos.current.z - localPlayerPos.z;
-      const d2 = dx * dx + dz * dz;
-      interval = d2 > MIXER_FAR_D2 ? 4 : d2 > MIXER_MID_D2 ? 2 : 1;
+      // Never throttle the enemy you're focused on — the one character combat
+      // attention is locked to must animate at full rate even at mage range.
+      const isTarget = kind === "enemy" && zoneStore.state?.players.get(zoneStore.selfId)?.targetId === entityId;
+      if (!isTarget) {
+        const dx = worldPos.current.x - localPlayerPos.x;
+        const dz = worldPos.current.z - localPlayerPos.z;
+        const d2 = dx * dx + dz * dz;
+        interval = d2 > MIXER_FAR_D2 ? 4 : d2 > MIXER_MID_D2 ? 2 : 1;
+      }
     }
     if (++mixerTick.current >= interval) {
       mixer.update(mixerAccum.current);

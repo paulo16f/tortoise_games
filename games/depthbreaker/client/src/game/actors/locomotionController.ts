@@ -162,10 +162,18 @@ export class LocomotionController {
     this.phaseNames = a === b ? [a.name] : [a.name, b.name];
   }
 
+  private isCombatClip(name: string): boolean {
+    return name === this.clips.attack || name === this.clips.hit || name === this.clips.death;
+  }
+
   private applyWeights(targets: Map<string, number>, delta: number): void {
-    const rate = Math.min(1, delta * this.profile.blendRate);
+    const locoRate = Math.min(1, delta * this.profile.blendRate);
+    // Combat one-shots (attack/hit/death) snap in much faster than locomotion so
+    // a swing/flinch reads on the frame it starts instead of ramping ~180ms.
+    const combatRate = Math.min(1, delta * 26);
     const names = new Set<string>([...this.weights.keys(), ...targets.keys()]);
     for (const name of names) {
+      const rate = this.isCombatClip(name) ? combatRate : locoRate;
       const cur = this.weights.get(name) ?? 0;
       const tgt = targets.get(name) ?? 0;
       let next = cur + (tgt - cur) * rate;
