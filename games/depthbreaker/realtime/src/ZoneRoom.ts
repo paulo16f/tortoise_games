@@ -42,6 +42,7 @@ import {
   type ChatMessage,
   type SpinnerMessage,
   type SpinResultMessage,
+  type TelegraphMessage,
   type CombatActionState,
   type CombatEventMessage,
   type LootEventMessage,
@@ -105,7 +106,7 @@ import {
   type PendingProjectile,
   type ProjectileEntity,
 } from "@depthbreaker/sim";
-import { EnemyController, GRUNT, ELITE_GRUNT, BOSS_BRUTE, type EnemyDef, type CombatTarget } from "./enemies.js";
+import { EnemyController, GRUNT, SWARMER, ELITE_GRUNT, BOSS_BRUTE, type EnemyDef, type CombatTarget } from "./enemies.js";
 import { verifyJoinTicket, type JoinTicketClaims } from "./joinTicket.js";
 import { BackendReporter } from "./backendReporter.js";
 import { loadConfig, type RealtimeConfig } from "./config.js";
@@ -245,6 +246,7 @@ export class ZoneRoom extends Room<ZoneState> {
   private spawnSeq = 0;
   private actionSeq = 0;
   private waveTimer = WAVE_INTERVAL_SECONDS;
+  private waveCount = 0;
   private bossPortalTimer = BOSS_PORTAL_INTERVAL_SECONDS;
   // Independent Loot substream, seeded once from the run seed in ensureSeeded().
   private lootRng: DeterministicRng = new DeterministicRng(0);
@@ -645,10 +647,27 @@ export class ZoneRoom extends Room<ZoneState> {
   private updateWaves(dt: number): void {
     this.waveTimer -= dt;
     if (this.waveTimer > 0) return;
-    this.waveTimer = WAVE_INTERVAL_SECONDS;
-    if (this.liveEnemyCount() >= MAX_LIVE_ENEMIES) return;
-    const elite = Math.random() < ELITE_CHANCE;
-    const def = elite ? ELITE_GRUNT : GRUNT;
+    // Intensity ramps over the first ~5 minutes: waves come faster, elites more
+    // often, more enemies allowed alive, and periodic swarmer packs punctuate.
+    const intensity = Math.min(1, this.elapsedSeconds / 300);
+    this.waveTimer = WAVE_INTERVAL_SECONDS * (1 - 0.45 * intensity);
+    const cap = MAX_LIVE_ENEMIES + Math.floor(4 * intensity);
+    if (this.liveEnemyCount() >= cap) return;
+
+    this.waveCount++;
+    // Every 4th wave (once things heat up) is a swarmer pack — a punctuated
+    // "oh no, a group" moment instead of the endless one-at-a-time trickle.
+    if (this.waveCount % 4 === 0 && intensity > 0.2) {
+      const point = this.randomSpawnPoint(SWARMER);
+      const packSize = 3 + Math.floor(intensity * 2); // 3-5
+      for (let i = 0; i < packSize; i++) {
+        this.spawnEnemy(SWARMER, point.x + (i - 2) * 1.1, point.z + (i % 2) * 1.1);
+      }
+      return;
+    }
+
+    const roll = Math.random();
+    const def = roll < ELITE_CHANCE + 0.25 * intensity ? ELITE_GRUNT : roll < 0.6 ? SWARMER : GRUNT;
     const point = this.randomSpawnPoint(def);
     this.spawnEnemy(def, point.x, point.z);
   }
@@ -686,7 +705,8 @@ export class ZoneRoom extends Room<ZoneState> {
   private updateEnemies(dt: number, targets: Map<string, CombatTarget>): void {
     for (const enemy of this.enemies) {
       const action = enemy.update(dt, targets, this.dungeon);
-      if (action.attackTargetId) this.enemyHitsPlayer(enemy, action.attackTargetId);
+      if (action.special) this.enemySpecialSlam(enemy);
+      else if (action.attackTargetId) this.enemyHitsPlayer(enemy, action.attackTargetId);
     }
   }
 
@@ -1582,17 +1602,50 @@ export class ZoneRoom extends Room<ZoneState> {
 
   private resolveEnemyHit(enemy: EnemyController, playerId: string, actionId: string): void {
     const p = this.state.players.get(playerId);
-    const rt = this.runtimes.get(playerId);
-    if (!enemy.state.alive || !p || !rt || !p.alive || !this.isCurrentAction(enemy.state, actionId)) return;
+    if (!enemy.state.alive || !p || !p.alive || !this.isCurrentAction(enemy.state, actionId)) return;
     const d = Math.hypot(enemy.state.x - p.x, enemy.state.z - p.z);
-    if (d > enemy.def.attackRange + 0.65) return;
+    if (d > enemy.def.attackRange + 0.65) return; // juked out during the wind-up
+    this.dealEnemyDamageToPlayer(enemy, playerId, enemy.def.attackDamage, actionId);
+  }
+
+  /**
+   * Telegraphed ground-slam: broadcast a warning ring, then after the wind-up
+   * hit every player still inside the radius. Dodgeable by leaving the ring —
+   * the radius is captured where the slam started, so moving out avoids it.
+   */
+  private enemySpecialSlam(enemy: EnemyController): void {
+    const special = enemy.def.special;
+    if (!special) return;
+    const actionId = this.nextActionId();
+    const slamX = enemy.state.x;
+    const slamZ = enemy.state.z;
+    this.setAction(enemy.state, "attack", special.windup + special.recovery, enemy.state.targetId, actionId);
+    const tele: TelegraphMessage = { sourceId: enemy.state.id, x: slamX, z: slamZ, radius: special.radius, windupMs: special.windup * 1000 };
+    this.broadcast(ServerMessage.Telegraph, tele);
+    this.scheduleImpact(actionId, special.windup, () => {
+      if (!enemy.state.alive || !this.isCurrentAction(enemy.state, actionId)) return;
+      this.state.players.forEach((p, pid) => {
+        if (!p.alive) return;
+        if (Math.hypot(p.x - slamX, p.z - slamZ) > special.radius) return; // stepped out
+        this.dealEnemyDamageToPlayer(enemy, pid, special.damage, actionId);
+      });
+      // Impact flash at the slam center (drives ImpactFx).
+      this.emitCombat({ sourceId: enemy.state.id, targetId: enemy.state.id, amount: 0, kind: "skill", actionId });
+    });
+  }
+
+  /** Apply one enemy hit to a player (shield/armor/bulwark/death), shared by the
+   *  basic attack and the ground-slam AoE. */
+  private dealEnemyDamageToPlayer(enemy: EnemyController, playerId: string, rawDamage: number, actionId: string): void {
+    const p = this.state.players.get(playerId);
+    const rt = this.runtimes.get(playerId);
+    if (!p || !rt || !p.alive) return;
     if (rt.shieldSeconds > 0) {
       this.emitCombat({ sourceId: enemy.state.id, targetId: p.id, amount: 0, kind: "skill", actionId });
       return;
     }
     const playerArmor = p.level * 5;
-    let dmg = resolveDamage(enemy.def.attackDamage, playerArmor, enemy.def.level, false);
-    // Bulwark: flat post-mitigation damage reduction while the buff is up.
+    let dmg = resolveDamage(rawDamage, playerArmor, enemy.def.level, false);
     if (rt.bulwarkSeconds > 0 && rt.bulwarkValue > 0) {
       dmg = Math.max(1, Math.round(dmg * (1 - rt.bulwarkValue)));
     }

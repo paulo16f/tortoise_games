@@ -64,6 +64,8 @@ export const ServerMessage = {
   SpinResult: "spinResult",
   /** The player's OWN spinner state (targeted): whether a free spin is ready. */
   Spinner: "spinner",
+  /** A telegraphed AoE about to land — clients draw a growing warning ring. */
+  Telegraph: "telegraph",
 } as const;
 
 export type CombatActionState = "idle" | "attack" | "skill" | "hit" | "dying" | "dead";
@@ -175,6 +177,16 @@ export interface ChatMessage {
 export interface SpinnerMessage {
   /** Seconds until the next free spin (0 = ready now). */
   cooldownRemaining: number;
+}
+
+/** Payload of ServerMessage.Telegraph — a ground AoE winding up at (x,z). */
+export interface TelegraphMessage {
+  sourceId: string;
+  x: number;
+  z: number;
+  radius: number;
+  /** Wind-up duration in ms; the client fills the ring over this time. */
+  windupMs: number;
 }
 
 /** Payload of ServerMessage.SpinResult — the prize a spin awarded. */

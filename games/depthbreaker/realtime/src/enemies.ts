@@ -26,6 +26,14 @@ export interface EnemyDef {
    * since the hit re-checks range at impact). Falls back to the shared default.
    */
   attackTiming?: AttackTiming;
+  /**
+   * Telegraphed ground-slam special: every `interval`s in combat, wind up for
+   * `windup`s (a warning ring shows client-side), then hit every player within
+   * `radius` for `damage`. Dodgeable by leaving the ring. Elites/bosses only.
+   */
+  special?: { interval: number; windup: number; recovery: number; radius: number; damage: number };
+  /** Idle enemies drift within a small radius of their spawn so the world reads as alive. */
+  wander?: boolean;
 }
 
 export const GRUNT: EnemyDef = {
@@ -43,8 +51,27 @@ export const GRUNT: EnemyDef = {
   currencyValue: 5,
   level: 1,
   respawnDelay: 0,
-  // Trash: a snappy, light swing.
+  // Trash: a snappy, light swing; drifts around its post when idle.
   attackTiming: { windup: 0.28, recovery: 0.34 },
+  wander: true,
+};
+
+/** Fast, fragile pack hunter — spawns in groups; punishes standing still. */
+export const SWARMER: EnemyDef = {
+  ...GRUNT,
+  id: "swarmer",
+  rank: "normal",
+  maxHp: 28,
+  attackDamage: 5,
+  attackInterval: 0.9,
+  attackRange: 2.0,
+  moveSpeed: 3.6,
+  armor: 4,
+  xpValue: 40,
+  currencyValue: 4,
+  level: 2,
+  attackTiming: { windup: 0.22, recovery: 0.3 },
+  wander: true,
 };
 
 export const ELITE_GRUNT: EnemyDef = {
@@ -59,8 +86,9 @@ export const ELITE_GRUNT: EnemyDef = {
   xpValue: 140,
   currencyValue: 18,
   level: 3,
-  // Elite: a heavier, clearly readable swing you can step out of.
+  // Elite slammer: a heavy readable swing, plus a periodic telegraphed stomp.
   attackTiming: { windup: 0.5, recovery: 0.4 },
+  special: { interval: 8, windup: 0.7, recovery: 0.5, radius: 3.2, damage: 22 },
 };
 
 export const BOSS_BRUTE: EnemyDef = {
@@ -76,8 +104,10 @@ export const BOSS_BRUTE: EnemyDef = {
   xpValue: 600,
   currencyValue: 80,
   level: 6,
-  // Boss: a slow, telegraphed haymaker — clearly readable, punishing if it lands.
+  // Boss: a slow, telegraphed haymaker + a big, frequent ground-slam AoE — the
+  // fight is now about reading and dodging the slam, not just trading blows.
   attackTiming: { windup: 0.75, recovery: 0.5 },
+  special: { interval: 6, windup: 0.85, recovery: 0.6, radius: 4.6, damage: 34 },
 };
 
 /** A live combat target the enemy can act on (player or another entity). */
@@ -91,6 +121,8 @@ export interface CombatTarget {
 /** What the enemy wants to do this tick; the room applies the effects. */
 export interface EnemyAction {
   attackTargetId: string | null;
+  /** True this tick to begin the telegraphed ground-slam special. */
+  special?: boolean;
 }
 
 function dist(ax: number, az: number, bx: number, bz: number): number {
@@ -105,7 +137,13 @@ export class EnemyController {
   private readonly spawnX: number;
   private readonly spawnZ: number;
   private attackCooldown = 0;
+  private specialTimer: number;
   private respawnTimer = 0;
+  private wanderTarget: { x: number; z: number } | null = null;
+  private wanderTimer = 0;
+  // Per-controller deterministic RNG seeded from the spawn point — used for idle
+  // wander so the world reads as alive without Math.random on shared content.
+  private rngState: number;
   // The per-run map, refreshed each update() so movement collision uses the
   // seeded dungeon rather than the module fallback.
   private map: DungeonMapDefinition = DEPTHBREAKER_DUNGEON;
@@ -119,6 +157,14 @@ export class EnemyController {
     this.def = def;
     this.spawnX = spawnX;
     this.spawnZ = spawnZ;
+    // Stagger the first special so packs don't all slam on the same tick.
+    this.specialTimer = def.special ? def.special.interval * 0.6 : 0;
+    this.rngState = ((Math.floor(spawnX * 73856093) ^ Math.floor(spawnZ * 19349663)) >>> 0) || 1;
+  }
+
+  private nextRand(): number {
+    this.rngState = (Math.imul(this.rngState, 1664525) + 1013904223) >>> 0;
+    return this.rngState / 4294967296;
   }
 
   addThreat(playerId: string, amount: number): void {
@@ -141,6 +187,7 @@ export class EnemyController {
     }
 
     this.attackCooldown = Math.max(0, this.attackCooldown - dt);
+    this.specialTimer = Math.max(0, this.specialTimer - dt);
 
     if (dist(s.x, s.z, this.spawnX, this.spawnZ) > ENEMY_LEASH_DISTANCE) {
       this.enterLeash();
@@ -163,7 +210,10 @@ export class EnemyController {
           break;
         }
       }
-      if (s.fsm === "idle") return { attackTargetId: null };
+      if (s.fsm === "idle") {
+        if (this.def.wander) this.updateWander(dt);
+        return { attackTargetId: null };
+      }
     }
 
     const targetId = this.threat.selectTarget(s.targetId || null, (id) => {
@@ -179,6 +229,16 @@ export class EnemyController {
 
     s.targetId = target.id;
     const d = dist(s.x, s.z, target.x, target.z);
+
+    // Ground-slam special: fires when a target is inside the (larger) slam
+    // radius, even from beyond melee reach, so it reads as a gap-closing threat.
+    if (this.def.special && this.specialTimer <= 0 && d <= this.def.special.radius) {
+      this.specialTimer = this.def.special.interval;
+      s.fsm = "combat";
+      this.faceToward(target.x, target.z);
+      return { attackTargetId: null, special: true };
+    }
+
     if (d > this.def.attackRange) {
       s.fsm = "aggro";
       this.moveToward(target.x, target.z, dt);
@@ -192,6 +252,20 @@ export class EnemyController {
       return { attackTargetId: target.id };
     }
     return { attackTargetId: null };
+  }
+
+  /** Idle amble within a small radius of the spawn (deterministic wander). */
+  private updateWander(dt: number): void {
+    this.wanderTimer -= dt;
+    if (!this.wanderTarget || this.wanderTimer <= 0) {
+      const ang = this.nextRand() * Math.PI * 2;
+      const r = this.nextRand() * 3.5;
+      this.wanderTarget = { x: this.spawnX + Math.cos(ang) * r, z: this.spawnZ + Math.sin(ang) * r };
+      this.wanderTimer = 2 + this.nextRand() * 3;
+    }
+    if (dist(this.state.x, this.state.z, this.wanderTarget.x, this.wanderTarget.z) > 0.4) {
+      this.moveAt(this.wanderTarget.x, this.wanderTarget.z, dt, this.def.moveSpeed * 0.4);
+    }
   }
 
   takeDamage(amount: number): boolean {
@@ -225,12 +299,16 @@ export class EnemyController {
   }
 
   private moveToward(tx: number, tz: number, dt: number): void {
+    this.moveAt(tx, tz, dt, this.def.moveSpeed);
+  }
+
+  private moveAt(tx: number, tz: number, dt: number, speed: number): void {
     const s = this.state;
     const dx = tx - s.x;
     const dz = tz - s.z;
     const len = Math.sqrt(dx * dx + dz * dz);
     if (len < 1e-4) return;
-    const step = Math.min(len, this.def.moveSpeed * dt);
+    const step = Math.min(len, speed * dt);
     const nextX = s.x + (dx / len) * step;
     const nextZ = s.z + (dz / len) * step;
     if (isDungeonWalkable(nextX, nextZ, 0.45, this.map)) {

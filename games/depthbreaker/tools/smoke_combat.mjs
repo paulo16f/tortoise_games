@@ -142,6 +142,22 @@ async function main() {
     check("player stays put after disengaging (auto-follow off, not yanked to target)", moved < 0.6 && movedTowardFoe < 0.5, `moved=${moved.toFixed(2)}, towardFoe=${movedTowardFoe.toFixed(2)}`);
   }
 
+  // === D) Slam telegraph: standing near an elite/boss draws a telegraphed AoE ===
+  const teles = [];
+  room.onMessage("telegraph", (m) => teles.push(m));
+  const slammers = entries(room.state.enemies).map(([, e]) => e).filter((e) => e.alive && (e.rank === "elite" || e.rank === "boss"));
+  slammers.sort((a, b) => dist(a, self) - dist(b, self));
+  const slammer = slammers[0];
+  if (slammer) {
+    // Get inside the slam radius and stay put so the elite/boss slams us.
+    await walkNear(room, self, slammer.id, 3.5, 25000);
+    room.send("setTarget", { targetId: slammer.id, autoAttack: true });
+    await waitFor(() => teles.length > 0, "slam telegraph", 16000).catch(() => {});
+    check("elite/boss broadcasts a telegraphed slam ring", teles.length > 0, teles[0] ? `radius=${teles[0].radius}` : "none reached");
+  } else {
+    check("a special-capable enemy exists", false, "no elite/boss found");
+  }
+
   await room.leave();
   console.log(failures === 0 ? "\nRESULT: PASS ✅ combat responsiveness green" : `\nRESULT: FAIL ❌ ${failures} check(s) failed`);
   process.exitCode = failures === 0 ? 0 : 1;

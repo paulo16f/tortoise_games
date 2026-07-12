@@ -33,11 +33,13 @@ import {
   type ChatMessage,
   type SpinnerMessage,
   type SpinResultMessage,
+  type TelegraphMessage,
   type CombatEventMessage,
   type LootEventMessage,
   type WelcomeMessage,
 } from "@depthbreaker/protocol";
 import { combatBus } from "./combatBus";
+import { telegraphBus } from "./telegraphBus";
 
 export interface MapLike<V> {
   forEach(cb: (value: V, key: string) => void): void;
@@ -256,6 +258,11 @@ class ZoneStore {
       this.spinResult = { ...msg, id: this.spinSeq++ };
       this.spinner = { cooldownRemaining: msg.cooldownRemaining, updatedAt: performance.now() };
       this.refresh();
+    });
+
+    room.onMessage(ServerMessage.Telegraph, (msg: TelegraphMessage) => {
+      // 3D-only reaction; bypass React (no snapshot involvement).
+      telegraphBus.emit(msg);
     });
 
     room.onLeave(() => this.detach());

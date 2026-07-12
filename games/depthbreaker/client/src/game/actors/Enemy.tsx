@@ -1,6 +1,6 @@
 ﻿import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Billboard } from "@react-three/drei";
+import { Billboard, Text } from "@react-three/drei";
 import type { Group, Mesh, MeshStandardMaterial } from "three";
 import { MathUtils } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
@@ -35,6 +35,7 @@ export function Enemy({ id, isTarget }: EnemyProps) {
   const hpChip = useRef<Mesh>(null);
   const hpDisplay = useRef(1);
   const hpChipVal = useRef(1);
+  const alert = useRef<Group>(null);
 
   useEffect(
     () =>
@@ -72,6 +73,8 @@ export function Enemy({ id, isTarget }: EnemyProps) {
     g.rotation.y = lerpAngle(g.rotation.y, e.yaw, turnT);
     g.visible = true;
     if (reticle.current) reticle.current.rotation.z -= delta * 1.5;
+    // Aggro tell: a "!" pops when the enemy notices/chases you (synced fsm).
+    if (alert.current) alert.current.visible = e.alive && e.fsm === "aggro";
 
     // Health bar: smooth the red fill, and trail a yellow "chip" that drains
     // toward it so a burst of damage reads as a satisfying chunk.
@@ -166,6 +169,14 @@ export function Enemy({ id, isTarget }: EnemyProps) {
           </mesh>
         </group>
       )}
+
+      <group ref={alert} visible={false}>
+        <Billboard position={[0, visualHeight + 0.62, 0]}>
+          <Text fontSize={0.5} color="#f87171" outlineWidth={0.035} outlineColor="#000000" fontWeight="bold">
+            !
+          </Text>
+        </Billboard>
+      </group>
 
       {alive && (
         <Billboard position={[0, visualHeight + 0.28, 0]}>
