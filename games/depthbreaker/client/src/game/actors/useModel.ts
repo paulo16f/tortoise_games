@@ -2,7 +2,7 @@
 
 import { useGLTF } from "@react-three/drei";
 import type { ClassId } from "@depthbreaker/protocol";
-import { skinDef } from "@depthbreaker/sim";
+import { skinDef, weaponTypeOf, type WeaponType } from "@depthbreaker/sim";
 import type { ClipSet, StrideNorm } from "./AnimatedCharacter";
 import { MOTION_PROFILES, type MotionProfile, type MotionProfileId } from "./motionProfiles";
 import syntyRuntimeManifest from "../../../public/models/synty/runtime/manifest.json";
@@ -41,6 +41,29 @@ const SYNTY_DB_UNDEAD_KNIGHT = "/models/synty/depthbreaker/characters/undead_kni
 const SYNTY_DB_BOSS_SKELETON = "/models/synty/depthbreaker/characters/boss_skeleton.glb";
 const SYNTY_DB_SWORD = "/models/synty/depthbreaker/weapons/sword.glb";
 const SYNTY_DB_STAFF = "/models/synty/depthbreaker/weapons/staff.glb";
+
+/**
+ * Weapon archetype -> held GLB. Only sword/staff are imported so far; the other
+ * melee types fall back to the sword and casters to the staff until their
+ * POLYGON Dungeon Realms models are exported (then it's one line each here).
+ */
+const WEAPON_MODELS: Record<WeaponType, string> = {
+  sword: SYNTY_DB_SWORD,
+  axe: SYNTY_DB_SWORD,
+  mace: SYNTY_DB_SWORD,
+  hammer: SYNTY_DB_SWORD,
+  dagger: SYNTY_DB_SWORD,
+  spear: SYNTY_DB_SWORD,
+  staff: SYNTY_DB_STAFF,
+  wand: SYNTY_DB_STAFF,
+  bow: SYNTY_DB_STAFF,
+};
+
+/** The GLB to render for an equipped weapon id (undefined if unknown). */
+export function resolveWeaponModel(weaponId: string): string | undefined {
+  const type = weaponTypeOf(weaponId);
+  return type ? WEAPON_MODELS[type] : undefined;
+}
 
 const SYNTY_DEPTHBREAKER_CLIPS: ClipSet = {
   idle: "idle",

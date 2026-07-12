@@ -89,6 +89,9 @@ import {
   itemDef,
   stackSizeOf,
   weaponAttack,
+  weaponAttackSpeed,
+  weaponCritBonus,
+  weaponReach,
   canEquipWeapon,
   type InvSlot,
   type LootRank,
@@ -162,6 +165,21 @@ function defaultWeaponForClass(classId: ClassId): string {
 function basicAttackRaw(p: PlayerState, rt: PlayerRuntime): number {
   if (!p.weaponId) return Math.max(1, Math.round(rt.profile.attackRaw * 0.45));
   return rt.profile.attackRaw + weaponAttack(p.weaponId);
+}
+
+/** Effective swing period after the equipped weapon's speed multiplier. */
+function swingIntervalFor(profile: ClassProfile, weaponId: string): number {
+  return profile.attackInterval / weaponAttackSpeed(weaponId);
+}
+
+/** Effective melee reach after the equipped weapon's reach bonus. */
+function attackRangeFor(profile: ClassProfile, weaponId: string): number {
+  return profile.attackRange + weaponReach(weaponId);
+}
+
+/** Effective crit chance after the equipped weapon's crit bonus. */
+function critChanceFor(weaponId: string): number {
+  return PLAYER_CRIT_CHANCE + weaponCritBonus(weaponId);
 }
 
 interface PlayerRuntime {
@@ -609,6 +627,8 @@ export class ZoneRoom extends Room<ZoneState> {
       p.gcdRemaining = rt.gcdRemaining;
       // Swing timer is advanced in updatePlayerAttacks; surface it for the HUD bar.
       p.swingCooldown = rt.attackCooldown;
+      // Keep the HUD swing bar accurate as weapons (and their speed) change.
+      p.swingInterval = swingIntervalFor(rt.profile, p.weaponId);
       p.shieldSeconds = rt.shieldSeconds;
       p.frostSeconds = rt.frostSeconds;
       // Mirror per-skill cooldowns + level unlocks into the synced hotbar.
@@ -741,17 +761,18 @@ export class ZoneRoom extends Room<ZoneState> {
         return;
       }
       const d = Math.hypot(enemy.state.x - p.x, enemy.state.z - p.z);
-      if (d > rt.profile.attackRange) {
+      const range = attackRangeFor(rt.profile, p.weaponId);
+      if (d > range) {
         // Out of range: only chase if the player engaged by clicking the target
         // and isn't steering themselves this tick. Manual movement wins, so
         // strafing/kiting away is never yanked back to the target.
         const manualMove = Math.hypot(rt.input.moveX, rt.input.moveZ) > 0.01;
-        if (rt.engaging && !manualMove) this.autoFollowTarget(p, enemy, dt, rt.profile.attackRange);
+        if (rt.engaging && !manualMove) this.autoFollowTarget(p, enemy, dt, range);
         return;
       }
 
       this.facePlayerToEnemy(p, enemy);
-      rt.attackCooldown = rt.profile.attackInterval;
+      rt.attackCooldown = swingIntervalFor(rt.profile, p.weaponId);
       const actionId = this.nextActionId();
       this.setAction(p, "attack", actionDuration(DEFAULT_MELEE_ATTACK_TIMING), enemy.state.id, actionId);
 
@@ -766,7 +787,7 @@ export class ZoneRoom extends Room<ZoneState> {
             const liveTarget = this.enemies.find((e) => e.state.id === enemy.state.id);
             const rtNow = this.runtimes.get(id);
             if (!liveSource || !rtNow || !liveSource.alive || !liveTarget?.state.alive) return;
-            const isCrit = Math.random() < PLAYER_CRIT_CHANCE;
+            const isCrit = Math.random() < critChanceFor(liveSource.weaponId);
             const dmg = resolveDamage(basicAttackRaw(liveSource, rtNow), liveTarget.def.armor, liveSource.level, isCrit);
             this.damageEnemy(id, rtNow, liveSource, liveTarget, dmg, isCrit ? "crit" : "hit", actionId);
           });
@@ -778,14 +799,14 @@ export class ZoneRoom extends Room<ZoneState> {
           const liveRt = this.runtimes.get(id);
           if (!source || !liveRt || !source.alive || !target?.state.alive || !this.isCurrentAction(source, actionId)) return;
           const liveDistance = Math.hypot(target.state.x - source.x, target.state.z - source.z);
-          if (liveDistance > liveRt.profile.attackRange + 0.75) {
+          if (liveDistance > attackRangeFor(liveRt.profile, source.weaponId) + 0.75) {
             // Target juked out during the windup — refund most of the swing so
             // re-engaging is snappy instead of a full-interval lockout on a whiff.
             liveRt.attackCooldown = Math.min(liveRt.attackCooldown, DEFAULT_MELEE_ATTACK_TIMING.windup);
             return;
           }
           this.facePlayerToEnemy(source, target);
-          const isCrit = Math.random() < PLAYER_CRIT_CHANCE;
+          const isCrit = Math.random() < critChanceFor(source.weaponId);
           const dmg = resolveDamage(basicAttackRaw(source, liveRt), target.def.armor, source.level, isCrit);
           this.damageEnemy(id, liveRt, source, target, dmg, isCrit ? "crit" : "hit", actionId);
         });

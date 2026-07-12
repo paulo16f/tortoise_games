@@ -6,7 +6,7 @@ import { MathUtils } from "three";
 import { zoneStore } from "../../net/room";
 import { combatBus } from "../../net/combatBus";
 import { localPlayerPos } from "../entityRefs";
-import { resolvePlayerModel } from "./useModel";
+import { resolvePlayerModel, resolveWeaponModel } from "./useModel";
 import { AnimatedCharacter } from "./AnimatedCharacter";
 import { DEFAULT_MOTION_PROFILE } from "./motionProfiles";
 import { FLINCH_MS } from "../fx/fxConstants";
@@ -91,7 +91,9 @@ export function Player({ id, isLocal }: PlayerProps) {
   const name = p?.name ?? "";
   const classId = p?.classId ?? "";
   const model = resolvePlayerModel(classId, p?.skinId);
-  const weaponUrl = p?.weaponId ? model?.weaponUrl : undefined;
+  // Render the equipped weapon's own model (axe looks like an axe), falling back
+  // to the class default if the weapon has no mapped model.
+  const weaponUrl = p?.weaponId ? resolveWeaponModel(p.weaponId) ?? model?.weaponUrl : undefined;
   const visualHeight = model?.visualHeight ?? 1.8;
   const radius = model?.radius ?? 0.45;
   const color = !alive ? DEAD_COLOR : isLocal ? LOCAL_COLOR : OTHER_COLOR;
