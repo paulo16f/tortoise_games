@@ -16,6 +16,7 @@ import { rarityColor, itemInitials, itemName } from "./itemDisplay";
 import { useDraggablePanel } from "./useDraggablePanel";
 import { tooltipHandlers } from "./Tooltip";
 import { ItemCard } from "./ItemCard";
+import { PanelClose } from "./PanelClose";
 
 let cookingOpen = false;
 const openListeners = new Set<() => void>();
@@ -79,7 +80,10 @@ export function CookingPanel() {
     >
       <div {...dragHandlers} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}>
         <b>Cooking</b>
-        <span style={{ opacity: 0.6, fontSize: 12 }}>turn raw fish into food</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ opacity: 0.6, fontSize: 12 }}>turn raw fish into food</span>
+          <PanelClose onClose={closeCooking} />
+        </div>
       </div>
 
       {!inRange && <div style={{ color: "#fbbf24", fontSize: 12, marginBottom: 8 }}>Walk to the cooking station to cook.</div>}

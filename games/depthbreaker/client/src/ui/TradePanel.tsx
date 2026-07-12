@@ -13,6 +13,7 @@ import { withAuth } from "../net/session";
 import { marketListings, marketMine, marketList, marketBuy, marketCancel, type MarketListing } from "../net/backend";
 import { useDraggablePanel } from "./useDraggablePanel";
 import { itemName, itemInitials, rarityColor } from "./itemDisplay";
+import { PanelClose } from "./PanelClose";
 
 let tradeOpen = false;
 const openListeners = new Set<() => void>();
@@ -75,8 +76,8 @@ export function TradePanel() {
       await withAuth(fn);
       zoneStore.sendRefreshPrivate(); // re-sync gold + stash in the live zone
       await reload();
-    } catch {
-      setError("That action was refused. Try again.");
+    } catch (err) {
+      setError(friendlyMarketError(err));
     } finally {
       setBusy(false);
     }
@@ -104,7 +105,13 @@ export function TradePanel() {
     >
       <div {...dragHandlers} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}>
         <b>Trading Post</b>
-        <span style={{ color: "#fbbf24", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>🪙 {gold}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button onClick={() => void reload()} disabled={busy} title="Refresh listings" aria-label="Refresh listings" style={refreshBtn}>
+            ⟳
+          </button>
+          <span style={{ color: "#fbbf24", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>🪙 {gold}</span>
+          <PanelClose onClose={closeTrade} />
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
@@ -289,7 +296,7 @@ function SellRow({
               min={1}
               max={available}
               value={count}
-              onChange={(e) => setCount(Math.floor(Number(e.target.value) || 1))}
+              onChange={(e) => setCount(Math.min(available, Math.max(1, Math.floor(Number(e.target.value) || 1))))}
               style={numInput}
             />
           </label>
@@ -327,6 +334,49 @@ function MineTab({ mine, busy, onCancel }: { mine: MarketListing[]; busy: boolea
       ))}
     </div>
   );
+}
+
+const refreshBtn: React.CSSProperties = {
+  width: 22,
+  height: 22,
+  borderRadius: 6,
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#e6e9ef",
+  fontSize: 14,
+  lineHeight: 1,
+  cursor: "pointer",
+  display: "grid",
+  placeItems: "center",
+};
+
+/** Map the backend's `error` code (embedded in the ApiError message) to a
+ *  human, actionable string — so a full bank or a sold listing says so. */
+function friendlyMarketError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : "";
+  if (msg.includes("not_authenticated") || msg.startsWith("401")) return "Sign in to trade.";
+  const code = msg.match(/"error":"([^"]+)"/)?.[1];
+  switch (code) {
+    case "insufficient_currency":
+      return "Not enough gold.";
+    case "listing_limit_reached":
+      return "You already have 8 active listings.";
+    case "own_listing":
+      return "That's your own listing.";
+    case "not_open":
+    case "listing_not_found":
+      return "That listing was just sold or removed.";
+    case "not_in_stash":
+      return "That item isn't in your bank.";
+    case "stash_full":
+      return "Your bank is full — withdraw something first.";
+    case "stack_full":
+      return "Your bank stack for that item is full.";
+    case "unknown_item":
+      return "Unknown item.";
+    default:
+      return "That action was refused. Try again.";
+  }
 }
 
 const numInput: React.CSSProperties = {

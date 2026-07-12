@@ -8,6 +8,7 @@ import { useSyncExternalStore } from "react";
 import { classKit, type ClassId, type SkillDef } from "@depthbreaker/protocol";
 import { useZoneState } from "../net/useZone";
 import { useDraggablePanel } from "./useDraggablePanel";
+import { PanelClose } from "./PanelClose";
 
 let bookOpen = false;
 const openListeners = new Set<() => void>();
@@ -125,7 +126,10 @@ export function SkillBookPanel() {
         <b>
           Skill Book <span style={{ opacity: 0.6, fontWeight: 400 }}>({snap.self.classId} — Lv {level})</span>
         </b>
-        <span style={{ opacity: 0.6, fontSize: 12 }}>K to close</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ opacity: 0.6, fontSize: 12 }}>K / Esc</span>
+          <PanelClose onClose={closeSkillBook} />
+        </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {kit.map((def) => (

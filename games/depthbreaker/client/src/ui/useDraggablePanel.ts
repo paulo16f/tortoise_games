@@ -4,7 +4,7 @@
 // localStorage and are clamped so a panel can never be dragged (or restored)
 // fully off-screen.
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface PanelPosition {
   x: number;
@@ -38,6 +38,14 @@ function load(key: string, fallback: PanelPosition): PanelPosition {
 export function useDraggablePanel(key: string, defaultPos: () => PanelPosition) {
   const [position, setPosition] = useState<PanelPosition>(() => load(key, clamp(defaultPos())));
   const drag = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null);
+
+  // Re-clamp on window resize so a panel positioned for a larger window (or a
+  // restored position) can never end up stranded off-screen with no grab strip.
+  useEffect(() => {
+    const onResize = () => setPosition((p) => clamp(p));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {

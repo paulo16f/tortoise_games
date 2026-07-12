@@ -39,6 +39,7 @@ function DockButton({ item }: { item: DockItem }) {
   return (
     <button
       onClick={item.toggle}
+      aria-label={`${item.label} (${item.hotkey})`}
       {...tooltipHandlers(() => (
         <span>
           <b>{item.label}</b> <span style={{ opacity: 0.6 }}>({item.hotkey})</span>

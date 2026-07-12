@@ -7,6 +7,7 @@ import { useSyncExternalStore } from "react";
 import { useZoneState } from "../net/useZone";
 import { zoneStore } from "../net/room";
 import { useDraggablePanel } from "./useDraggablePanel";
+import { PanelClose } from "./PanelClose";
 
 let dailiesOpen = false;
 const openListeners = new Set<() => void>();
@@ -58,7 +59,10 @@ export function DailyQuestPanel() {
     >
       <div {...dragHandlers} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, ...dragHandlers.style }}>
         <b>Daily Quests</b>
-        <span style={{ opacity: 0.6, fontSize: 12 }}>resets daily</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ opacity: 0.6, fontSize: 12 }}>resets daily</span>
+          <PanelClose onClose={closeDailies} />
+        </div>
       </div>
 
       {quests.length === 0 && (

@@ -14,6 +14,7 @@ import { rarityColor, itemInitials } from "./itemDisplay";
 import { useDraggablePanel } from "./useDraggablePanel";
 import { tooltipHandlers } from "./Tooltip";
 import { ItemCard } from "./ItemCard";
+import { PanelClose } from "./PanelClose";
 
 let marketOpen = false;
 const openListeners = new Set<() => void>();
@@ -86,7 +87,10 @@ export function MarketPanel() {
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}
       >
         <b>Market</b>
-        <GoldChip amount={gold} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <GoldChip amount={gold} />
+          <PanelClose onClose={closeMarket} />
+        </div>
       </div>
 
       {!inRange && (

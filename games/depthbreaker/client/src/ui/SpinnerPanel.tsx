@@ -10,6 +10,7 @@ import { useZoneState } from "../net/useZone";
 import { zoneStore } from "../net/room";
 import { useDraggablePanel } from "./useDraggablePanel";
 import { itemName } from "./itemDisplay";
+import { PanelClose } from "./PanelClose";
 
 let spinnerOpen = false;
 const openListeners = new Set<() => void>();
@@ -128,7 +129,10 @@ export function SpinnerPanel() {
     >
       <div {...dragHandlers} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, ...dragHandlers.style }}>
         <b>Fortune Wheel</b>
-        <span style={{ opacity: 0.6, fontSize: 12 }}>free daily</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ opacity: 0.6, fontSize: 12 }}>free daily</span>
+          <PanelClose onClose={closeSpinner} />
+        </div>
       </div>
 
       <div style={{ position: "relative", width: 200, height: 200, margin: "0 auto 12px" }}>

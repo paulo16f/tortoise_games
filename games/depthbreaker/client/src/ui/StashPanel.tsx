@@ -14,6 +14,7 @@ import { rarityColor, itemInitials } from "./itemDisplay";
 import { useDraggablePanel } from "./useDraggablePanel";
 import { tooltipHandlers } from "./Tooltip";
 import { ItemCard } from "./ItemCard";
+import { PanelClose } from "./PanelClose";
 
 let stashOpen = false;
 const openListeners = new Set<() => void>();
@@ -112,7 +113,10 @@ export function StashPanel() {
     >
       <div {...dragHandlers} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}>
         <b>Bank</b>
-        <span style={{ opacity: 0.6, fontSize: 12 }}>click to move · persists across runs</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ opacity: 0.6, fontSize: 12 }}>click to move · persists</span>
+          <PanelClose onClose={closeStash} />
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: 14 }}>

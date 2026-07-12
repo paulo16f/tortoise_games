@@ -10,6 +10,7 @@ import { zoneStore } from "../net/room";
 import { rarityColor, itemInitials } from "./itemDisplay";
 import { useDraggablePanel } from "./useDraggablePanel";
 import { tooltipHandlers } from "./Tooltip";
+import { PanelClose } from "./PanelClose";
 import { ItemCard } from "./ItemCard";
 
 // Minimal external store for the open/closed flag so the input layer (window
@@ -125,7 +126,10 @@ export function InventoryPanel() {
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, ...dragHandlers.style }}
       >
         <b>Bag</b>
-        <span style={{ opacity: 0.6, fontSize: 12 }}>B to close</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ opacity: 0.6, fontSize: 12 }}>B / Esc</span>
+          <PanelClose onClose={closeInventory} />
+        </div>
       </div>
       <div
         style={{
