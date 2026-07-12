@@ -226,6 +226,13 @@ export interface CombatEventMessage {
   actionId?: string;
   /** Milliseconds from this event to the intended visual impact. */
   impactDelayMs?: number;
+  /**
+   * Catalog id of the skill/source that produced this event (e.g. "fireball",
+   * "smite", "basic_attack") — the per-skill discriminator the client keys VFX,
+   * SFX, and attack-animation selection off. Absent for enemy attacks and other
+   * non-skill sources; consumers fall back to `kind`.
+   */
+  skillId?: string;
 }
 
 export interface LootEventMessage {

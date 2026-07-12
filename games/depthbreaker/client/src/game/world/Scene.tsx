@@ -10,6 +10,7 @@ import { CameraRig } from "./CameraRig";
 import { CombatFloaters } from "../fx/CombatFloaters";
 import { Projectiles } from "../fx/Projectiles";
 import { ImpactFx } from "../fx/ImpactFx";
+import { SkillGroundFx } from "../fx/SkillGroundFx";
 import { Telegraphs } from "../fx/Telegraphs";
 import { AmbientDust } from "../fx/AmbientDust";
 import { DungeonClickPlane } from "./DungeonClickPlane";
@@ -86,6 +87,7 @@ export function Scene() {
       <CombatFloaters />
       <Projectiles />
       <ImpactFx />
+      <SkillGroundFx />
       <Telegraphs />
       <AmbientDust />
       <BossPortal />

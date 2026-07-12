@@ -72,6 +72,8 @@ export interface CombatFloater {
   actionId: string;
   bornAt: number;
   delayMs: number;
+  /** Per-skill discriminator for VFX/SFX/anim; "" when the source has no skill id. */
+  skillId: string;
 }
 
 /** A transient "you looted X" notification for the local player. */
@@ -211,6 +213,7 @@ class ZoneStore {
         actionId: msg.actionId ?? "",
         bornAt: performance.now(),
         delayMs: msg.impactDelayMs ?? 0,
+        skillId: msg.skillId ?? "",
       };
       this.combat.push(floater);
       const cutoff = performance.now() - 2000;

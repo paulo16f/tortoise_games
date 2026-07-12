@@ -11,6 +11,7 @@ import { AdditiveBlending, Color } from "three";
 import { zoneStore } from "../../net/room";
 import { combatBus } from "../../net/combatBus";
 import { resolveEnemyModel, resolvePlayerModel } from "../actors/useModel";
+import { vfxFor } from "./skillVfx";
 
 const POOL = 72;
 const GRAVITY = 6;
@@ -102,6 +103,21 @@ export function ImpactFx() {
         const spawn = () => {
           const a = targetAnchor(f.targetId);
           if (!a) return;
+          const damaging = f.kind === "hit" || f.kind === "crit" || (f.kind === "skill" && f.amount > 0);
+          const spec = damaging ? vfxFor(f.skillId)?.impact : undefined;
+          if (spec) {
+            // Per-skill impact; a crit reads bigger/faster while keeping the skill colour.
+            const critK = f.kind === "crit" ? 1.4 : 1;
+            spawnImpactBurst(a.x, a.y, a.z, {
+              count: Math.round((spec.count ?? 8) * critK),
+              color: spec.color ?? "#93c5fd",
+              speed: (spec.speed ?? 3.6) * (f.kind === "crit" ? 1.15 : 1),
+              size: (spec.size ?? 0.13) * (f.kind === "crit" ? 1.25 : 1),
+              life: spec.life ?? 0.34,
+              up: spec.up,
+            });
+            return;
+          }
           if (f.kind === "crit") spawnImpactBurst(a.x, a.y, a.z, { count: 12, color: "#fbbf24", speed: 4.2, size: 0.16, life: 0.4 });
           else if (f.kind === "hit") spawnImpactBurst(a.x, a.y, a.z, { count: 6, color: "#fef3c7", speed: 3.2, size: 0.11 });
           else if (f.kind === "skill" && f.amount > 0) spawnImpactBurst(a.x, a.y, a.z, { count: 8, color: "#93c5fd", speed: 3.6, size: 0.13 });

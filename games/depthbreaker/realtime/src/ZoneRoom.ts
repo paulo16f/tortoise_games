@@ -208,8 +208,8 @@ interface PlayerRuntime {
   shieldSeconds: number;
   frostSeconds: number;
   frostTick: number;
-  /** Aura params captured from the aura_dot effect at cast time. */
-  frostAura: { radius: number; tick: number; damage: number };
+  /** Aura params captured from the aura_dot effect at cast time (skillId drives VFX/SFX). */
+  frostAura: { radius: number; tick: number; damage: number; skillId: string };
   /** Bulwark damage-reduction buff (0 value = inactive). */
   bulwarkSeconds: number;
   bulwarkValue: number;
@@ -449,7 +449,7 @@ export class ZoneRoom extends Room<ZoneState> {
       shieldSeconds: 0,
       frostSeconds: 0,
       frostTick: 0,
-      frostAura: { radius: 0, tick: 0.5, damage: 0 },
+      frostAura: { radius: 0, tick: 0.5, damage: 0, skillId: "" },
       bulwarkSeconds: 0,
       bulwarkValue: 0,
       ampSeconds: 0,
@@ -756,7 +756,7 @@ export class ZoneRoom extends Room<ZoneState> {
         if (!enemy.state.alive) continue;
         const d = Math.hypot(enemy.state.x - p.x, enemy.state.z - p.z);
         if (d > rt.frostAura.radius) continue;
-        this.damageEnemy(id, rt, p, enemy, rt.frostAura.damage, "skill");
+        this.damageEnemy(id, rt, p, enemy, rt.frostAura.damage, "skill", this.nextActionId(), rt.frostAura.skillId);
       }
     });
   }
@@ -776,7 +776,7 @@ export class ZoneRoom extends Room<ZoneState> {
         // Source disconnected or died: the curse fizzles this tick (drops next).
         if (!source || !rt || !source.alive) continue;
         if (!enemy.state.alive) break;
-        this.damageEnemy(t.sourceId, rt, source, enemy, t.damage, "skill");
+        this.damageEnemy(t.sourceId, rt, source, enemy, t.damage, "skill", this.nextActionId(), t.skillId);
       }
     }
   }
@@ -823,8 +823,8 @@ export class ZoneRoom extends Room<ZoneState> {
             if (!liveSource || !rtNow || !liveSource.alive || !liveTarget?.state.alive) return;
             const isCrit = Math.random() < critChanceFor(liveSource.weaponId);
             const dmg = resolveDamage(basicAttackRaw(liveSource, rtNow), liveTarget.def.armor, liveSource.level, isCrit);
-            this.damageEnemy(id, rtNow, liveSource, liveTarget, dmg, isCrit ? "crit" : "hit", actionId);
-          });
+            this.damageEnemy(id, rtNow, liveSource, liveTarget, dmg, isCrit ? "crit" : "hit", actionId, "basic_attack");
+          }, "basic_attack");
         });
       } else {
         this.scheduleImpact(actionId, DEFAULT_MELEE_ATTACK_TIMING.windup, () => {
@@ -842,7 +842,7 @@ export class ZoneRoom extends Room<ZoneState> {
           this.facePlayerToEnemy(source, target);
           const isCrit = Math.random() < critChanceFor(source.weaponId);
           const dmg = resolveDamage(basicAttackRaw(source, liveRt), target.def.armor, source.level, isCrit);
-          this.damageEnemy(id, liveRt, source, target, dmg, isCrit ? "crit" : "hit", actionId);
+          this.damageEnemy(id, liveRt, source, target, dmg, isCrit ? "crit" : "hit", actionId, "basic_attack");
         });
       }
     });
@@ -1479,7 +1479,7 @@ export class ZoneRoom extends Room<ZoneState> {
     // due mid-windup overwrites the skill's action state, and the skill's
     // scheduled impact (which re-checks isCurrentAction) silently fizzles.
     rt.attackCooldown = Math.max(rt.attackCooldown, actionDuration(DEFAULT_SKILL_TIMING));
-    for (const effect of def.effects) this.runEffect(playerId, rt, p, effect, target);
+    for (const effect of def.effects) this.runEffect(playerId, rt, p, effect, target, def.id);
   }
 
   /** Charge the shared global cooldown after a class skill commits to casting. */
@@ -1498,6 +1498,7 @@ export class ZoneRoom extends Room<ZoneState> {
     p: PlayerState,
     effect: SkillEffect,
     target: EnemyController | null,
+    skillId: string,
   ): void {
     switch (effect.type) {
       case "basic_attack":
@@ -1509,7 +1510,7 @@ export class ZoneRoom extends Room<ZoneState> {
         p.shieldSeconds = rt.shieldSeconds;
         const actionId = this.nextActionId();
         this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), p.id, actionId);
-        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: 0, kind: "skill", actionId });
+        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: 0, kind: "skill", actionId }, skillId);
         return;
       }
 
@@ -1523,7 +1524,7 @@ export class ZoneRoom extends Room<ZoneState> {
         }
         const actionId = this.nextActionId();
         this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), p.id, actionId);
-        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: 0, kind: "skill", actionId });
+        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: 0, kind: "skill", actionId }, skillId);
         return;
       }
 
@@ -1547,7 +1548,7 @@ export class ZoneRoom extends Room<ZoneState> {
         this.applyHealThreat(playerId, effective); // healing draws aggro to the CASTER
         const actionId = this.nextActionId();
         this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), heal.id, actionId);
-        this.emitCombat({ sourceId: p.id, targetId: heal.id, amount: -effective, kind: "heal", actionId });
+        this.emitCombat({ sourceId: p.id, targetId: heal.id, amount: -effective, kind: "heal", actionId }, skillId);
         return;
       }
 
@@ -1564,12 +1565,12 @@ export class ZoneRoom extends Room<ZoneState> {
           if (!source || !liveRt || !source.alive || !live?.state.alive || !this.isCurrentAction(source, actionId)) return;
           const reach = Math.hypot(live.state.x - source.x, live.state.z - source.z);
           if (reach > effect.range + 0.75) return;
-          this.damageEnemy(playerId, liveRt, source, live, effect.damage, "skill", actionId);
+          this.damageEnemy(playerId, liveRt, source, live, effect.damage, "skill", actionId, skillId);
           // Drain: heal the caster for a fraction of the strike's nominal damage.
           const { newHp, effective } = applyHeal(source.hp, source.maxHp, (effect.damage * effect.lifesteal) / source.maxHp);
           if (effective > 0) {
             source.hp = newHp;
-            this.emitCombat({ sourceId: source.id, targetId: source.id, amount: -effective, kind: "heal", actionId: this.nextActionId() });
+            this.emitCombat({ sourceId: source.id, targetId: source.id, amount: -effective, kind: "heal", actionId: this.nextActionId() }, skillId);
           }
         });
         return;
@@ -1578,12 +1579,12 @@ export class ZoneRoom extends Room<ZoneState> {
       case "dot": {
         if (!target) return;
         this.facePlayerToEnemy(p, target);
-        target.applyDot(playerId, effect.damage, effect.tick, effect.duration);
+        target.applyDot(playerId, effect.damage, effect.tick, effect.duration, skillId);
         // Seed threat immediately so the curse pulls aggro like any other cast.
         target.addThreat(playerId, effect.damage);
         const actionId = this.nextActionId();
         this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), target.state.id, actionId);
-        this.emitCombat({ sourceId: p.id, targetId: target.state.id, amount: 0, kind: "skill", actionId });
+        this.emitCombat({ sourceId: p.id, targetId: target.state.id, amount: 0, kind: "skill", actionId }, skillId);
         return;
       }
 
@@ -1595,7 +1596,7 @@ export class ZoneRoom extends Room<ZoneState> {
         }
         const actionId = this.nextActionId();
         this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), p.id, actionId);
-        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: 0, kind: "skill", actionId });
+        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: 0, kind: "skill", actionId }, skillId);
         return;
       }
 
@@ -1606,18 +1607,18 @@ export class ZoneRoom extends Room<ZoneState> {
         const actionId = this.nextActionId();
         this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), p.id, actionId);
         // Negative amount renders as a green heal number (see CombatFloaters).
-        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: -effective, kind: "heal", actionId });
+        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: -effective, kind: "heal", actionId }, skillId);
         return;
       }
 
       case "aura_dot": {
         rt.frostSeconds = effect.duration;
         rt.frostTick = 0;
-        rt.frostAura = { radius: effect.radius, tick: effect.tick, damage: effect.damage };
+        rt.frostAura = { radius: effect.radius, tick: effect.tick, damage: effect.damage, skillId };
         p.frostSeconds = rt.frostSeconds;
         const actionId = this.nextActionId();
         this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), p.id, actionId);
-        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: 0, kind: "skill", actionId });
+        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: 0, kind: "skill", actionId }, skillId);
         return;
       }
 
@@ -1638,9 +1639,12 @@ export class ZoneRoom extends Room<ZoneState> {
             const angle = Math.atan2(dx, dz);
             if (Math.abs(angleDiff(source.yaw, angle)) > effect.halfAngle) continue;
             hit = true;
-            this.damageEnemy(playerId, liveRt, source, enemy, effect.damage, "skill", actionId);
+            this.damageEnemy(playerId, liveRt, source, enemy, effect.damage, "skill", actionId, skillId);
           }
-          if (!hit) this.emitCombat({ sourceId: source.id, targetId: source.id, amount: 0, kind: "skill", actionId });
+          // Always emit a self-anchored cast event (drives the client's caster
+          // ground FX / cast flash); on a whiff it's also the "nothing hit" signal.
+          this.emitCombat({ sourceId: source.id, targetId: source.id, amount: 0, kind: "skill", actionId }, skillId);
+          void hit;
         });
         return;
       }
@@ -1658,9 +1662,12 @@ export class ZoneRoom extends Room<ZoneState> {
             const d = Math.hypot(enemy.state.x - source.x, enemy.state.z - source.z);
             if (d > effect.radius) continue;
             hit = true;
-            this.damageEnemy(playerId, liveRt, source, enemy, effect.damage, "skill", actionId);
+            this.damageEnemy(playerId, liveRt, source, enemy, effect.damage, "skill", actionId, skillId);
           }
-          if (!hit) this.emitCombat({ sourceId: source.id, targetId: source.id, amount: 0, kind: "skill", actionId });
+          // Always emit a self-anchored cast event (drives the client's caster
+          // ground FX / cast flash); on a whiff it's also the "nothing hit" signal.
+          this.emitCombat({ sourceId: source.id, targetId: source.id, amount: 0, kind: "skill", actionId }, skillId);
+          void hit;
         });
         return;
       }
@@ -1691,7 +1698,7 @@ export class ZoneRoom extends Room<ZoneState> {
           if (!source || !liveRt || !source.alive || !live?.state.alive || !this.isCurrentAction(source, actionId)) return;
           const reach = Math.hypot(live.state.x - source.x, live.state.z - source.z);
           if (reach > 2.5) return;
-          this.damageEnemy(playerId, liveRt, source, live, effect.damage, "skill", actionId);
+          this.damageEnemy(playerId, liveRt, source, live, effect.damage, "skill", actionId, skillId);
         });
         return;
       }
@@ -1711,7 +1718,7 @@ export class ZoneRoom extends Room<ZoneState> {
           if (reach > effect.range + 0.75) return;
           const lowHp = live.state.hp / Math.max(1, live.state.maxHp) < effect.lowHpThreshold;
           const raw = lowHp ? effect.damage * effect.bonusMult : effect.damage;
-          this.damageEnemy(playerId, liveRt, source, live, raw, "skill", actionId);
+          this.damageEnemy(playerId, liveRt, source, live, raw, "skill", actionId, skillId);
         });
         return;
       }
@@ -1735,9 +1742,9 @@ export class ZoneRoom extends Room<ZoneState> {
             for (const enemy of this.enemies) {
               if (!enemy.state.alive) continue;
               const d = Math.hypot(enemy.state.x - impactCenter.state.x, enemy.state.z - impactCenter.state.z);
-              if (d <= effect.radius) this.damageEnemy(playerId, rtNow, liveSource, enemy, effect.damage, "skill", actionId);
+              if (d <= effect.radius) this.damageEnemy(playerId, rtNow, liveSource, enemy, effect.damage, "skill", actionId, skillId);
             }
-          });
+          }, skillId);
         });
         return;
       }
@@ -1824,6 +1831,7 @@ export class ZoneRoom extends Room<ZoneState> {
     amount: number,
     kind: CombatEventMessage["kind"],
     actionId = this.nextActionId(),
+    skillId = "",
   ): void {
     // Blessing (Cleric) amps ALL of the caster's outgoing damage — basic
     // attacks, skills, lifesteal, and DoT ticks all route through here.
@@ -1831,10 +1839,10 @@ export class ZoneRoom extends Room<ZoneState> {
     enemy.addThreat(playerId, Math.max(1, amount));
     const killed = enemy.takeDamage(amount);
     if (!killed) this.setAction(enemy.state, "hit", 0.28, playerId, actionId);
-    this.emitCombat({ sourceId: playerId, targetId: enemy.state.id, amount, kind, actionId });
+    this.emitCombat({ sourceId: playerId, targetId: enemy.state.id, amount, kind, actionId }, skillId);
     if (killed) {
       this.setAction(enemy.state, "dying", ENEMY_DYING_SECONDS, playerId, actionId);
-      this.emitCombat({ sourceId: playerId, targetId: enemy.state.id, amount: 0, kind: "death", actionId });
+      this.emitCombat({ sourceId: playerId, targetId: enemy.state.id, amount: 0, kind: "death", actionId }, skillId);
       this.awardKill(rt, p, enemy.def.xpValue, enemy.def.currencyValue);
       this.bumpDaily(rt, "kill", enemy.def.id, 1);
       this.rollKillLoot(rt, p, enemy.def.rank as LootRank);
@@ -1948,7 +1956,10 @@ export class ZoneRoom extends Room<ZoneState> {
     });
   }
 
-  private emitCombat(event: CombatEventMessage): void {
+  private emitCombat(event: CombatEventMessage, skillId = ""): void {
+    // Per-skill discriminator for client VFX/SFX/anim (e.g. "fireball", "smite",
+    // "basic_attack"); omitted for enemy attacks and other non-skill sources.
+    if (skillId && !event.skillId) event.skillId = skillId;
     this.broadcast(ServerMessage.CombatEvent, event);
   }
 
@@ -1966,7 +1977,7 @@ export class ZoneRoom extends Room<ZoneState> {
     this.pendingImpacts = remaining;
   }
 
-  private launchProjectile(actionId: string, source: PlayerState, target: EnemyState, resolve: ProjectileResolver): void {
+  private launchProjectile(actionId: string, source: PlayerState, target: EnemyState, resolve: ProjectileResolver, skillId = ""): void {
     const distance = Math.hypot(target.x - source.x, target.z - source.z);
     const timing = projectileTiming(distance, 0, PROJECTILE_SPEED_UNITS_PER_SECOND);
     this.emitCombat({
@@ -1976,7 +1987,7 @@ export class ZoneRoom extends Room<ZoneState> {
       kind: "skill",
       actionId,
       impactDelayMs: timing.travelTime * 1000,
-    });
+    }, skillId);
     this.pendingProjectiles.push(createPendingProjectile(actionId, source, target, resolve));
   }
 

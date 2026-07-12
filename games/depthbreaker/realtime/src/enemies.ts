@@ -124,12 +124,15 @@ interface EnemyDot {
   tickInterval: number;
   tickTimer: number;
   timeLeft: number;
+  /** The skill that applied it (drives per-skill tick VFX/SFX). */
+  skillId: string;
 }
 
 /** A DoT tick that came due this frame; the room routes it through damageEnemy. */
 export interface DotTick {
   sourceId: string;
   damage: number;
+  skillId: string;
 }
 
 /** What the enemy wants to do this tick; the room applies the effects. */
@@ -192,9 +195,9 @@ export class EnemyController {
   }
 
   /** Apply/refresh a caster's damage-over-time on this enemy (Necromancer curse). */
-  applyDot(sourceId: string, tickDamage: number, tickInterval: number, duration: number): void {
+  applyDot(sourceId: string, tickDamage: number, tickInterval: number, duration: number, skillId = ""): void {
     if (!this.state.alive) return;
-    this.dots.set(sourceId, { tickDamage, tickInterval, tickTimer: tickInterval, timeLeft: duration });
+    this.dots.set(sourceId, { tickDamage, tickInterval, tickTimer: tickInterval, timeLeft: duration, skillId });
   }
 
   /**
@@ -210,7 +213,7 @@ export class EnemyController {
       dot.tickTimer -= dt;
       if (dot.tickTimer <= 0) {
         dot.tickTimer += dot.tickInterval;
-        ticks.push({ sourceId, damage: dot.tickDamage });
+        ticks.push({ sourceId, damage: dot.tickDamage, skillId: dot.skillId });
       }
       if (dot.timeLeft <= 0) this.dots.delete(sourceId);
     }

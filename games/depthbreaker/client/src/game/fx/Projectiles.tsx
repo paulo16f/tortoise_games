@@ -5,11 +5,13 @@ import { zoneStore } from "../../net/room";
 import { combatBus } from "../../net/combatBus";
 import { PROJECTILE_SPEED } from "./fxConstants";
 import { spawnImpactBurst } from "./ImpactFx";
+import { vfxFor } from "./skillVfx";
 
 const POOL_SIZE = 8;
 const HIT_RADIUS = 0.4;
 const MAX_AGE_MS = 1800;
 const BOLT_COLOR = "#a78bfa";
+const BASE_RADIUS = 0.15; // the sphere geometry radius the per-bolt size scales against
 
 interface Bolt {
   active: boolean;
@@ -19,10 +21,14 @@ interface Bolt {
   targetId: string;
   actionId: string;
   bornAt: number;
+  /** Per-skill look (from skillVfx.projectile); defaults to the neutral bolt. */
+  color: string;
+  size: number;
+  trail: string;
 }
 
 export function Projectiles() {
-  const bolts = useRef<Bolt[]>(Array.from({ length: POOL_SIZE }, () => ({ active: false, x: 0, y: 0, z: 0, targetId: "", actionId: "", bornAt: 0 })));
+  const bolts = useRef<Bolt[]>(Array.from({ length: POOL_SIZE }, () => ({ active: false, x: 0, y: 0, z: 0, targetId: "", actionId: "", bornAt: 0, color: BOLT_COLOR, size: BASE_RADIUS, trail: "" })));
   const meshes = useRef<(Mesh | null)[]>(Array(POOL_SIZE).fill(null));
   const slots = useMemo(() => Array.from({ length: POOL_SIZE }, (_, i) => i), []);
 
@@ -41,6 +47,10 @@ export function Projectiles() {
         const source = zoneStore.state?.players.get(f.sourceId);
         if (!source) return;
         const bolt = bolts.current.find((b) => !b.active) ?? bolts.current.reduce((a, b) => (a.bornAt <= b.bornAt ? a : b));
+        const pv = vfxFor(f.skillId)?.projectile;
+        bolt.color = pv?.color ?? BOLT_COLOR;
+        bolt.size = pv?.size ?? BASE_RADIUS;
+        bolt.trail = pv?.trail ?? "";
         bolt.active = true;
         bolt.x = source.x;
         bolt.y = source.y + 1.2;
@@ -48,8 +58,8 @@ export function Projectiles() {
         bolt.targetId = f.targetId;
         bolt.actionId = f.actionId;
         bolt.bornAt = performance.now();
-        // Muzzle flash at the caster.
-        spawnImpactBurst(bolt.x, bolt.y, bolt.z, { count: 5, color: BOLT_COLOR, speed: 2, size: 0.1, life: 0.2, up: 0.6 });
+        // Muzzle flash at the caster, tinted to the bolt.
+        spawnImpactBurst(bolt.x, bolt.y, bolt.z, { count: 5, color: bolt.color, speed: 2, size: 0.1, life: 0.2, up: 0.6 });
       }),
     [],
   );
@@ -75,7 +85,7 @@ export function Projectiles() {
       const step = PROJECTILE_SPEED * delta;
       if (dist <= Math.max(HIT_RADIUS, step)) {
         // Reached the target — impact burst (the bolt no longer just vanishes).
-        spawnImpactBurst(tx, ty, tz, { count: 10, color: BOLT_COLOR, speed: 3.6, size: 0.14, life: 0.32 });
+        spawnImpactBurst(tx, ty, tz, { count: 10, color: bolt.color, speed: 3.6, size: 0.14, life: 0.32 });
         bolt.active = false;
         mesh.visible = false;
         return;
@@ -88,8 +98,14 @@ export function Projectiles() {
       bolt.x += (dx / dist) * step;
       bolt.y += (dy / dist) * step;
       bolt.z += (dz / dist) * step;
+      // Ember/holy trail: drop a faint spark along the path (fireball etc.).
+      if (bolt.trail) spawnImpactBurst(bolt.x, bolt.y, bolt.z, { count: 1, color: bolt.trail, speed: 0.4, size: 0.09, life: 0.26, up: 0.2 });
       mesh.visible = true;
       mesh.position.set(bolt.x, bolt.y, bolt.z);
+      mesh.scale.setScalar(bolt.size / BASE_RADIUS);
+      const mat = mesh.material as import("three").MeshStandardMaterial;
+      mat.color.set(bolt.color);
+      mat.emissive.set(bolt.color);
     });
   });
 
@@ -97,8 +113,8 @@ export function Projectiles() {
     <>
       {slots.map((i) => (
         <mesh key={i} visible={false} ref={(m) => { meshes.current[i] = m; }}>
-          <sphereGeometry args={[0.15, 12, 12]} />
-          <meshStandardMaterial color={BOLT_COLOR} emissive={BOLT_COLOR} emissiveIntensity={2} />
+          <sphereGeometry args={[BASE_RADIUS, 12, 12]} />
+          <meshStandardMaterial color={BOLT_COLOR} emissive={BOLT_COLOR} emissiveIntensity={2} toneMapped={false} />
         </mesh>
       ))}
     </>
