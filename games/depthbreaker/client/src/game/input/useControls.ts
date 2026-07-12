@@ -17,6 +17,7 @@ import { closeStash, toggleStash } from "../../ui/StashPanel";
 import { closeDailies, toggleDailies } from "../../ui/DailyQuestPanel";
 import { closeSpinner, toggleSpinner } from "../../ui/SpinnerPanel";
 import { closeTrade, toggleTrade } from "../../ui/TradePanel";
+import { closeCooking, toggleCooking } from "../../ui/CookingPanel";
 import { focusChat } from "../../ui/ChatPanel";
 import { localPlayerPos } from "../entityRefs";
 
@@ -102,6 +103,7 @@ export function useControls(): void {
       if (e.code === "KeyJ") toggleDailies();
       if (e.code === "KeyG") toggleSpinner();
       if (e.code === "KeyT") toggleTrade();
+      if (e.code === "KeyF") toggleCooking();
       if (e.code === "KeyC") focusChat();
       if (e.code === "Escape") {
         closeInventory();
@@ -111,6 +113,7 @@ export function useControls(): void {
         closeDailies();
         closeSpinner();
         closeTrade();
+        closeCooking();
       }
       if (e.code === "KeyR") resetCameraOrbit();
       if (e.code === "Tab") {

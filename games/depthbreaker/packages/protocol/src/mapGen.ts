@@ -225,9 +225,24 @@ export function buildDungeon(seed32: number, depth: number): DungeonMapDefinitio
     }
   }
 
-  // Market stall: a fixed offset inside the start ("market") room, clear of the
-  // player spawn at the room center.
+  // Fishing spots: a SEPARATE pass appended AFTER the mining loop so its dress
+  // draws come last and never shift existing seeds' spawn/prop/mining layout.
+  // A guaranteed town pond keeps the fishing loop reachable from spawn; combat
+  // rooms get an occasional deeper spot (elite rooms fish rarer stock).
+  resourceNodes.push({ id: "fish-town", kind: "fishing_spot", x: startCenter.x - 5, z: startCenter.z - 4 });
+  for (const room of graph.rooms) {
+    if (room.kind !== "combat") continue;
+    if (dress.nextFloat01() >= 0.5) continue;
+    const info = roomInfo.get(room.index)!;
+    const kind = info.id === "elite" ? "deep_fishing_spot" : "fishing_spot";
+    const pos = jitter(info.center, 5, ROOM_HALF - 2);
+    resourceNodes.push({ id: `fish-${room.index}`, kind, x: pos.x, z: pos.z });
+  }
+
+  // Market stall + cooking station: fixed offsets inside the start ("market")
+  // room (no rng draws), clear of the player spawn, the fountain, and each other.
   const marketStall: Vec2 = { x: startCenter.x + 4, z: startCenter.z + 3 };
+  const cookingStation: Vec2 = { x: startCenter.x - 4, z: startCenter.z + 3 };
 
   return {
     tileSize: TILE,
@@ -245,5 +260,6 @@ export function buildDungeon(seed32: number, depth: number): DungeonMapDefinitio
     visualPlacements: [...floorPlacements, ...propPlacements],
     resourceNodes,
     marketStall,
+    cookingStation,
   };
 }

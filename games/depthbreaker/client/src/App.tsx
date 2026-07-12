@@ -15,6 +15,7 @@ import { DailyQuestPanel } from "./ui/DailyQuestPanel";
 import { TradePanel } from "./ui/TradePanel";
 import { SpinnerPanel } from "./ui/SpinnerPanel";
 import { ChatPanel } from "./ui/ChatPanel";
+import { CookingPanel } from "./ui/CookingPanel";
 import { PanelDock } from "./ui/PanelDock";
 import { LootToasts } from "./ui/LootToasts";
 import { GoldToasts } from "./ui/GoldToasts";
@@ -41,6 +42,7 @@ function GameCanvas({ onLeave }: { onLeave: () => void }) {
       <TradePanel />
       <SpinnerPanel />
       <ChatPanel />
+      <CookingPanel />
       <PanelDock />
       <LootToasts />
       <GoldToasts />

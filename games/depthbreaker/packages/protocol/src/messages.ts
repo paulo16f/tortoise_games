@@ -17,8 +17,10 @@ export const ClientMessage = {
   EquipWeapon: "equipWeapon",
   /** Consume the potion/food in the bag slot at the given index. */
   UseItem: "useItem",
-  /** Gather a mining node (short server-side cast; range-checked). */
+  /** Gather a mining/fishing node (short server-side cast; range-checked). */
   GatherNode: "gatherNode",
+  /** Cook a recipe at the cooking station (server-validated bag math). */
+  Craft: "craft",
   /** Buy an item from the market stall (server-priced; range-checked). */
   BuyItem: "buyItem",
   /** Sell one item from a bag slot to the market stall. */
@@ -111,6 +113,11 @@ export interface GatherNodeMessage {
   nodeId: string;
 }
 
+export interface CraftMessage {
+  /** Cooking recipe id (validated server-side against COOKING_RECIPES). */
+  recipeId: string;
+}
+
 export interface BuyItemMessage {
   /** Catalog item id; must be in the market stock and have a buyValue. */
   itemId: string;
@@ -182,7 +189,7 @@ export interface SpinResultMessage {
 /** One daily quest with the player's progress. */
 export interface DailyQuestView {
   id: string;
-  kind: "gather" | "kill" | "depth";
+  kind: "gather" | "kill" | "depth" | "cook";
   label: string;
   target: number;
   subject: string;

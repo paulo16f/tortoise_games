@@ -38,7 +38,7 @@ describe("daily quests", () => {
     const ids = DAILY_QUEST_CATALOG.map((q) => q.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const q of DAILY_QUEST_CATALOG) {
-      expect(["gather", "kill", "depth"]).toContain(q.kind);
+      expect(["gather", "kill", "depth", "cook"]).toContain(q.kind);
       expect(q.target).toBeGreaterThan(0);
       expect(q.goldReward).toBeGreaterThan(0);
       expect(dailyQuestDef(q.id)).toEqual(q);

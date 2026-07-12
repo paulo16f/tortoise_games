@@ -11,6 +11,7 @@ import { toggleDailies, useDailiesOpen } from "./DailyQuestPanel";
 import { toggleTrade, useTradeOpen } from "./TradePanel";
 import { toggleSpinner, useSpinnerOpen } from "./SpinnerPanel";
 import { focusChat, useChatFocused } from "./ChatPanel";
+import { toggleCooking, useCookingOpen } from "./CookingPanel";
 import { tooltipHandlers } from "./Tooltip";
 
 interface DockItem {
@@ -27,6 +28,7 @@ const DOCK_ITEMS: DockItem[] = [
   { icon: "🏪", label: "Market", hotkey: "M", toggle: toggleMarket, useOpen: useMarketOpen },
   { icon: "🤝", label: "Trading Post", hotkey: "T", toggle: toggleTrade, useOpen: useTradeOpen },
   { icon: "🏦", label: "Bank", hotkey: "N", toggle: toggleStash, useOpen: useStashOpen },
+  { icon: "🍳", label: "Cooking", hotkey: "F", toggle: toggleCooking, useOpen: useCookingOpen },
   { icon: "📜", label: "Daily Quests", hotkey: "J", toggle: toggleDailies, useOpen: useDailiesOpen },
   { icon: "🎡", label: "Fortune Wheel", hotkey: "G", toggle: toggleSpinner, useOpen: useSpinnerOpen },
   { icon: "💬", label: "World Chat", hotkey: "C", toggle: focusChat, useOpen: useChatFocused },

@@ -18,3 +18,4 @@ export * from "./plausibility.js";
 export * from "./dailyQuests.js";
 export * from "./skins.js";
 export * from "./spinner.js";
+export * from "./cooking.js";

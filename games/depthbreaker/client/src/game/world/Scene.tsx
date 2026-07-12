@@ -15,6 +15,7 @@ import { DungeonClickPlane } from "./DungeonClickPlane";
 import { BossPortal } from "./BossPortal";
 import { ResourceNode } from "./ResourceNode";
 import { MarketStall } from "./MarketStall";
+import { CookingStation } from "./CookingStation";
 import { Fountain } from "./Fountain";
 import { ClickMarker } from "./ClickMarker";
 import { RuntimeDungeon } from "./RuntimeDungeon";
@@ -77,6 +78,7 @@ export function Scene() {
         <ResourceNode key={id} id={id} />
       ))}
       <MarketStall />
+      <CookingStation />
       <Fountain />
       <ClickMarker />
 

@@ -19,6 +19,7 @@ import {
   type UseItemMessage,
   type UseSkillMessage,
   type GatherNodeMessage,
+  type CraftMessage,
   type BuyItemMessage,
   type SellItemMessage,
   type StashDepositMessage,
@@ -332,6 +333,11 @@ class ZoneStore {
   sendGather(nodeId: string): void {
     const payload: GatherNodeMessage = { nodeId };
     this.room?.send(ClientMessage.GatherNode, payload);
+  }
+
+  sendCraft(recipeId: string): void {
+    const payload: CraftMessage = { recipeId };
+    this.room?.send(ClientMessage.Craft, payload);
   }
 
   sendBuy(itemId: string): void {

@@ -50,7 +50,7 @@ export interface DungeonVisualPlacement {
   tint?: string;
 }
 
-export type ResourceNodeKind = "iron_vein" | "crystal_vein";
+export type ResourceNodeKind = "iron_vein" | "crystal_vein" | "fishing_spot" | "deep_fishing_spot";
 
 /** A gatherable mining node (deterministic per seed, like enemy spawns). */
 export interface ResourceNodeDef {
@@ -74,10 +74,12 @@ export interface DungeonMapDefinition {
   bossPortal: Vec2;
   props: DungeonProp[];
   visualPlacements: DungeonVisualPlacement[];
-  /** Mining nodes; the zone server spawns synced ResourceNodeState from these. */
+  /** Mining + fishing nodes; the zone server spawns synced ResourceNodeState from these. */
   resourceNodes: ResourceNodeDef[];
   /** Market stall location, inside the start ("market") room. */
   marketStall: Vec2;
+  /** Cooking station location, inside the start ("market") room. */
+  cookingStation: Vec2;
 }
 
 // The dungeon is generated from the seeded room graph (see mapGen.ts). This

@@ -23,6 +23,7 @@
     "smoke:market": "node tools/smoke_market.mjs",
     "smoke:economy": "node tools/smoke_economy.mjs",
     "smoke:p2p": "node tools/smoke_p2p.mjs",
-    "smoke:combat": "node tools/smoke_combat.mjs"
+    "smoke:combat": "node tools/smoke_combat.mjs",
+    "smoke:fishing": "node tools/smoke_fishing.mjs"
   }
 }

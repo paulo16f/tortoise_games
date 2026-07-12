@@ -23,6 +23,12 @@ export const GATHER_RANGE = 3;
 /** Gather cast duration — shared so the client cast bar matches the server. */
 export const GATHER_CAST_SECONDS = 1.4;
 
+/** Fishing cast duration — longer than mining so fishing reads as its own action. */
+export const FISH_CAST_SECONDS = 2.2;
+
+/** Max distance from the cooking station for a craft to be accepted. */
+export const COOK_RANGE = 6;
+
 /**
  * Town fountain: a safe heal pad at the player spawn. Any player standing
  * within FOUNTAIN_RADIUS regenerates FOUNTAIN_HEAL_PER_SECOND HP. Shared so the

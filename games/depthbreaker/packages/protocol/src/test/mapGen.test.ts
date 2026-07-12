@@ -79,19 +79,32 @@ describe("buildDungeon", () => {
     }
   });
 
-  it("places resource nodes on walkable ground inside combat rooms, deterministically", () => {
+  it("places resource nodes on walkable ground, deterministically", () => {
     for (const seed of SEEDS) {
       const map = buildDungeon(seed, 2);
       expect(map.resourceNodes.length).toBeGreaterThan(0);
       for (const node of map.resourceNodes) {
-        expect(["iron_vein", "crystal_vein"]).toContain(node.kind);
+        expect(["iron_vein", "crystal_vein", "fishing_spot", "deep_fishing_spot"]).toContain(node.kind);
         expect(isDungeonWalkable(node.x, node.z, 0.45, map)).toBe(true);
-        // Nodes never spawn in the start (market) room.
-        expect(isPointInRect(node.x, node.z, map.rooms[0]!.rect)).toBe(false);
+        // Only the guaranteed town pond sits in the start room; mining veins and
+        // combat fishing spots are always out in the dungeon.
+        const inStart = isPointInRect(node.x, node.z, map.rooms[0]!.rect);
+        expect(inStart).toBe(node.id === "fish-town");
       }
+      // A reachable town fishing pond always exists.
+      expect(map.resourceNodes.some((n) => n.id === "fish-town" && n.kind === "fishing_spot")).toBe(true);
       const ids = map.resourceNodes.map((n) => n.id);
       expect(new Set(ids).size).toBe(ids.length);
       expect(buildDungeon(seed, 2).resourceNodes).toEqual(map.resourceNodes);
+    }
+  });
+
+  it("puts the cooking station inside the start room, clear of spawn and stall", () => {
+    for (const seed of SEEDS) {
+      const map = buildDungeon(seed, 2);
+      expect(isPointInRect(map.cookingStation.x, map.cookingStation.z, map.rooms[0]!.rect)).toBe(true);
+      expect(Math.hypot(map.cookingStation.x - map.playerSpawn.x, map.cookingStation.z - map.playerSpawn.z)).toBeGreaterThan(2);
+      expect(Math.hypot(map.cookingStation.x - map.marketStall.x, map.cookingStation.z - map.marketStall.z)).toBeGreaterThan(2);
     }
   });
 

@@ -28,6 +28,7 @@ import {
   type UseItemMessage,
   type UseSkillMessage,
   type GatherNodeMessage,
+  type CraftMessage,
   type BuyItemMessage,
   type SellItemMessage,
   type StashDepositMessage,
@@ -52,6 +53,8 @@ import {
   MARKET_RANGE,
   GATHER_RANGE,
   GATHER_CAST_SECONDS,
+  FISH_CAST_SECONDS,
+  COOK_RANGE,
   STASH_SLOT_CAP,
   STASH_STACK_CAP,
   FOUNTAIN_RADIUS,
@@ -80,6 +83,8 @@ import {
   addStacked,
   removeAt,
   removeStacked,
+  countItem,
+  cookingRecipe,
   itemDef,
   stackSizeOf,
   weaponAttack,
@@ -313,6 +318,10 @@ export class ZoneRoom extends Room<ZoneState> {
 
     this.onMessage(CM.GatherNode, (client, message: GatherNodeMessage) => {
       this.gatherNode(client.sessionId, message?.nodeId ?? "");
+    });
+
+    this.onMessage(CM.Craft, (client, message: CraftMessage) => {
+      this.craftRecipe(client.sessionId, message?.recipeId ?? "");
     });
 
     this.onMessage(CM.BuyItem, (client, message: BuyItemMessage) => {
@@ -837,11 +846,13 @@ export class ZoneRoom extends Room<ZoneState> {
     if (!rt || !p || !p.alive || !node || node.depleted) return;
     if (Math.hypot(node.x - p.x, node.z - p.z) > GATHER_RANGE) return;
 
+    const isFishing = node.kind === "fishing_spot" || node.kind === "deep_fishing_spot";
+    const castSeconds = isFishing ? FISH_CAST_SECONDS : GATHER_CAST_SECONDS;
     const actionId = this.nextActionId();
     // Action window outlives the impact tick — an impact scheduled exactly at
     // the action's end loses the isCurrentAction race by one frame.
-    this.setAction(p, "skill", GATHER_CAST_SECONDS + 0.4, nodeId, actionId);
-    this.scheduleImpact(actionId, GATHER_CAST_SECONDS, () => {
+    this.setAction(p, "skill", castSeconds + 0.4, nodeId, actionId);
+    this.scheduleImpact(actionId, castSeconds, () => {
       const source = this.state.players.get(playerId);
       const liveRt = this.runtimes.get(playerId);
       const liveNode = this.state.nodes.get(nodeId);
@@ -849,11 +860,19 @@ export class ZoneRoom extends Room<ZoneState> {
       if (!this.isCurrentAction(source, actionId)) return;
       if (Math.hypot(liveNode.x - source.x, liveNode.z - source.z) > GATHER_RANGE + 0.75) return;
 
-      // Yields: iron veins give 1-2 ore; crystal veins give a shard + 25% ore.
+      // Yields per node kind. Mining: iron veins give 1-2 ore, crystal veins a
+      // shard + 25% ore. Fishing: shallow spots give minnows (40% bonus cavefish),
+      // deep spots give cavefish (25% rare bass).
       const grants: { itemId: string; count: number }[] = [];
       if (liveNode.kind === "crystal_vein") {
         grants.push({ itemId: "crystal_shard", count: 1 });
         if (Math.random() < 0.25) grants.push({ itemId: "iron_ore", count: 1 });
+      } else if (liveNode.kind === "fishing_spot") {
+        grants.push({ itemId: "raw_minnow", count: 1 });
+        if (Math.random() < 0.4) grants.push({ itemId: "raw_cavefish", count: 1 });
+      } else if (liveNode.kind === "deep_fishing_spot") {
+        grants.push({ itemId: "raw_cavefish", count: 1 });
+        if (Math.random() < 0.25) grants.push({ itemId: "raw_gilded_bass", count: 1 });
       } else {
         grants.push({ itemId: "iron_ore", count: 1 + (Math.random() < 0.5 ? 1 : 0) });
       }
@@ -880,6 +899,41 @@ export class ZoneRoom extends Room<ZoneState> {
   private nearMarket(p: PlayerState): boolean {
     const stall = this.dungeon.marketStall;
     return Math.hypot(stall.x - p.x, stall.z - p.z) <= MARKET_RANGE;
+  }
+
+  /** True when the player stands at the cooking station. */
+  private nearCookingStation(p: PlayerState): boolean {
+    const s = this.dungeon.cookingStation;
+    return Math.hypot(s.x - p.x, s.z - p.z) <= COOK_RANGE;
+  }
+
+  /**
+   * Cook a recipe at the station: consume raw ingredients from the bag, grant
+   * the cooked food. Pure synchronous bag math (no wallet, no backend) — the
+   * useBagItem guard ladder + gatherNode's grant path, range-gated like buyItem.
+   */
+  private craftRecipe(playerId: string, recipeId: string): void {
+    const rt = this.runtimes.get(playerId);
+    const p = this.state.players.get(playerId);
+    if (!rt || !p || !p.alive) return;
+    if (!this.nearCookingStation(p)) return;
+    const recipe = cookingRecipe(recipeId);
+    if (!recipe) return;
+    // Must have every ingredient and room for the output.
+    for (const input of recipe.inputs) {
+      if (countItem(rt.bag, input.itemId) < input.count) return;
+    }
+    if (!this.bagHasRoomFor(rt.bag, recipe.output)) return;
+    // Consume, then grant (ingredients confirmed present, so removes succeed).
+    for (const input of recipe.inputs) {
+      if (!removeStacked(rt.bag, input.itemId, input.count)) return;
+    }
+    addStacked(rt.bag, BAG_CAPACITY, recipe.output, recipe.outputCount);
+    this.syncBag(p, rt);
+    const def = itemDef(recipe.output);
+    const loot: LootEventMessage = { playerId: p.id, itemId: recipe.output, rarity: def?.rarity ?? "" };
+    this.broadcast(ServerMessage.LootEvent, loot);
+    this.bumpDaily(rt, "cook", recipe.output, recipe.outputCount);
   }
 
   /**

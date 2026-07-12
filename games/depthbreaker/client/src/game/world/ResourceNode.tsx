@@ -15,7 +15,7 @@ import { localPlayerPos } from "../entityRefs";
 import { setClickDestination } from "../input/controls";
 import { setGameCursor } from "../cursors";
 import { startCastBar } from "../../ui/CastBar";
-import { GATHER_CAST_SECONDS } from "@depthbreaker/protocol";
+import { GATHER_CAST_SECONDS, FISH_CAST_SECONDS } from "@depthbreaker/protocol";
 import { DUNGEON_ASSETS } from "./syntyDungeonAssets";
 import { spawnImpactBurst } from "../fx/ImpactFx";
 import { playGather } from "../fx/sfx";
@@ -23,9 +23,13 @@ import { playGather } from "../fx/sfx";
 const GATHER_CLICK_RANGE = 2.8; // client-side convenience; server enforces 3
 const RING_IN_RANGE = "#fbbf24";
 const RING_OUT_OF_RANGE = "#64748b";
-const NODE_STYLE: Record<string, { asset: keyof typeof DUNGEON_ASSETS; tint: string; scale: number }> = {
+const NODE_STYLE: Record<string, { asset: keyof typeof DUNGEON_ASSETS; tint: string; scale: number; fishing?: boolean }> = {
   crystal_vein: { asset: "crystal_alt", tint: "#7c6fd8", scale: 3.0 },
   iron_vein: { asset: "rocks", tint: "#8a6f52", scale: 2.6 },
+  // Fishing spots — blue-tinted placeholder props (real water disc/ripple art
+  // lands on asset import). A longer cast distinguishes fishing from mining.
+  fishing_spot: { asset: "mushroom", tint: "#38bdf8", scale: 2.4, fishing: true },
+  deep_fishing_spot: { asset: "mushroom_alt", tint: "#6366f1", scale: 2.7, fishing: true },
 };
 
 function cloneTinted(scene: Group, tint: string, materialsOut: MeshStandardMaterial[]): Group {
@@ -130,7 +134,8 @@ export function ResourceNode({ id }: { id: string }) {
       return;
     }
     zoneStore.sendGather(id);
-    startCastBar("Mining…", GATHER_CAST_SECONDS);
+    if (style.fishing) startCastBar("Fishing…", FISH_CAST_SECONDS);
+    else startCastBar("Mining…", GATHER_CAST_SECONDS);
   };
   const handleOver = (ev: ThreeEvent<PointerEvent>) => {
     ev.stopPropagation();

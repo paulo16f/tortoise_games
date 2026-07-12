@@ -167,6 +167,61 @@ export const ITEMS: Record<string, ItemDef> = {
     stackSize: 20,
     sellValue: 18,
   },
+  // Raw fish (fishing) — a resource; carries a sellValue so cooking has a real
+  // opportunity cost vs. selling, and it auto-appears in the Market Sell tab.
+  raw_minnow: {
+    id: "raw_minnow",
+    name: "Raw Minnow",
+    kind: "resource",
+    rarity: "common",
+    stackSize: 20,
+    sellValue: 3,
+  },
+  raw_cavefish: {
+    id: "raw_cavefish",
+    name: "Raw Cavefish",
+    kind: "resource",
+    rarity: "uncommon",
+    stackSize: 20,
+    sellValue: 9,
+  },
+  raw_gilded_bass: {
+    id: "raw_gilded_bass",
+    name: "Raw Gilded Bass",
+    kind: "resource",
+    rarity: "rare",
+    stackSize: 20,
+    sellValue: 22,
+  },
+  // Cooked food (cooking) — heals more than bread (0.2); no buyValue, so the
+  // only way to get it is to cook it. Shares the potion cooldown when eaten.
+  cooked_minnow: {
+    id: "cooked_minnow",
+    name: "Cooked Minnow",
+    kind: "food",
+    rarity: "common",
+    stackSize: 20,
+    healFraction: 0.3,
+    sellValue: 6,
+  },
+  cooked_cavefish: {
+    id: "cooked_cavefish",
+    name: "Cooked Cavefish",
+    kind: "food",
+    rarity: "uncommon",
+    stackSize: 20,
+    healFraction: 0.45,
+    sellValue: 15,
+  },
+  grilled_bass: {
+    id: "grilled_bass",
+    name: "Grilled Bass",
+    kind: "food",
+    rarity: "rare",
+    stackSize: 20,
+    healFraction: 0.6,
+    sellValue: 34,
+  },
 };
 
 export function itemDef(id: string): ItemDef | undefined {
