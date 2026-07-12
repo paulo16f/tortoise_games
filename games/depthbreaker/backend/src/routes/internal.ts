@@ -6,6 +6,7 @@ import type { AppContext } from "../server.js";
 import { withTransaction } from "../db/pool.js";
 import { makeRequireZoneSecret } from "../plugins/guards.js";
 import {
+  DAILY_EARN_CAP,
   MAX_PLAUSIBLE_DEPTH,
   maxCurrencyForDepth,
   maxXpForDepth,
@@ -21,6 +22,30 @@ import {
 } from "@depthbreaker/sim";
 
 const OUTCOMES = ["dead", "complete", "abandoned"] as const;
+
+/** Sum of today's ledgered grants for an account (0 if none). */
+async function earnedToday(client: { query: (q: string, v: unknown[]) => Promise<{ rows: Array<{ total: string }> }> }, accountId: string, dateKey: string): Promise<number> {
+  const res = await client.query(
+    "SELECT COALESCE(SUM(amount), 0)::bigint AS total FROM wallet_ledger WHERE account_id = $1 AND date_key = $2 AND amount > 0",
+    [accountId, dateKey],
+  );
+  return Number(res.rows[0]?.total ?? 0);
+}
+
+/**
+ * Append a grant to the wallet ledger. `ref` (when set) is globally unique —
+ * a replay inserts nothing and returns false, so callers can skip the wallet
+ * credit too (idempotent grants).
+ */
+async function ledgerGrant(client: { query: (q: string, v: unknown[]) => Promise<{ rowCount: number | null }> }, accountId: string, amount: number, reason: string, ref: string | null, dateKey: string): Promise<boolean> {
+  if (amount <= 0) return true;
+  const res = await client.query(
+    `INSERT INTO wallet_ledger (account_id, amount, reason, ref, date_key)
+     VALUES ($1, $2, $3, $4, $5) ON CONFLICT (ref) WHERE ref IS NOT NULL DO NOTHING`,
+    [accountId, amount, reason, ref, dateKey],
+  );
+  return (res.rowCount ?? 0) > 0 || ref === null;
+}
 
 export function registerInternalRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { config, pool } = ctx;
@@ -97,15 +122,26 @@ export function registerInternalRoutes(app: FastifyInstance, ctx: AppContext): v
           [run.character_id, body.xpEarned],
         );
 
+        // Daily earn cap: run gold is clamped to the account's remaining
+        // headroom for today (never rejected — the run still finishes), and
+        // the grant is ledgered with the run id as its idempotency ref.
+        const acctRes = await client.query<{ account_id: string }>(
+          "SELECT account_id FROM characters WHERE id = $1",
+          [run.character_id],
+        );
+        const accountId = acctRes.rows[0]!.account_id;
+        const dateKey = dateKeyUTC(new Date());
+        const headroom = Math.max(0, DAILY_EARN_CAP - (await earnedToday(client, accountId, dateKey)));
+        const granted = Math.min(body.currencyEarned, headroom);
+        await ledgerGrant(client, accountId, granted, "run_finish", `run:${id}`, dateKey);
         const walletRes = await client.query<{ currency: string }>(
           `UPDATE meta_wallets SET currency = currency + $2, updated_at = now()
-           WHERE account_id = (SELECT account_id FROM characters WHERE id = $1)
-           RETURNING currency`,
-          [run.character_id, body.currencyEarned],
+           WHERE account_id = $1 RETURNING currency`,
+          [accountId, granted],
         );
         return {
           code: 200 as const,
-          credited: body.currencyEarned,
+          credited: granted,
           balance: Number(walletRes.rows[0]?.currency ?? 0),
         };
       });
@@ -215,6 +251,9 @@ export function registerInternalRoutes(app: FastifyInstance, ctx: AppContext): v
           [accountId, dateKey, streak],
         );
         const gold = streakGold(def.goldReward, streak);
+        // Ledgered (dailies are self-capped, so no headroom check) with a
+        // per-day-per-quest ref — belt-and-suspenders on top of `claimed`.
+        await ledgerGrant(client, accountId, gold, "daily_claim", `daily:${accountId}:${dateKey}:${questId}`, dateKey);
         const wallet = await client.query<{ currency: string }>(
           "UPDATE meta_wallets SET currency = currency + $2, updated_at = now() WHERE account_id = $1 RETURNING currency",
           [accountId, gold],
@@ -542,18 +581,28 @@ export function registerInternalRoutes(app: FastifyInstance, ctx: AppContext): v
     { preHandler: requireZoneSecret, schema: walletAmountSchema },
     async (request, reply) => {
       const { accountId } = request.params as { accountId: string };
-      const { amount } = request.body as { amount: number };
+      const { amount, reason } = request.body as { amount: number; reason?: string };
       if (amount > MAX_CREDIT_PER_CALL) {
         request.log.warn({ accountId, amount }, "implausible wallet credit rejected");
         return reply.code(422).send({ error: "implausible_credit" });
       }
-      const res = await pool.query<{ currency: string }>(
-        `UPDATE meta_wallets SET currency = currency + $2, updated_at = now()
-         WHERE account_id = $1 RETURNING currency`,
-        [accountId, amount],
-      );
-      if (!res.rowCount) return reply.code(404).send({ error: "wallet_not_found" });
-      return reply.send({ balance: Number(res.rows[0]!.currency) });
+      // Per-account daily earn cap across all ledgered grants — hard reject
+      // (this route is the unbounded inflow; gameplay paths clamp instead).
+      const dateKey = dateKeyUTC(new Date());
+      const result = await withTransaction(pool, async (client) => {
+        const total = await earnedToday(client, accountId, dateKey);
+        if (total + amount > DAILY_EARN_CAP) return { code: 422 as const, error: "daily_earn_cap" };
+        await ledgerGrant(client, accountId, amount, reason ?? "credit", null, dateKey);
+        const res = await client.query<{ currency: string }>(
+          `UPDATE meta_wallets SET currency = currency + $2, updated_at = now()
+           WHERE account_id = $1 RETURNING currency`,
+          [accountId, amount],
+        );
+        if (!res.rowCount) return { code: 404 as const, error: "wallet_not_found" };
+        return { code: 200 as const, balance: Number(res.rows[0]!.currency) };
+      });
+      if (result.code !== 200) return reply.code(result.code).send({ error: result.error });
+      return reply.send({ balance: result.balance });
     },
   );
 }

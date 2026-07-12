@@ -114,6 +114,14 @@ async function main() {
   const claim2 = await api(`/internal/dailies/${accountId}/claim`, { method: "POST", secret: ZONE_SECRET, body: { questId: q2.id } });
   check("claim reports streak day 1 with unboosted gold", claim2.json?.streak === 1 && claim2.json?.gold === q2.goldReward, `streak=${claim2.json?.streak} gold=${claim2.json?.gold}/${q2.goldReward}`);
 
+  // === DAILY EARN CAP: repeated max credits must hit the 5000/day ceiling ===
+  let capHit = null;
+  for (let i = 0; i < 4; i++) {
+    const res = await api(`/internal/wallet/${accountId}/credit`, { method: "POST", secret: ZONE_SECRET, body: { amount: 2000, reason: "cap-probe" } });
+    if (res.status === 422) { capHit = res.json?.error; break; }
+  }
+  check("daily earn cap rejects credits beyond 5000/day", capHit === "daily_earn_cap", `error=${capHit}`);
+
   // === SKINS: buy (gold sink, verified against the wallet) then equip ===
   await api(`/internal/wallet/${accountId}/credit`, { method: "POST", secret: ZONE_SECRET, body: { amount: 300, reason: "test-topup" } });
   await walkToStall(s2.room, s2.self);

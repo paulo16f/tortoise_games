@@ -16,3 +16,11 @@ export function maxCurrencyForDepth(depth: number): number {
 }
 
 export const MAX_PLAUSIBLE_DEPTH = 50;
+
+/**
+ * Server-enforced per-account daily gold earn cap, summed across ALL grant
+ * sources in the wallet ledger (run finishes, admin credits). Self-capped
+ * sources (dailies ≤ ~280 boosted, spinner ≤ 120) are ledgered but exempt
+ * from the check. The anti-abuse floor for any future token payout.
+ */
+export const DAILY_EARN_CAP = 5000;
