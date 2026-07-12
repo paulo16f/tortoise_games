@@ -213,6 +213,9 @@ interface PlayerRuntime {
   /** Bulwark damage-reduction buff (0 value = inactive). */
   bulwarkSeconds: number;
   bulwarkValue: number;
+  /** Blessing damage-amp buff: outgoing damage ×(1+ampValue) while ampSeconds>0. */
+  ampSeconds: number;
+  ampValue: number;
   respawnTimer: number;
   profile: ClassProfile;
   runId: string | null;
@@ -449,6 +452,8 @@ export class ZoneRoom extends Room<ZoneState> {
       frostAura: { radius: 0, tick: 0.5, damage: 0 },
       bulwarkSeconds: 0,
       bulwarkValue: 0,
+      ampSeconds: 0,
+      ampValue: 0,
       respawnTimer: 0,
       profile,
       runId: auth.claims?.runId ?? null,
@@ -564,6 +569,7 @@ export class ZoneRoom extends Room<ZoneState> {
     const targets = this.buildTargetMap();
     this.updateEnemies(dt, targets);
     this.updateFrostAuras(dt);
+    this.updateDots(dt);
     this.updatePlayerAttacks(dt);
     this.updatePendingImpacts(dt);
     this.updatePendingProjectiles(dt);
@@ -621,6 +627,7 @@ export class ZoneRoom extends Room<ZoneState> {
       rt.shieldSeconds = Math.max(0, rt.shieldSeconds - dt);
       rt.frostSeconds = Math.max(0, rt.frostSeconds - dt);
       rt.bulwarkSeconds = Math.max(0, rt.bulwarkSeconds - dt);
+      rt.ampSeconds = Math.max(0, rt.ampSeconds - dt);
       // Per-skill cooldowns: tick down and drop finished entries (WoCC pattern).
       for (const [skillId, remaining] of rt.cooldowns) {
         const next = remaining - dt;
@@ -637,6 +644,7 @@ export class ZoneRoom extends Room<ZoneState> {
       p.swingInterval = swingIntervalFor(rt.profile, p.weaponId);
       p.shieldSeconds = rt.shieldSeconds;
       p.frostSeconds = rt.frostSeconds;
+      p.ampSeconds = rt.ampSeconds;
       // Mirror per-skill cooldowns + level unlocks into the synced hotbar.
       for (const slot of p.hotbar) {
         if (!slot.skillId) continue;
@@ -751,6 +759,26 @@ export class ZoneRoom extends Room<ZoneState> {
         this.damageEnemy(id, rt, p, enemy, rt.frostAura.damage, "skill");
       }
     });
+  }
+
+  /**
+   * Tick Necromancer curses (single-target DoTs). Each due tick is routed
+   * through damageEnemy so it builds threat, awards the kill, and rolls loot
+   * exactly like a direct hit — the caster keeps the credit even at range.
+   */
+  private updateDots(dt: number): void {
+    for (const enemy of this.enemies) {
+      if (!enemy.state.alive) continue;
+      const ticks = enemy.advanceDots(dt);
+      for (const t of ticks) {
+        const source = this.state.players.get(t.sourceId);
+        const rt = this.runtimes.get(t.sourceId);
+        // Source disconnected or died: the curse fizzles this tick (drops next).
+        if (!source || !rt || !source.alive) continue;
+        if (!enemy.state.alive) break;
+        this.damageEnemy(t.sourceId, rt, source, enemy, t.damage, "skill");
+      }
+    }
   }
 
   private updatePlayerAttacks(dt: number): void {
@@ -1423,16 +1451,22 @@ export class ZoneRoom extends Room<ZoneState> {
     }
 
     // Guards that must not waste the cooldown: targeted effects with no valid
-    // target (or target beyond reach).
+    // target (or a melee target beyond reach).
     const targeted = def.effects.find(
-      (e): e is Extract<SkillEffect, { type: "projectile_aoe" | "dash_strike" | "execute" }> =>
-        e.type === "projectile_aoe" || e.type === "dash_strike" || e.type === "execute",
+      (e): e is Extract<SkillEffect, { type: "projectile_aoe" | "dash_strike" | "execute" | "lifesteal_strike" | "dot" }> =>
+        e.type === "projectile_aoe" ||
+        e.type === "dash_strike" ||
+        e.type === "execute" ||
+        e.type === "lifesteal_strike" ||
+        e.type === "dot",
     );
     let target: EnemyController | null = null;
     if (targeted) {
       target = this.enemies.find((e) => e.state.id === p.targetId && e.state.alive) ?? null;
       if (!target) return;
-      if (targeted.type !== "projectile_aoe") {
+      // Melee strikes reject an out-of-reach target; ranged casts (projectile,
+      // curse) land at any range on the current target.
+      if (targeted.type === "dash_strike" || targeted.type === "execute" || targeted.type === "lifesteal_strike") {
         const d = Math.hypot(target.state.x - p.x, target.state.z - p.z);
         if (d > targeted.range + 0.5) return;
       }
@@ -1476,8 +1510,85 @@ export class ZoneRoom extends Room<ZoneState> {
       }
 
       case "self_buff": {
-        rt.bulwarkSeconds = effect.duration;
-        rt.bulwarkValue = effect.value;
+        if (effect.kind === "damage_amp") {
+          rt.ampSeconds = effect.duration;
+          rt.ampValue = effect.value;
+        } else {
+          rt.bulwarkSeconds = effect.duration;
+          rt.bulwarkValue = effect.value;
+        }
+        const actionId = this.nextActionId();
+        this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), p.id, actionId);
+        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: 0, kind: "skill", actionId });
+        return;
+      }
+
+      case "heal_ally": {
+        // Smart-heal: the most-wounded living player within radius (incl. self).
+        let best: PlayerState | null = null;
+        let bestRatio = Infinity;
+        this.state.players.forEach((ally) => {
+          if (!ally.alive || ally.hp >= ally.maxHp) return;
+          if (Math.hypot(ally.x - p.x, ally.z - p.z) > effect.radius) return;
+          const ratio = ally.hp / Math.max(1, ally.maxHp);
+          if (ratio < bestRatio) {
+            bestRatio = ratio;
+            best = ally;
+          }
+        });
+        // Nobody hurt in range → heal the caster (never wastes the cast/cooldown).
+        const heal: PlayerState = best ?? p;
+        const { newHp, effective } = applyHeal(heal.hp, heal.maxHp, effect.fraction);
+        heal.hp = newHp;
+        this.applyHealThreat(playerId, effective); // healing draws aggro to the CASTER
+        const actionId = this.nextActionId();
+        this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), heal.id, actionId);
+        this.emitCombat({ sourceId: p.id, targetId: heal.id, amount: -effective, kind: "heal", actionId });
+        return;
+      }
+
+      case "lifesteal_strike": {
+        if (!target) return;
+        this.facePlayerToEnemy(p, target);
+        const targetId = target.state.id;
+        const actionId = this.nextActionId();
+        this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), targetId, actionId);
+        this.scheduleImpact(actionId, DEFAULT_SKILL_TIMING.windup, () => {
+          const source = this.state.players.get(playerId);
+          const liveRt = this.runtimes.get(playerId);
+          const live = this.enemies.find((e) => e.state.id === targetId);
+          if (!source || !liveRt || !source.alive || !live?.state.alive || !this.isCurrentAction(source, actionId)) return;
+          const reach = Math.hypot(live.state.x - source.x, live.state.z - source.z);
+          if (reach > effect.range + 0.75) return;
+          this.damageEnemy(playerId, liveRt, source, live, effect.damage, "skill", actionId);
+          // Drain: heal the caster for a fraction of the strike's nominal damage.
+          const { newHp, effective } = applyHeal(source.hp, source.maxHp, (effect.damage * effect.lifesteal) / source.maxHp);
+          if (effective > 0) {
+            source.hp = newHp;
+            this.emitCombat({ sourceId: source.id, targetId: source.id, amount: -effective, kind: "heal", actionId: this.nextActionId() });
+          }
+        });
+        return;
+      }
+
+      case "dot": {
+        if (!target) return;
+        this.facePlayerToEnemy(p, target);
+        target.applyDot(playerId, effect.damage, effect.tick, effect.duration);
+        // Seed threat immediately so the curse pulls aggro like any other cast.
+        target.addThreat(playerId, effect.damage);
+        const actionId = this.nextActionId();
+        this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), target.state.id, actionId);
+        this.emitCombat({ sourceId: p.id, targetId: target.state.id, amount: 0, kind: "skill", actionId });
+        return;
+      }
+
+      case "taunt": {
+        for (const enemy of this.enemies) {
+          if (!enemy.state.alive) continue;
+          if (Math.hypot(enemy.state.x - p.x, enemy.state.z - p.z) > effect.radius) continue;
+          enemy.taunt(playerId);
+        }
         const actionId = this.nextActionId();
         this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), p.id, actionId);
         this.emitCombat({ sourceId: p.id, targetId: p.id, amount: 0, kind: "skill", actionId });
@@ -1710,6 +1821,9 @@ export class ZoneRoom extends Room<ZoneState> {
     kind: CombatEventMessage["kind"],
     actionId = this.nextActionId(),
   ): void {
+    // Blessing (Cleric) amps ALL of the caster's outgoing damage — basic
+    // attacks, skills, lifesteal, and DoT ticks all route through here.
+    if (rt.ampSeconds > 0 && rt.ampValue > 0) amount = Math.round(amount * (1 + rt.ampValue));
     enemy.addThreat(playerId, Math.max(1, amount));
     const killed = enemy.takeDamage(amount);
     if (!killed) this.setAction(enemy.state, "hit", 0.28, playerId, actionId);

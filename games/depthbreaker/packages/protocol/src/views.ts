@@ -46,6 +46,7 @@ export interface PlayerView {
   swingInterval: number;
   shieldSeconds: number;
   frostSeconds: number;
+  ampSeconds: number;
   /** Fixed-length bag; ArraySchema at runtime, read-only array-like here. */
   inventory: ReadonlyArray<ItemSlotView>;
   /** Fixed 10-slot hotbar; ArraySchema at runtime, read-only array-like here. */

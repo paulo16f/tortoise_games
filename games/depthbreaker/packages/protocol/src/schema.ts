@@ -116,10 +116,12 @@ export class PlayerState extends Schema {
   declare swingCooldown: number;
   /** Full auto-attack swing period, so the client can draw a fill fraction. */
   declare swingInterval: number;
-  /** Seconds of warrior immunity remaining. */
+  /** Seconds of Shield Wall damage-immunity remaining (Knight/reactive). */
   declare shieldSeconds: number;
-  /** Seconds of mage orbiting frost projectiles remaining. */
+  /** Seconds of orbiting frost aura remaining (Necromancer Frost Nova). */
   declare frostSeconds: number;
+  /** Seconds of Blessing damage-amp remaining (Cleric outgoing-damage buff). */
+  declare ampSeconds: number;
   /** Fixed-length bag; empty slots have itemId "". Weapon is `weaponId`, not here. */
   declare inventory: ArraySchema<ItemSlotState>;
   /** Fixed 10-slot hotbar (keys 1-9,0). Layout comes from hotbarLayout(classId). */
@@ -157,6 +159,7 @@ export class PlayerState extends Schema {
     this.swingInterval = 0;
     this.shieldSeconds = 0;
     this.frostSeconds = 0;
+    this.ampSeconds = 0;
     this.inventory = new ArraySchema<ItemSlotState>();
     this.hotbar = new ArraySchema<SkillSlotState>();
   }
@@ -193,6 +196,7 @@ defineTypes(PlayerState, {
   swingInterval: "number",
   shieldSeconds: "number",
   frostSeconds: "number",
+  ampSeconds: "number",
   inventory: [ItemSlotState],
   hotbar: [SkillSlotState],
 });

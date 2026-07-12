@@ -25,6 +25,7 @@
     "smoke:p2p": "node tools/smoke_p2p.mjs",
     "smoke:combat": "node tools/smoke_combat.mjs",
     "smoke:fishing": "node tools/smoke_fishing.mjs",
-    "smoke:weapons": "node tools/smoke_weapons.mjs"
+    "smoke:weapons": "node tools/smoke_weapons.mjs",
+    "smoke:classes": "node tools/smoke_classes.mjs"
   }
 }

@@ -80,4 +80,22 @@ describe("Threat table (GAME_MATH_SPEC §4)", () => {
     table.addDamage("abe", 100);
     expect(table.selectTarget(null, () => true)).toBe("abe");
   });
+
+  it("forceTarget (taunt) pulls aggro past any swap threshold", () => {
+    const table = new ThreatTable();
+    table.addDamage("dps", 1000); // a raging damage dealer holds aggro
+    table.addDamage("tank", 10);
+    expect(table.selectTarget(null, () => true)).toBe("dps");
+    table.forceTarget("tank");
+    // Tank is now clear top; ranged threshold (the hardest to clear) still swaps.
+    expect(table.getThreat("tank")).toBeGreaterThan(table.getThreat("dps") * RANGED_SWAP_THRESHOLD);
+    expect(table.selectTarget("dps", () => false)).toBe("tank");
+  });
+
+  it("forceTarget wins even from an empty table", () => {
+    const table = new ThreatTable();
+    table.forceTarget("tank");
+    expect(table.getThreat("tank")).toBeGreaterThan(0);
+    expect(table.selectTarget(null, () => true)).toBe("tank");
+  });
 });

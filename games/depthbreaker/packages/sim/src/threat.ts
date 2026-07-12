@@ -31,6 +31,17 @@ export class ThreatTable {
     return this.threat.get(entityId) ?? 0;
   }
 
+  /**
+   * Force `entityId` to the top of the table by a clear margin, so the next
+   * selectTarget() adopts it past any swap threshold (Knight taunt). Sets its
+   * threat to 1.5× the current highest (+1 so it wins even from an empty table).
+   */
+  forceTarget(entityId: string): void {
+    let max = 0;
+    for (const value of this.threat.values()) if (value > max) max = value;
+    this.threat.set(entityId, max * 1.5 + 1);
+  }
+
   remove(entityId: string): void {
     this.threat.delete(entityId);
   }

@@ -118,6 +118,20 @@ export interface CombatTarget {
   alive: boolean;
 }
 
+/** An active damage-over-time on an enemy, keyed by the caster (Necromancer). */
+interface EnemyDot {
+  tickDamage: number;
+  tickInterval: number;
+  tickTimer: number;
+  timeLeft: number;
+}
+
+/** A DoT tick that came due this frame; the room routes it through damageEnemy. */
+export interface DotTick {
+  sourceId: string;
+  damage: number;
+}
+
 /** What the enemy wants to do this tick; the room applies the effects. */
 export interface EnemyAction {
   attackTargetId: string | null;
@@ -134,6 +148,8 @@ function dist(ax: number, az: number, bx: number, bz: number): number {
 export class EnemyController {
   readonly def: EnemyDef;
   readonly threat = new ThreatTable();
+  /** Active damage-over-time curses, keyed by the caster's id (re-cast refreshes). */
+  private readonly dots = new Map<string, EnemyDot>();
   private readonly spawnX: number;
   private readonly spawnZ: number;
   private attackCooldown = 0;
@@ -173,6 +189,43 @@ export class EnemyController {
 
   removeThreat(playerId: string): void {
     this.threat.remove(playerId);
+  }
+
+  /** Apply/refresh a caster's damage-over-time on this enemy (Necromancer curse). */
+  applyDot(sourceId: string, tickDamage: number, tickInterval: number, duration: number): void {
+    if (!this.state.alive) return;
+    this.dots.set(sourceId, { tickDamage, tickInterval, tickTimer: tickInterval, timeLeft: duration });
+  }
+
+  /**
+   * Advance all active DoTs by `dt`, returning any ticks that came due this
+   * frame (the room applies them through damageEnemy so threat/kills/loot fire).
+   * Expired DoTs are dropped.
+   */
+  advanceDots(dt: number): DotTick[] {
+    if (this.dots.size === 0 || !this.state.alive) return [];
+    const ticks: DotTick[] = [];
+    for (const [sourceId, dot] of this.dots) {
+      dot.timeLeft -= dt;
+      dot.tickTimer -= dt;
+      if (dot.tickTimer <= 0) {
+        dot.tickTimer += dot.tickInterval;
+        ticks.push({ sourceId, damage: dot.tickDamage });
+      }
+      if (dot.timeLeft <= 0) this.dots.delete(sourceId);
+    }
+    return ticks;
+  }
+
+  /**
+   * Taunt: adopt this player as the target now and spike their threat so the
+   * enemy sticks to them (Knight's aggro control). No-op while leashing home.
+   */
+  taunt(playerId: string): void {
+    if (!this.state.alive || this.state.fsm === "leash") return;
+    this.threat.forceTarget(playerId);
+    this.state.targetId = playerId;
+    if (this.state.fsm === "idle") this.state.fsm = "aggro";
   }
 
   update(dt: number, targets: Map<string, CombatTarget>, map: DungeonMapDefinition): EnemyAction {
@@ -276,6 +329,7 @@ export class EnemyController {
       this.state.fsm = "idle";
       this.state.targetId = "";
       this.threat.clear();
+      this.dots.clear();
       this.respawnTimer = this.def.respawnDelay;
       return true;
     }
@@ -294,6 +348,7 @@ export class EnemyController {
 
   private enterLeash(): void {
     this.threat.clear();
+    this.dots.clear();
     this.state.targetId = "";
     this.state.fsm = "leash";
   }

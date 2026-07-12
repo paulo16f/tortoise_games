@@ -83,3 +83,42 @@ describe("skillsKnownAt (learn-by-level)", () => {
     }
   });
 });
+
+describe("distinct class identities", () => {
+  const effectTypes = (id: string) => (SKILLS[id]?.effects ?? []).map((e) => e.type);
+
+  it("Cleric is solo-viable: has damage AND self-heal AND a heal that reaches allies", () => {
+    const cleric = CLASS_KITS.cleric;
+    // A ranged damage tool (smite) so the cleric can kill on its own.
+    expect(cleric).toContain("smite");
+    expect(effectTypes("smite")).toContain("projectile_aoe");
+    // Sustain: self-heal (mend) + a smart ally-heal (renew).
+    expect(effectTypes("mend")).toContain("heal_self");
+    expect(effectTypes("renew")).toContain("heal_ally");
+    // A damage buff (blessing) — the "balanced on damage and buffs" ask.
+    expect(effectTypes("blessing")).toContain("self_buff");
+  });
+
+  it("Knight is the only class with a taunt (threat control)", () => {
+    expect(CLASS_KITS.knight).toContain("taunt");
+    expect(effectTypes("taunt")).toContain("taunt");
+    for (const classId of CLASS_IDS) {
+      if (classId !== "knight") expect(CLASS_KITS[classId]).not.toContain("taunt");
+    }
+  });
+
+  it("Reaper drains (lifesteal) and forgoes the Knight's shields", () => {
+    expect(CLASS_KITS.reaper).toContain("soul_reap");
+    expect(effectTypes("soul_reap")).toContain("lifesteal_strike");
+    expect(CLASS_KITS.reaper).not.toContain("shield_wall");
+    expect(CLASS_KITS.reaper).not.toContain("bulwark");
+  });
+
+  it("Necromancer alone wields the Corruption damage-over-time", () => {
+    expect(CLASS_KITS.necromancer).toContain("corruption");
+    expect(effectTypes("corruption")).toContain("dot");
+    // Necromancer is a caster — no melee lifesteal or taunt.
+    expect(CLASS_KITS.necromancer).not.toContain("soul_reap");
+    expect(CLASS_KITS.necromancer).not.toContain("taunt");
+  });
+});

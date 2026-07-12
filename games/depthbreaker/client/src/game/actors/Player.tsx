@@ -152,6 +152,13 @@ export function Player({ id, isLocal }: PlayerProps) {
         </group>
       )}
 
+      {alive && (p?.ampSeconds ?? 0) > 0 && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+          <ringGeometry args={[radius * 1.5, radius * 1.9, 32]} />
+          <meshBasicMaterial color="#fde68a" transparent opacity={0.6} depthWrite={false} />
+        </mesh>
+      )}
+
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
         <ringGeometry args={[radius * 1.0, radius * 1.18, 24]} />
         <meshBasicMaterial color={isLocal ? LOCAL_COLOR : OTHER_COLOR} transparent opacity={0.7} />

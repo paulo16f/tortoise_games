@@ -379,7 +379,8 @@ export function Hud() {
             const active =
               (isAuto && self.autoAttack) ||
               (def.id === "shield_wall" && (self.shieldSeconds ?? 0) > 0) ||
-              (def.id === "frost_nova" && (self.frostSeconds ?? 0) > 0);
+              (def.id === "frost_nova" && (self.frostSeconds ?? 0) > 0) ||
+              (def.id === "blessing" && (self.ampSeconds ?? 0) > 0);
             const lockedNow = !slot.unlocked;
             return (
               <SkillSlot
