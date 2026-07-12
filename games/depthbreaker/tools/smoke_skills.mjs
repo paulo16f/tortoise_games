@@ -46,8 +46,8 @@ async function partA() {
 
   const bar = hotbar(self);
   console.log("  hotbar:", bar.map((s) => s.id || "·").join(" | "));
-  const expected = ["basic_attack", "cleave", "shield_wall", "whirlwind", "charge", "execute", "bulwark", "", "", ""];
-  check("layout is the 10-slot warrior kit (potion off the hotbar)", JSON.stringify(bar.map((s) => s.id)) === JSON.stringify(expected));
+  const expected = ["basic_attack", "cleave", "shield_wall", "whirlwind", "taunt", "execute", "bulwark", "", "", ""];
+  check("layout is the 10-slot knight kit (potion off the hotbar)", JSON.stringify(bar.map((s) => s.id)) === JSON.stringify(expected));
   check("Lv1 unlock flags (cleave yes, shield_wall no, bulwark no)",
     bar[1].unlocked === true && bar[2].unlocked === false && bar[6].unlocked === false);
 
@@ -121,13 +121,22 @@ async function partB() {
   check("shield_wall (Lv3) unlocked at Lv5", bar[2].unlocked === true);
   check("whirlwind (Lv6) still locked at Lv5", bar[3].unlocked === false);
 
-  // GCD cross-skill block: shield_wall commits, cleave in the same instant is
-  // refused by the GCD (its own cooldown stays 0), then fires once GCD clears.
-  room.send("useSkill", { slot: 2 }); // shield_wall
-  room.send("useSkill", { slot: 1 }); // cleave — must be GCD-blocked
+  // Off-GCD reactive defensive: shield_wall commits its buff WITHOUT spending the
+  // GCD (panic-shield and keep acting). Being off-GCD, it can't demonstrate the
+  // cross-skill GCD block — taunt (on-GCD) does that below.
+  room.send("useSkill", { slot: 2 }); // shield_wall (off-GCD)
   await wait(250);
   check("shield_wall fired (cooldown charged)", (self.hotbar[2]?.cooldownRemaining ?? 0) > 8);
   check("shield buff active (shieldSeconds > 0)", self.shieldSeconds > 0);
+  check("off-GCD shield_wall did not spend the GCD", self.gcdRemaining === 0);
+
+  // On-GCD cross-skill block: taunt (on-GCD, unlocked at Lv4) commits, cleave in
+  // the same instant is refused by the GCD (its own cooldown stays 0), then fires
+  // once the GCD clears.
+  room.send("useSkill", { slot: 4 }); // taunt (on-GCD)
+  room.send("useSkill", { slot: 1 }); // cleave — must be GCD-blocked
+  await wait(250);
+  check("taunt fired (cooldown charged)", (self.hotbar[4]?.cooldownRemaining ?? 0) > 8);
   check("cleave GCD-blocked in same instant", (self.hotbar[1]?.cooldownRemaining ?? -1) === 0);
 
   await wait(1100); // let the 1s GCD clear
