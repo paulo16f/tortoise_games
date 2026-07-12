@@ -12,6 +12,8 @@ import {
   dailyQuestsFor,
   dailyQuestDef,
   dateKeyUTC,
+  advanceStreak,
+  streakGold,
   skinDef,
   spinPrizeAt,
   SPINNER_SEGMENTS,
@@ -197,12 +199,28 @@ export function registerInternalRoutes(app: FastifyInstance, ctx: AppContext): v
           "UPDATE account_daily_quests SET claimed = true, updated_at = now() WHERE account_id = $1 AND date_key = $2 AND quest_id = $3",
           [accountId, dateKey, questId],
         );
+        // Streak: the first claim of a UTC day advances it (consecutive day)
+        // or resets it (gap); later claims the same day keep it. The streak
+        // multiplies daily GOLD only — bounded by streakGoldMult's +50% cap.
+        const streakRow = await client.query<{ last_claim_date: string; streak: number }>(
+          "SELECT last_claim_date, streak FROM account_daily_streaks WHERE account_id = $1 FOR UPDATE",
+          [accountId],
+        );
+        const prev = streakRow.rows[0] ?? { last_claim_date: "", streak: 0 };
+        const streak = advanceStreak(prev.last_claim_date, dateKey, prev.streak);
+        await client.query(
+          `INSERT INTO account_daily_streaks (account_id, last_claim_date, streak)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (account_id) DO UPDATE SET last_claim_date = $2, streak = $3, updated_at = now()`,
+          [accountId, dateKey, streak],
+        );
+        const gold = streakGold(def.goldReward, streak);
         const wallet = await client.query<{ currency: string }>(
           "UPDATE meta_wallets SET currency = currency + $2, updated_at = now() WHERE account_id = $1 RETURNING currency",
-          [accountId, def.goldReward],
+          [accountId, gold],
         );
         if (!wallet.rowCount) return { code: 404 as const, error: "wallet_not_found" };
-        return { code: 200 as const, balance: Number(wallet.rows[0]!.currency), gold: def.goldReward, xp: def.xpReward };
+        return { code: 200 as const, balance: Number(wallet.rows[0]!.currency), gold, xp: def.xpReward, streak };
       });
       if (result.code !== 200) return reply.code(result.code).send({ error: result.error });
       return reply.send(result);

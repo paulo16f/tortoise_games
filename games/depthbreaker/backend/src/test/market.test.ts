@@ -66,7 +66,7 @@ describe.skipIf(!hasTestDb)("P2P marketplace (requires TEST_DATABASE_URL)", () =
     expect(res.statusCode).toBe(200);
     expect(res.json().balance).toBe(320); // 500 - 180
 
-    expect(await walletBalance(seller.accountId)).toBe(180); // seller paid in full (gold listing, no fee)
+    expect(await walletBalance(seller.accountId)).toBe(171); // seller nets price minus the 5% market fee (180 - 9)
     expect(await walletBalance(buyer.accountId)).toBe(320);
     expect(await stashOf(buyer.accountId)).toEqual([{ itemId: "crystal_shard", count: 3 }]);
     // Listing is closed and no longer browsable.

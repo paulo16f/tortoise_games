@@ -108,6 +108,10 @@ import {
   projectileTiming,
   type PendingProjectile,
   type ProjectileEntity,
+  depthHpMult,
+  depthDamageMult,
+  scaledXp,
+  scaledCurrency,
 } from "@depthbreaker/sim";
 import { EnemyController, GRUNT, SWARMER, ELITE_GRUNT, BOSS_BRUTE, type EnemyDef, type CombatTarget } from "./enemies.js";
 import { verifyJoinTicket, type JoinTicketClaims } from "./joinTicket.js";
@@ -728,6 +732,23 @@ export class ZoneRoom extends Room<ZoneState> {
       portal.z = point.z;
       portal.countdown = BOSS_PORTAL_COUNTDOWN_SECONDS;
     }
+  }
+
+  /**
+   * The party broke through to the next depth (floor boss died). Depth drives
+   * everything downstream: enemy hp/damage scaling at spawn, kill xp/gold
+   * multipliers, the backend's per-run plausibility caps, and the reach-depth
+   * daily quest (which was unwinnable before this hook existed — nothing ever
+   * bumped the "depth" kind).
+   */
+  private breakDepth(): void {
+    this.state.depth += 1;
+    this.runtimes.forEach((rt, playerId) => {
+      const player = this.state.players.get(playerId);
+      if (player) this.bumpDaily(rt, "depth", "", 1);
+    });
+    const payload: ChatMessage = { text: `The floor gives way… Depth ${this.state.depth}. Enemies grow stronger — and richer.`, from: "⚒ Depthbreaker" };
+    this.broadcast(ServerMessage.Chat, payload);
   }
 
   private buildTargetMap(): Map<string, CombatTarget> {
@@ -1852,9 +1873,12 @@ export class ZoneRoom extends Room<ZoneState> {
     if (killed) {
       this.setAction(enemy.state, "dying", ENEMY_DYING_SECONDS, playerId, actionId);
       this.emitCombat({ sourceId: playerId, targetId: enemy.state.id, amount: 0, kind: "death", actionId }, skillId);
-      this.awardKill(rt, p, enemy.def.xpValue, enemy.def.currencyValue);
+      // Kill rewards scale with the CURRENT depth — deeper floors pay better
+      // (the backend's per-run plausibility caps rise with the same depth).
+      this.awardKill(rt, p, scaledXp(enemy.def.xpValue, this.state.depth), scaledCurrency(enemy.def.currencyValue, this.state.depth));
       this.bumpDaily(rt, "kill", enemy.def.id, 1);
       this.rollKillLoot(rt, p, enemy.def.rank as LootRank);
+      if (enemy.def.rank === "boss") this.breakDepth();
       this.retargetPlayersFromDeadEnemy(enemy.state.id);
       this.scheduleEnemyRemoval(enemy);
     }
@@ -2075,7 +2099,22 @@ export class ZoneRoom extends Room<ZoneState> {
     this.spawnEnemy(BOSS_BRUTE, point.x, point.z);
   }
 
-  private spawnEnemy(def: EnemyDef, x: number, z: number): EnemyController {
+  private spawnEnemy(baseDef: EnemyDef, x: number, z: number): EnemyController {
+    // Depth scaling: enemies spawned after the party breaks depth are tougher
+    // (hp/damage) and pay better (xp/currency — applied in awardKill via the
+    // live depth). The def is cloned so the shared base defs stay pristine.
+    const depth = this.state.depth;
+    const def: EnemyDef =
+      depth > 0
+        ? {
+            ...baseDef,
+            maxHp: Math.round(baseDef.maxHp * depthHpMult(depth)),
+            attackDamage: Math.round(baseDef.attackDamage * depthDamageMult(depth)),
+            special: baseDef.special
+              ? { ...baseDef.special, damage: Math.round(baseDef.special.damage * depthDamageMult(depth)) }
+              : undefined,
+          }
+        : baseDef;
     const state = new EnemyState();
     state.id = `${def.id}-${this.spawnSeq++}`;
     state.defId = def.id;

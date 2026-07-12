@@ -79,3 +79,41 @@ export function dailyQuestsFor(dateKey: string): DailyQuestDef[] {
 export function dailyQuestDef(id: string): DailyQuestDef | undefined {
   return DAILY_QUEST_CATALOG.find((q) => q.id === id);
 }
+
+// --- Daily streaks (Kintara-style retention layer) ---------------------------
+// A streak advances on the FIRST quest claim of each UTC day, and only if the
+// previous claim day was exactly yesterday; a missed day resets to 1. The
+// streak multiplies daily-quest GOLD only (not xp): +10% per consecutive day
+// beyond the first, capped at +50% — bounded, so MAX_DAILY_GOLD stays finite.
+
+/** Maximum streak days that still add bonus (cap: +50% at 6+ days). */
+export const STREAK_BONUS_CAP_DAYS = 6;
+/** Gold bonus per consecutive day beyond the first. */
+export const STREAK_BONUS_PER_DAY = 0.1;
+
+/** "YYYY-MM-DD" for the UTC day immediately before `dateKey`. */
+export function prevDateKeyUTC(dateKey: string): string {
+  const ms = Date.parse(`${dateKey}T00:00:00.000Z`);
+  return dateKeyUTC(new Date(ms - 86_400_000));
+}
+
+/**
+ * Next streak value when claiming on `todayKey`, given the last day a claim
+ * happened (`lastClaimKey`, "" if never). Same-day claims keep the streak.
+ */
+export function advanceStreak(lastClaimKey: string, todayKey: string, streak: number): number {
+  if (lastClaimKey === todayKey) return Math.max(1, streak);
+  if (lastClaimKey === prevDateKeyUTC(todayKey)) return Math.max(1, streak) + 1;
+  return 1;
+}
+
+/** Gold multiplier for a given streak length (1.0 at day 1, capped +50%). */
+export function streakGoldMult(streak: number): number {
+  const days = Math.max(1, Math.min(STREAK_BONUS_CAP_DAYS, Math.floor(streak)));
+  return 1 + STREAK_BONUS_PER_DAY * (days - 1);
+}
+
+/** Streak-boosted gold for a quest reward (rounded). */
+export function streakGold(baseGold: number, streak: number): number {
+  return Math.round(baseGold * streakGoldMult(streak));
+}

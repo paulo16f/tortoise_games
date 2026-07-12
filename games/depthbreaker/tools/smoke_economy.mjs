@@ -107,6 +107,13 @@ async function main() {
   await wait(500);
   check("daily claim is once-only", s2.self.gold === goldAfterClaim);
 
+  // Streak layer: a fresh account's first claim day = streak 1 (no bonus).
+  // Claim quest #2 via the internal route so we can read the response body.
+  const q2 = daily.json.quests[1];
+  await api(`/internal/dailies/${accountId}/progress`, { method: "POST", secret: ZONE_SECRET, body: { questId: q2.id, delta: q2.target } });
+  const claim2 = await api(`/internal/dailies/${accountId}/claim`, { method: "POST", secret: ZONE_SECRET, body: { questId: q2.id } });
+  check("claim reports streak day 1 with unboosted gold", claim2.json?.streak === 1 && claim2.json?.gold === q2.goldReward, `streak=${claim2.json?.streak} gold=${claim2.json?.gold}/${q2.goldReward}`);
+
   // === SKINS: buy (gold sink, verified against the wallet) then equip ===
   await api(`/internal/wallet/${accountId}/credit`, { method: "POST", secret: ZONE_SECRET, body: { amount: 300, reason: "test-topup" } });
   await walkToStall(s2.room, s2.self);

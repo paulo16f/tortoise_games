@@ -75,7 +75,8 @@ async function main() {
   const bought = await api("/api/market/buy", { method: "POST", token: buyer.token, body: { listingId: listed.json.id } });
   check("buy succeeded", bought.status === 200, `status=${bought.status}`);
   check("buyer charged the listing price (500 -> 380)", bought.json.balance === 380, `balance=${bought.json?.balance}`);
-  check("seller received the full gold price", (await walletBalance(seller.accountId)) === sellerGoldBefore + 120);
+  // 5% market fee (min 1g) is the P2P gold sink: buyer pays 120, seller nets 114.
+  check("seller received price minus the 5% market fee", (await walletBalance(seller.accountId)) === sellerGoldBefore + 114);
   check("item landed in the buyer stash", (await stashItems(buyer.accountId)).some((i) => i.itemId === "iron_ore" && i.count === 5));
   const mine = await api("/api/market/mine", { token: seller.token });
   check("listing now shows as sold", (mine.json.listings ?? []).some((l) => l.id === listed.json.id && l.status === "sold"));

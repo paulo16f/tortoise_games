@@ -19,3 +19,4 @@ export * from "./dailyQuests.js";
 export * from "./skins.js";
 export * from "./spinner.js";
 export * from "./cooking.js";
+export * from "./depthScaling.js";

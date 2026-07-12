@@ -206,9 +206,15 @@ export function registerMarketRoutes(app: FastifyInstance, ctx: AppContext): voi
 
           // 2..4 follow mutations — any failure past this point must THROW so
           //    the whole transaction (including the debit) rolls back.
+          // Market fee: 5% of the sale price (min 1g) leaves the economy — the
+          // buyer pays full price, the seller receives price minus the fee.
+          // This is the P2P gold sink (Kintara-style burn; ECONOMY_LAWS spend
+          // split). Pre-token it simply vanishes; the token-era ledger will
+          // book it under the burn share.
+          const fee = Math.max(1, Math.floor(price * 0.05));
           await client.query(
             "UPDATE meta_wallets SET currency = currency + $2, updated_at = now() WHERE account_id = $1",
-            [listing.seller_account, price],
+            [listing.seller_account, price - fee],
           );
           const deposit = await depositIntoStash(client, request.accountId!, listing.item_id, listing.count);
           if (deposit !== "ok") throw new TxAbort(409, deposit);
