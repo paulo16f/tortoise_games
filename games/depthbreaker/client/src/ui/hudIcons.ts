@@ -19,8 +19,19 @@ export const SKILL_ICONS: Record<string, string> = Object.fromEntries(
   ICON_SKILLS.map((id) => [id, `/ui/synty/icons/skill_${id}.png`]),
 );
 
-/** itemId → icon URL. Empty = initials fallback. */
-export const ITEM_ICONS: Record<string, string> = {};
+/** itemId → icon URL. Missing id = initials fallback (see ItemGlyph).
+ *  Weapons map to the pack's Icons_Weapons art; consumables/resources to the
+ *  Icons_Inventory glyphs (raw fish share one glyph until a fish icon exists). */
+const ICON_ITEMS = [
+  "iron_sword", "iron_dagger", "ash_staff", "apprentice_wand", "dwarven_axe",
+  "war_spear", "ember_blade", "storm_staff", "war_hammer", "oathbreaker",
+  "starcaller", "health_potion", "bread", "cracked_charm", "iron_ore",
+  "crystal_shard", "raw_minnow", "raw_cavefish", "raw_gilded_bass",
+  "cooked_minnow", "cooked_cavefish", "grilled_bass",
+];
+export const ITEM_ICONS: Record<string, string> = Object.fromEntries(
+  ICON_ITEMS.map((id) => [id, `/ui/synty/icons/item_${id}.png`]),
+);
 
 export function iconForSkill(skillId: string): string | undefined {
   return SKILL_ICONS[skillId];

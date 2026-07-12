@@ -5,6 +5,7 @@
 // server range-checks the stall on every op. Same external-store + drag-hook +
 // tooltip pattern as the other panels.
 
+import { ItemGlyph } from "./ItemGlyph";
 import { useSyncExternalStore } from "react";
 import { itemDef } from "@depthbreaker/sim";
 import type { ItemSlotView } from "@depthbreaker/protocol";
@@ -72,7 +73,7 @@ function SlotBox({
         cursor: empty ? "default" : "pointer",
       }}
     >
-      {!empty && itemInitials(itemId)}
+      {!empty && <ItemGlyph itemId={itemId} />}
       {!empty && count > 1 && (
         <span style={{ position: "absolute", right: 3, bottom: 1, fontSize: 10, fontWeight: 700, textShadow: "0 1px 2px #000" }}>
           {count}

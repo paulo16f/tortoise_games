@@ -4,6 +4,7 @@
 // and range-checks the stall, so this panel can never set a price. Same
 // external-store pattern as InventoryPanel.
 
+import { ItemGlyph } from "./ItemGlyph";
 import { useState, useSyncExternalStore } from "react";
 import { itemDef, SKIN_CATALOG } from "@depthbreaker/sim";
 import { MARKET_STOCK, MARKET_RANGE, buildDungeon } from "@depthbreaker/protocol";
@@ -171,7 +172,7 @@ export function MarketPanel() {
               <div key={itemId} style={rowStyle} {...tooltipHandlers(() => (
                 <ItemCard itemId={itemId} action={affordable ? "Click the price to buy" : "Not enough gold"} />
               ))}>
-                <div style={{ ...iconStyle, borderColor: rarityColor(def.rarity) }}>{itemInitials(itemId)}</div>
+                <div style={{ ...iconStyle, borderColor: rarityColor(def.rarity) }}><ItemGlyph itemId={itemId} /></div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 13 }}>{def.name}</div>
                   <div style={{ opacity: 0.6, fontSize: 11 }}>
@@ -193,7 +194,7 @@ export function MarketPanel() {
             <div key={index} style={rowStyle} {...tooltipHandlers(() => (
               <ItemCard itemId={slot.itemId} count={slot.count} action="Click the price to sell one" />
             ))}>
-              <div style={{ ...iconStyle, borderColor: rarityColor(slot.rarity) }}>{itemInitials(slot.itemId)}</div>
+              <div style={{ ...iconStyle, borderColor: rarityColor(slot.rarity) }}><ItemGlyph itemId={slot.itemId} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 13 }}>
                   {def!.name}

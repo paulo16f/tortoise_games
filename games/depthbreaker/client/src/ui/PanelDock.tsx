@@ -22,16 +22,18 @@ interface DockItem {
   useOpen: () => boolean;
 }
 
+// icon: a Dark Fantasy pack sprite under /ui/synty/icons/ (leading slash);
+// anything else renders as text (emoji fallback while a sprite is unmapped).
 const DOCK_ITEMS: DockItem[] = [
-  { icon: "🎒", label: "Bag", hotkey: "B", toggle: toggleInventory, useOpen: useInventoryOpen },
-  { icon: "📖", label: "Skill Book", hotkey: "K", toggle: toggleSkillBook, useOpen: useSkillBookOpen },
-  { icon: "🏪", label: "Market", hotkey: "M", toggle: toggleMarket, useOpen: useMarketOpen },
-  { icon: "🤝", label: "Trading Post", hotkey: "T", toggle: toggleTrade, useOpen: useTradeOpen },
-  { icon: "🏦", label: "Bank", hotkey: "N", toggle: toggleStash, useOpen: useStashOpen },
-  { icon: "🍳", label: "Cooking", hotkey: "F", toggle: toggleCooking, useOpen: useCookingOpen },
-  { icon: "📜", label: "Daily Quests", hotkey: "J", toggle: toggleDailies, useOpen: useDailiesOpen },
-  { icon: "🎡", label: "Fortune Wheel", hotkey: "G", toggle: toggleSpinner, useOpen: useSpinnerOpen },
-  { icon: "💬", label: "World Chat", hotkey: "C", toggle: focusChat, useOpen: useChatFocused },
+  { icon: "/ui/synty/icons/dock_bag.png", label: "Bag", hotkey: "B", toggle: toggleInventory, useOpen: useInventoryOpen },
+  { icon: "/ui/synty/icons/dock_skillbook.png", label: "Skill Book", hotkey: "K", toggle: toggleSkillBook, useOpen: useSkillBookOpen },
+  { icon: "/ui/synty/icons/dock_market.png", label: "Market", hotkey: "M", toggle: toggleMarket, useOpen: useMarketOpen },
+  { icon: "/ui/synty/icons/dock_trade.png", label: "Trading Post", hotkey: "T", toggle: toggleTrade, useOpen: useTradeOpen },
+  { icon: "/ui/synty/icons/dock_bank.png", label: "Bank", hotkey: "N", toggle: toggleStash, useOpen: useStashOpen },
+  { icon: "/ui/synty/icons/dock_cooking.png", label: "Cooking", hotkey: "F", toggle: toggleCooking, useOpen: useCookingOpen },
+  { icon: "/ui/synty/icons/dock_dailies.png", label: "Daily Quests", hotkey: "J", toggle: toggleDailies, useOpen: useDailiesOpen },
+  { icon: "/ui/synty/icons/dock_spinner.png", label: "Fortune Wheel", hotkey: "G", toggle: toggleSpinner, useOpen: useSpinnerOpen },
+  { icon: "/ui/synty/icons/dock_chat.png", label: "World Chat", hotkey: "C", toggle: focusChat, useOpen: useChatFocused },
 ];
 
 function DockButton({ item }: { item: DockItem }) {
@@ -64,7 +66,11 @@ function DockButton({ item }: { item: DockItem }) {
         pointerEvents: "auto",
       }}
     >
-      <span aria-hidden>{item.icon}</span>
+      {item.icon.startsWith("/") ? (
+        <img src={item.icon} alt="" draggable={false} style={{ width: 30, height: 30, objectFit: "contain", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))", pointerEvents: "none" }} />
+      ) : (
+        <span aria-hidden>{item.icon}</span>
+      )}
       <span
         style={{
           position: "absolute",

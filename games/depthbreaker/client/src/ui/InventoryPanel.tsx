@@ -2,6 +2,7 @@
 // local player and issues equip/use commands. The bag is a fixed grid; empty
 // slots have itemId "". Weapons equip on click; potions/food are consumed.
 
+import { ItemGlyph } from "./ItemGlyph";
 import { useSyncExternalStore } from "react";
 import { itemDef } from "@depthbreaker/sim";
 import type { ItemSlotView } from "@depthbreaker/protocol";
@@ -75,7 +76,7 @@ function BagSlot({ slot, index }: { slot: ItemSlotView; index: number }) {
         pointerEvents: "auto",
       }}
     >
-      {!empty && itemInitials(slot.itemId)}
+      {!empty && <ItemGlyph itemId={slot.itemId} />}
       {!empty && slot.count > 1 && (
         <span
           style={{

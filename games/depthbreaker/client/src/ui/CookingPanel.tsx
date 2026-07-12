@@ -5,6 +5,7 @@
 // only sends the recipe intent. Same external-store + draggable pattern as
 // MarketPanel; cooked food arrives via the existing loot-toast path.
 
+import { ItemGlyph } from "./ItemGlyph";
 import { useSyncExternalStore } from "react";
 import { itemDef, countItem, COOKING_RECIPES } from "@depthbreaker/sim";
 import { COOK_RANGE, buildDungeon } from "@depthbreaker/protocol";
@@ -96,7 +97,7 @@ export function CookingPanel() {
           return (
             <div key={recipe.id} style={rowStyle}>
               <div {...tooltipHandlers(() => <ItemCard itemId={recipe.output} action={`Heals ${Math.round((out?.healFraction ?? 0) * 100)}% HP`} />)} style={{ ...iconStyle, borderColor: rarityColor(out?.rarity ?? "") }}>
-                {itemInitials(recipe.output)}
+                <ItemGlyph itemId={recipe.output} size={22} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 13 }}>{itemName(recipe.output)}</div>

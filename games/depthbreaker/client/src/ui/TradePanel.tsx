@@ -5,6 +5,7 @@
 // (escrow on list, gold+item swap on buy; see backend/routes/market.ts). After
 // any op we call sendRefreshPrivate so the in-game gold/stash re-sync.
 
+import { ItemGlyph } from "./ItemGlyph";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { itemDef } from "@depthbreaker/sim";
 import { useZoneState } from "../net/useZone";
@@ -188,7 +189,7 @@ function Icon({ itemId }: { itemId: string }) {
         flexShrink: 0,
       }}
     >
-      {itemInitials(itemId)}
+      <ItemGlyph itemId={itemId} />
     </div>
   );
 }
