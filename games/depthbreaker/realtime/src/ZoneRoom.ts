@@ -120,6 +120,10 @@ const BOSS_PORTAL_COUNTDOWN_SECONDS = 30;
 // Per-skill tuning (cooldowns, damage, ranges, durations) lives in the shared
 // skill table: packages/protocol/src/skills.ts. This file only executes effects.
 const TARGET_SELECTION_RANGE = 18;
+// Ability input buffer: a skill pressed within this window of becoming castable
+// is queued and fires the instant the GCD/cooldown clears, instead of being
+// dropped — the ARPG "the input took" feel (audit: combat-server #1).
+const INPUT_BUFFER_SECONDS = 0.4;
 
 // Mining (WoCC pickUpObject-style harvest, with a short cast). Ranges, cast
 // time, and stall stock are shared with the client via protocol market.ts.
@@ -157,10 +161,22 @@ function basicAttackRaw(p: PlayerState, rt: PlayerRuntime): number {
 interface PlayerRuntime {
   input: { moveX: number; moveZ: number; yaw: number };
   attackCooldown: number;
+  /**
+   * "I clicked this target, chase it into range for me." Set true when the
+   * player engages (target+auto-attack), cleared the moment they take manual
+   * movement control. Auto-attack itself never drops on movement — this only
+   * gates server auto-follow, so strafing/kiting keeps you attacking in range
+   * without the server yanking you back to the target when you step away.
+   */
+  engaging: boolean;
   potionCooldown: number;
   /** Per-skill cooldowns keyed by skillId; entries are deleted at <= 0. */
   cooldowns: Map<string, number>;
   gcdRemaining: number;
+  /** Buffered hotbar slot pressed while gated (GCD/cooldown), -1 = none. */
+  queuedSlot: number;
+  /** elapsedSeconds when the buffered press was captured (for the buffer window). */
+  queuedAt: number;
   shieldSeconds: number;
   frostSeconds: number;
   frostTick: number;
@@ -242,30 +258,38 @@ export class ZoneRoom extends Room<ZoneState> {
       rt.input.moveX = Math.max(-1, Math.min(1, message.moveX ?? 0));
       rt.input.moveZ = Math.max(-1, Math.min(1, message.moveZ ?? 0));
       rt.input.yaw = message.yaw ?? player.yaw;
-      if (Math.hypot(rt.input.moveX, rt.input.moveZ) > 0.01) player.autoAttack = false;
+      // Taking manual movement control ends "chase my target" auto-follow, but
+      // KEEPS auto-attack on: you can strafe/kite and still swing when in range.
+      if (Math.hypot(rt.input.moveX, rt.input.moveZ) > 0.01) rt.engaging = false;
     });
 
     this.onMessage(CM.SetTarget, (client, message: SetTargetMessage) => {
       const player = this.state.players.get(client.sessionId);
       if (!player) return;
+      const rt = this.runtimes.get(client.sessionId);
       const id = message.targetId ?? "";
       if (id === "") {
         player.targetId = "";
         player.autoAttack = false;
+        if (rt) rt.engaging = false;
       }
       else {
         const enemy = this.enemies.find((e) => e.state.id === id);
         if (enemy && this.isEnemySelectable(player, enemy)) {
           player.targetId = id;
           player.autoAttack = message.autoAttack ?? player.autoAttack;
+          // Clicking a target to auto-attack it means "chase it into range".
+          if (rt && player.autoAttack) rt.engaging = true;
         }
       }
     });
 
     this.onMessage(CM.SetAutoAttack, (client, message: SetAutoAttackMessage) => {
       const player = this.state.players.get(client.sessionId);
+      const rt = this.runtimes.get(client.sessionId);
       if (!player || !player.alive || !player.targetId) return;
       player.autoAttack = !!message.enabled;
+      if (rt && player.autoAttack) rt.engaging = true;
     });
 
     this.onMessage(CM.UseSkill, (client, message: UseSkillMessage) => {
@@ -378,9 +402,12 @@ export class ZoneRoom extends Room<ZoneState> {
     const runtime: PlayerRuntime = {
       input: { moveX: 0, moveZ: 0, yaw: 0 },
       attackCooldown: 0,
+      engaging: false,
       potionCooldown: 0,
       cooldowns: new Map(),
       gcdRemaining: 0,
+      queuedSlot: -1,
+      queuedAt: 0,
       shieldSeconds: 0,
       frostSeconds: 0,
       frostTick: 0,
@@ -580,7 +607,30 @@ export class ZoneRoom extends Room<ZoneState> {
         const def = skillDef(slot.skillId);
         slot.unlocked = !!def && def.learnLevel <= p.level;
       }
+      // Fire a buffered skill press the instant its gate has cleared.
+      this.tryFireQueued(id, rt);
     });
+  }
+
+  /** Cast a buffered skill press once it becomes castable, or expire it. */
+  private tryFireQueued(playerId: string, rt: PlayerRuntime): void {
+    if (rt.queuedSlot < 0) return;
+    if (this.elapsedSeconds - rt.queuedAt > INPUT_BUFFER_SECONDS) {
+      rt.queuedSlot = -1;
+      return;
+    }
+    const p = this.state.players.get(playerId);
+    const slot = p?.hotbar[rt.queuedSlot];
+    const def = slot?.skillId ? skillDef(slot.skillId) : undefined;
+    if (!p || !p.alive || !def) {
+      rt.queuedSlot = -1;
+      return;
+    }
+    // Still gated? Keep it queued until it opens or the window lapses.
+    if ((!def.offGcd && rt.gcdRemaining > 0) || (rt.cooldowns.get(def.id) ?? 0) > 0) return;
+    const slotIndex = rt.queuedSlot;
+    rt.queuedSlot = -1; // clear BEFORE casting so a re-buffer can't loop
+    this.castSkillSlot(playerId, slotIndex);
   }
 
   private updateWaves(dt: number): void {
@@ -663,7 +713,11 @@ export class ZoneRoom extends Room<ZoneState> {
       }
       const d = Math.hypot(enemy.state.x - p.x, enemy.state.z - p.z);
       if (d > rt.profile.attackRange) {
-        this.autoFollowTarget(p, enemy, dt, rt.profile.attackRange);
+        // Out of range: only chase if the player engaged by clicking the target
+        // and isn't steering themselves this tick. Manual movement wins, so
+        // strafing/kiting away is never yanked back to the target.
+        const manualMove = Math.hypot(rt.input.moveX, rt.input.moveZ) > 0.01;
+        if (rt.engaging && !manualMove) this.autoFollowTarget(p, enemy, dt, rt.profile.attackRange);
         return;
       }
 
@@ -695,7 +749,12 @@ export class ZoneRoom extends Room<ZoneState> {
           const liveRt = this.runtimes.get(id);
           if (!source || !liveRt || !source.alive || !target?.state.alive || !this.isCurrentAction(source, actionId)) return;
           const liveDistance = Math.hypot(target.state.x - source.x, target.state.z - source.z);
-          if (liveDistance > liveRt.profile.attackRange + 0.75) return;
+          if (liveDistance > liveRt.profile.attackRange + 0.75) {
+            // Target juked out during the windup — refund most of the swing so
+            // re-engaging is snappy instead of a full-interval lockout on a whiff.
+            liveRt.attackCooldown = Math.min(liveRt.attackCooldown, DEFAULT_MELEE_ATTACK_TIMING.windup);
+            return;
+          }
           this.facePlayerToEnemy(source, target);
           const isCrit = Math.random() < PLAYER_CRIT_CHANCE;
           const dmg = resolveDamage(basicAttackRaw(source, liveRt), target.def.armor, source.level, isCrit);
@@ -1238,13 +1297,29 @@ export class ZoneRoom extends Room<ZoneState> {
 
     // basic_attack is a pure toggle — no cooldown, no GCD, no action state.
     if (def.effects.some((e) => e.type === "basic_attack")) {
-      if (p.targetId) p.autoAttack = !p.autoAttack;
+      if (p.targetId) {
+        p.autoAttack = !p.autoAttack;
+        if (p.autoAttack) rt.engaging = true; // toggling on = "chase this target"
+      }
       return;
     }
 
-    if (!def.offGcd && isOnGlobalCooldown(rt.gcdRemaining)) return;
-    if (rt.cooldowns.has(def.id)) return;
+    // A locked skill can never fire — hard reject, never buffer.
     if (def.learnLevel > p.level) return;
+
+    // Gated by GCD or its own cooldown? Buffer the press if it will clear within
+    // the input-buffer window (fires from updateCooldowns the instant it opens),
+    // otherwise drop it. This is the single biggest server responsiveness win.
+    const gcdWait = def.offGcd ? 0 : rt.gcdRemaining;
+    const ownCdWait = rt.cooldowns.get(def.id) ?? 0;
+    const wait = Math.max(gcdWait, ownCdWait);
+    if (wait > 0) {
+      if (wait <= INPUT_BUFFER_SECONDS) {
+        rt.queuedSlot = slotIndex;
+        rt.queuedAt = this.elapsedSeconds;
+      }
+      return;
+    }
 
     // Guards that must not waste the cooldown: targeted effects with no valid
     // target (or target beyond reach).
@@ -1444,8 +1519,11 @@ export class ZoneRoom extends Room<ZoneState> {
 
   private enemyHitsPlayer(enemy: EnemyController, playerId: string): void {
     const actionId = this.nextActionId();
-    this.setAction(enemy.state, "attack", actionDuration(DEFAULT_ENEMY_ATTACK_TIMING), playerId, actionId);
-    this.scheduleImpact(actionId, DEFAULT_ENEMY_ATTACK_TIMING.windup, () => this.resolveEnemyHit(enemy, playerId, actionId));
+    // Heavier enemies telegraph with a longer wind-up (per-def), so the hit is
+    // readable and dodgeable — resolveEnemyHit re-checks range at impact.
+    const timing = enemy.def.attackTiming ?? DEFAULT_ENEMY_ATTACK_TIMING;
+    this.setAction(enemy.state, "attack", actionDuration(timing), playerId, actionId);
+    this.scheduleImpact(actionId, timing.windup, () => this.resolveEnemyHit(enemy, playerId, actionId));
   }
 
   private resolveEnemyHit(enemy: EnemyController, playerId: string, actionId: string): void {

@@ -81,6 +81,9 @@ export const SKILLS: Record<string, SkillDef> = {
     slot: 2,
     learnLevel: 3,
     cooldown: 10,
+    // Reactive panic button: off the GCD so you can shield the instant you need
+    // it and still act, without eating a global lock (its 10s cooldown gates it).
+    offGcd: true,
     effects: [{ type: "self_immunity", duration: 3 }],
     label: "SHLD",
     description: "Raise your shield, blocking all damage for 3s.",
@@ -121,6 +124,8 @@ export const SKILLS: Record<string, SkillDef> = {
     slot: 6,
     learnLevel: 15,
     cooldown: 20,
+    // Reactive defensive cooldown: off the GCD (its 20s cooldown is the gate).
+    offGcd: true,
     effects: [{ type: "self_buff", kind: "damage_reduction", value: 0.4, duration: 6 }],
     label: "BLWK",
     description: "Brace yourself, taking 40% less damage for 6s.",

@@ -1,7 +1,7 @@
 ﻿// Server-side enemy controller. Drives an EnemyState through Idle -> Aggro ->
 // Combat -> Leash. EnemyDef carries the rank tuning used by wave spawns.
 
-import { ThreatTable } from "@depthbreaker/sim";
+import { ThreatTable, type AttackTiming } from "@depthbreaker/sim";
 import { ENEMY_AGGRO_RADIUS, ENEMY_LEASH_DISTANCE, DEPTHBREAKER_DUNGEON, isDungeonWalkable } from "@depthbreaker/protocol";
 import type { EnemyState, DungeonMapDefinition } from "@depthbreaker/protocol";
 
@@ -20,6 +20,12 @@ export interface EnemyDef {
   currencyValue: number;
   level: number;
   respawnDelay: number;
+  /**
+   * Wind-up/recovery for this enemy's basic attack. Heavier enemies telegraph
+   * with a longer, readable wind-up (bigger tell = dodgeable = a skill moment,
+   * since the hit re-checks range at impact). Falls back to the shared default.
+   */
+  attackTiming?: AttackTiming;
 }
 
 export const GRUNT: EnemyDef = {
@@ -37,6 +43,8 @@ export const GRUNT: EnemyDef = {
   currencyValue: 5,
   level: 1,
   respawnDelay: 0,
+  // Trash: a snappy, light swing.
+  attackTiming: { windup: 0.28, recovery: 0.34 },
 };
 
 export const ELITE_GRUNT: EnemyDef = {
@@ -51,6 +59,8 @@ export const ELITE_GRUNT: EnemyDef = {
   xpValue: 140,
   currencyValue: 18,
   level: 3,
+  // Elite: a heavier, clearly readable swing you can step out of.
+  attackTiming: { windup: 0.5, recovery: 0.4 },
 };
 
 export const BOSS_BRUTE: EnemyDef = {
@@ -66,6 +76,8 @@ export const BOSS_BRUTE: EnemyDef = {
   xpValue: 600,
   currencyValue: 80,
   level: 6,
+  // Boss: a slow, telegraphed haymaker — clearly readable, punishing if it lands.
+  attackTiming: { windup: 0.75, recovery: 0.5 },
 };
 
 /** A live combat target the enemy can act on (player or another entity). */
