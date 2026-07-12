@@ -69,6 +69,14 @@ export function TradePanel() {
     if (open) void reload();
   }, [open, reload]);
 
+  // Auto-dismiss the inline error so it doesn't linger on screen after a failed
+  // action (e.g. a listing that was just bought out from under you).
+  useEffect(() => {
+    if (!error) return;
+    const t = window.setTimeout(() => setError(""), 4500);
+    return () => window.clearTimeout(t);
+  }, [error]);
+
   const act = async (fn: (token: string) => Promise<unknown>) => {
     setBusy(true);
     setError("");
@@ -131,7 +139,7 @@ export function TradePanel() {
               fontWeight: 600,
             }}
           >
-            {t === "browse" ? "Browse" : t === "sell" ? "Sell" : `Mine (${mine.length})`}
+            {t === "browse" ? "Browse" : t === "sell" ? "Sell" : `Mine (${mine.filter((l) => l.status === "open").length})`}
           </button>
         ))}
       </div>
@@ -314,10 +322,15 @@ function SellRow({
 }
 
 function MineTab({ mine, busy, onCancel }: { mine: MarketListing[]; busy: boolean; onCancel: (id: string) => void }) {
+  // Only OPEN listings are cancellable — sold/cancelled ones show as read-only
+  // history. (marketMine returns every status; rendering a Cancel button on a
+  // sold/cancelled row is what produced the "just sold or removed" error.)
+  const active = mine.filter((l) => l.status === "open");
+  const history = mine.filter((l) => l.status !== "open").slice(0, 6);
   return (
     <div style={listWrap}>
-      {mine.length === 0 && <div style={{ opacity: 0.55, fontSize: 12 }}>You have no active listings.</div>}
-      {mine.map((l) => (
+      {active.length === 0 && <div style={{ opacity: 0.55, fontSize: 12 }}>You have no active listings.</div>}
+      {active.map((l) => (
         <Row key={l.id}>
           <Icon itemId={l.itemId} />
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -332,6 +345,34 @@ function MineTab({ mine, busy, onCancel }: { mine: MarketListing[]; busy: boolea
           </button>
         </Row>
       ))}
+
+      {history.length > 0 && (
+        <>
+          <div style={{ opacity: 0.5, fontSize: 11, marginTop: 6, fontWeight: 600 }}>Recent</div>
+          {history.map((l) => (
+            <Row key={l.id}>
+              <Icon itemId={l.itemId} />
+              <div style={{ flex: 1, minWidth: 0, opacity: 0.65 }}>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>
+                  {itemName(l.itemId)}
+                  {l.count > 1 && <span style={{ opacity: 0.6, fontWeight: 400 }}> ×{l.count}</span>}
+                </div>
+                <div style={{ fontSize: 11 }}>🪙 {l.price}</div>
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: l.status === "sold" ? "#4ade80" : "rgba(255,255,255,0.45)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {l.status === "sold" ? "Sold ✓" : "Cancelled"}
+              </span>
+            </Row>
+          ))}
+        </>
+      )}
     </div>
   );
 }

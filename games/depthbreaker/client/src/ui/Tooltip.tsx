@@ -10,6 +10,14 @@ interface TooltipState {
   render: () => ReactNode;
   x: number;
   y: number;
+  /**
+   * The DOM element the tooltip belongs to. We key show/hide on this (a stable
+   * node React reuses across re-renders) rather than the `render` closure — the
+   * closure is recreated on every parent re-render (panels re-render at the 20Hz
+   * snapshot rate), so an identity check on it would fail and the tooltip would
+   * never clear on mouse-out. That was the "popup stuck on screen" bug.
+   */
+  owner: Element;
 }
 
 let tip: TooltipState | null = null;
@@ -26,15 +34,17 @@ function setTip(next: TooltipState | null): void {
 export function tooltipHandlers(render: () => ReactNode): {
   onMouseEnter: (e: React.MouseEvent) => void;
   onMouseMove: (e: React.MouseEvent) => void;
-  onMouseLeave: () => void;
+  onMouseLeave: (e: React.MouseEvent) => void;
 } {
   return {
-    onMouseEnter: (e) => setTip({ render, x: e.clientX, y: e.clientY }),
+    onMouseEnter: (e) => setTip({ render, x: e.clientX, y: e.clientY, owner: e.currentTarget }),
     onMouseMove: (e) => {
-      if (tip?.render === render) setTip({ render, x: e.clientX, y: e.clientY });
+      // Follow the cursor + refresh the (re-created) render fn while still over
+      // the same element.
+      if (tip?.owner === e.currentTarget) setTip({ render, x: e.clientX, y: e.clientY, owner: e.currentTarget });
     },
-    onMouseLeave: () => {
-      if (tip?.render === render) setTip(null);
+    onMouseLeave: (e) => {
+      if (tip?.owner === e.currentTarget) setTip(null);
     },
   };
 }
@@ -54,6 +64,11 @@ const CARD_MAX_WIDTH = 260;
 export function TooltipLayer() {
   const current = useTip();
   if (!current) return null;
+  // Safety net: if the owning element was unmounted while hovered (a panel
+  // closed via Esc/×, an item row was removed) no mouse-leave fires, so hide the
+  // stale card. This layer re-renders with its parent, so the check runs often;
+  // the stale tip is simply overwritten by the next hover.
+  if (!current.owner.isConnected) return null;
   // Offset from the cursor, clamped so the card never leaves the viewport.
   const pad = 14;
   const left = Math.min(current.x + pad, window.innerWidth - CARD_MAX_WIDTH - 8);
