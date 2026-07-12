@@ -5,6 +5,7 @@
 //   depletes) → walk to the stall → sell ore (gold + wallet rise) → buy bread
 //   (gold falls, item lands) → overpriced buy rejected → out-of-range rejected.
 import { Client } from "colyseus.js";
+import { makeNav } from "./navlib.mjs";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:3100";
 const REALTIME_URL = process.env.REALTIME_URL ?? "ws://localhost:2667";
@@ -42,49 +43,17 @@ function bagCount(self, itemId) {
 }
 
 async function walkTo(room, self, x, z, stopAt = 1.2, timeoutMs = 45000) {
-  let seq = 1000;
-  const deadline = Date.now() + timeoutMs;
-  // Naive straight-line walk with a wall-slide "unstick": the server rejects
-  // moves into walls (isDungeonWalkable), so a corridor corner would stall a
-  // pure beeline. When progress stalls, steer perpendicular for a few steps to
-  // slide along the obstacle (classic bug-navigation), alternating sides.
-  let lastD = Infinity;
-  let stalled = 0;
-  let slideDir = 1;
-  let slideSteps = 0;
-  while (Date.now() < deadline) {
-    const dx = x - self.x;
-    const dz = z - self.z;
-    const d = Math.hypot(dx, dz);
-    if (d <= stopAt) break;
-
-    if (d > lastD - 0.03) stalled++;
-    else stalled = 0;
-    lastD = d;
-
-    let mx = dx / d;
-    let mz = dz / d;
-    if (slideSteps > 0) {
-      // Perpendicular to the goal direction (rotate 90°), blended toward goal.
-      const px = -mz * slideDir;
-      const pz = mx * slideDir;
-      mx = px * 0.85 + mx * 0.15;
-      mz = pz * 0.85 + mz * 0.15;
-      const l = Math.hypot(mx, mz) || 1;
-      mx /= l;
-      mz /= l;
-      slideSteps--;
-    } else if (stalled >= 6) {
-      slideSteps = 8; // begin a slide burst
-      slideDir *= -1; // alternate the side we try each time we re-stall
-      stalled = 0;
-    }
-    room.send("input", { seq: seq++, moveX: mx, moveZ: mz, yaw: Math.atan2(dx, dz) });
-    await wait(50);
-  }
-  room.send("input", { seq: seq++, moveX: 0, moveZ: 0, yaw: 0 });
+  // BFS over the seed-built dungeon (navlib) — survives any level design.
+  // Returns the final distance to (x, z) — callers assert on it.
+  const nav = navFor(room);
+  await nav.walkToPoint(self, x, z, stopAt, timeoutMs);
   await wait(150);
   return Math.hypot(x - self.x, z - self.z);
+}
+const _navs = new Map();
+function navFor(room) {
+  if (!_navs.has(room)) _navs.set(room, makeNav(room));
+  return _navs.get(room);
 }
 
 async function main() {
@@ -106,7 +75,9 @@ async function main() {
 
   // Nodes synced from the seeded map.
   await waitFor(() => room.state.nodes && room.state.nodes.size > 0, "resource nodes");
-  const nodes = entries(room.state.nodes).map(([, n]) => n);
+  // MINING nodes only — the map also carries fishing spots, and this loop
+  // asserts on ore/crystal yields (fishing has its own smoke).
+  const nodes = entries(room.state.nodes).map(([, n]) => n).filter((n) => n.kind === "iron_vein" || n.kind === "crystal_vein");
   check("nodes synced from the map", nodes.length > 0, `count=${nodes.length}`);
   check("wallet starts at 0 (fresh account)", self.gold === 0, `gold=${self.gold}`);
 

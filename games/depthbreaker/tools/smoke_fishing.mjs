@@ -5,6 +5,7 @@
 // (heals more than bread). Fishing depletes the spot (35s respawn) like mining,
 // so we fish, wait out the respawn, fish again to afford a 2-fish recipe.
 import { Client } from "colyseus.js";
+import { makeNav } from "./navlib.mjs";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:3100";
 const REALTIME_URL = process.env.REALTIME_URL ?? "ws://localhost:2667";
@@ -31,16 +32,15 @@ async function api(path, { method = "GET", token, body } = {}) {
 function bagCount(self, itemId) { let n = 0; self.inventory.forEach((s) => { if (s.itemId === itemId) n += s.count; }); return n; }
 
 async function walkTo(room, self, x, z, stopAt = 2.4, timeoutMs = 15000) {
-  let seq = 2000; const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const dx = x - self.x, dz = z - self.z, d = Math.hypot(dx, dz);
-    if (d <= stopAt) break;
-    room.send("input", { seq: seq++, moveX: dx / d, moveZ: dz / d, yaw: Math.atan2(dx, dz) });
-    await wait(50);
-  }
-  room.send("input", { seq: seq++, moveX: 0, moveZ: 0, yaw: 0 });
+  // BFS over the seed-built dungeon (navlib) — survives any level design.
+  const nav = navFor(room);
+  await nav.walkToPoint(self, x, z, stopAt, timeoutMs);
   await wait(150);
-  return Math.hypot(x - self.x, z - self.z);
+}
+const _navs = new Map();
+function navFor(room) {
+  if (!_navs.has(room)) _navs.set(room, makeNav(room));
+  return _navs.get(room);
 }
 
 // Fish a node until it yields (or times out): walk in range, send gather, wait

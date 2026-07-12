@@ -10,6 +10,7 @@
 //   Reaper      — Soul Reap lifesteals; Rupture's bleed keeps ticking.
 //   Knight      — Taunt forces a nearby enemy to target the knight.
 import { Client } from "colyseus.js";
+import { makeNav } from "./navlib.mjs";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:3100";
 const REALTIME_URL = process.env.REALTIME_URL ?? "ws://localhost:2667";
@@ -49,24 +50,16 @@ function nearestAliveEnemy(room, self, maxRank = "elite") {
 
 // Walk toward a (possibly moving) enemy until within stopDist, with a wall-slide
 // unstick so corridors don't strand the beeline.
-async function walkNear(room, self, enemyId, stopDist = 12, timeoutMs = 25000) {
-  let seq = 4000, lastD = Infinity, stalled = 0, slideDir = 1, slideSteps = 0;
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const e = room.state.enemies.get(enemyId);
-    if (!e || !e.alive) break;
-    const dx = e.x - self.x, dz = e.z - self.z, d = Math.hypot(dx, dz);
-    if (d <= stopDist) break;
-    if (d > lastD - 0.03) stalled++; else stalled = 0;
-    lastD = d;
-    let mx = dx / d, mz = dz / d;
-    if (slideSteps > 0) { const px = -mz * slideDir, pz = mx * slideDir; mx = px * 0.85 + mx * 0.15; mz = pz * 0.85 + mz * 0.15; const l = Math.hypot(mx, mz) || 1; mx /= l; mz /= l; slideSteps--; }
-    else if (stalled >= 6) { slideSteps = 8; slideDir *= -1; stalled = 0; }
-    room.send("input", { seq: seq++, moveX: mx, moveZ: mz, yaw: Math.atan2(dx, dz) });
-    await wait(50);
-  }
-  room.send("input", { seq: seq++, moveX: 0, moveZ: 0, yaw: 0 });
-  await wait(120);
+async function walkNear(room, self, enemyId, stopDist = 14, timeoutMs = 30000) {
+  // BFS over the seed-built dungeon (navlib) — survives any level design.
+  const nav = navFor(room);
+  await nav.walkNearEnemy(self, enemyId, stopDist, timeoutMs);
+  await wait(150);
+}
+const _navs = new Map();
+function navFor(room) {
+  if (!_navs.has(room)) _navs.set(room, makeNav(room));
+  return _navs.get(room);
 }
 
 // guest → character(classId) → grant 30000 XP via three run-finishes (level 9,

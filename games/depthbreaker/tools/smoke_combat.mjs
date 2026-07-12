@@ -5,6 +5,7 @@
 // the target after they deliberately move away (auto-attack persists, auto-follow
 // does not). Combat-only; no gold/market involved.
 import { Client } from "colyseus.js";
+import { makeNav } from "./navlib.mjs";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:3100";
 const REALTIME_URL = process.env.REALTIME_URL ?? "ws://localhost:2667";
@@ -40,24 +41,16 @@ function nearestAliveEnemy(room, self) {
 // Walk toward a (possibly moving) enemy until within `stopDist`, with a wall-slide
 // unstick so corridors don't strand the beeline. Targets can only be selected
 // within 18u, so we approach before setTarget.
-async function walkNear(room, self, enemyId, stopDist = 14, timeoutMs = 20000) {
-  let seq = 4000, lastD = Infinity, stalled = 0, slideDir = 1, slideSteps = 0;
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const e = room.state.enemies.get(enemyId);
-    if (!e || !e.alive) break;
-    const dx = e.x - self.x, dz = e.z - self.z, d = Math.hypot(dx, dz);
-    if (d <= stopDist) break;
-    if (d > lastD - 0.03) stalled++; else stalled = 0;
-    lastD = d;
-    let mx = dx / d, mz = dz / d;
-    if (slideSteps > 0) { const px = -mz * slideDir, pz = mx * slideDir; mx = px * 0.85 + mx * 0.15; mz = pz * 0.85 + mz * 0.15; const l = Math.hypot(mx, mz) || 1; mx /= l; mz /= l; slideSteps--; }
-    else if (stalled >= 6) { slideSteps = 8; slideDir *= -1; stalled = 0; }
-    room.send("input", { seq: seq++, moveX: mx, moveZ: mz, yaw: Math.atan2(dx, dz) });
-    await wait(50);
-  }
-  room.send("input", { seq: seq++, moveX: 0, moveZ: 0, yaw: 0 });
+async function walkNear(room, self, enemyId, stopDist = 14, timeoutMs = 30000) {
+  // BFS over the seed-built dungeon (navlib) — survives any level design.
+  const nav = navFor(room);
+  await nav.walkNearEnemy(self, enemyId, stopDist, timeoutMs);
   await wait(150);
+}
+const _navs = new Map();
+function navFor(room) {
+  if (!_navs.has(room)) _navs.set(room, makeNav(room));
+  return _navs.get(room);
 }
 
 async function main() {
@@ -145,16 +138,27 @@ async function main() {
   // === D) Slam telegraph: standing near an elite/boss draws a telegraphed AoE ===
   const teles = [];
   room.onMessage("telegraph", (m) => teles.push(m));
-  const slammers = entries(room.state.enemies).map(([, e]) => e).filter((e) => e.alive && (e.rank === "elite" || e.rank === "boss"));
-  slammers.sort((a, b) => dist(a, self) - dist(b, self));
-  const slammer = slammers[0];
-  if (slammer) {
-    // Get INSIDE the slam radius (elite 3.2 / boss 4.6) and stay put so it slams
-    // us — stopping at 2.8 guarantees we're within reach (elites are rarer now,
-    // so give the walk + slam-interval more time to land reliably).
+  // Retry across slammers: a Lv1 tester standing in an elite's slam often
+  // dies mid-wait (respawn far away) — re-approach up to 3 times, re-picking
+  // the nearest live elite/boss each attempt.
+  const pickSlammer = () => {
+    const list = entries(room.state.enemies).map(([, e]) => e).filter((e) => e.alive && (e.rank === "elite" || e.rank === "boss"));
+    list.sort((a, b) => dist(a, self) - dist(b, self));
+    return list[0];
+  };
+  let sawSlammer = false;
+  for (let attempt = 0; attempt < 3 && teles.length === 0; attempt++) {
+    if (!self.alive) { await wait(4800); continue; } // respawn timer
+    const slammer = pickSlammer();
+    if (!slammer) break;
+    sawSlammer = true;
+    // Get INSIDE the slam radius (elite 3.2 / boss 4.6) and hold — the special
+    // fires every ~6s while the enemy is in combat.
     await walkNear(room, self, slammer.id, 2.8, 30000);
     room.send("setTarget", { targetId: slammer.id, autoAttack: true });
-    await waitFor(() => teles.length > 0, "slam telegraph", 22000).catch(() => {});
+    await waitFor(() => teles.length > 0 || !self.alive, "slam telegraph", 16000).catch(() => {});
+  }
+  if (sawSlammer) {
     check("elite/boss broadcasts a telegraphed slam ring", teles.length > 0, teles[0] ? `radius=${teles[0].radius}` : "none reached");
   } else {
     check("a special-capable enemy exists", false, "no elite/boss found");

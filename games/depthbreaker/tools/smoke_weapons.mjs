@@ -3,6 +3,7 @@
 // class-gating), and the equipped weapon's stats taking effect — a faster weapon
 // shortens the synced swing interval; a wrong-class weapon is refused.
 import { Client } from "colyseus.js";
+import { makeNav } from "./navlib.mjs";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:3100";
 const REALTIME_URL = process.env.REALTIME_URL ?? "ws://localhost:2667";
@@ -30,15 +31,17 @@ async function api(path, { method = "GET", token, body, secret } = {}) {
 }
 function bagIndex(self, itemId) { let idx = -1; self.inventory.forEach((s, i) => { if (idx === -1 && s.itemId === itemId && s.count > 0) idx = i; }); return idx; }
 async function walkToStall(room, self) {
-  let seq = 3000; const deadline = Date.now() + 20000;
-  while (Date.now() < deadline) {
-    const dx = 4 - self.x, dz = 3 - self.z, d = Math.hypot(dx, dz);
-    if (d <= 1.5) break;
-    room.send("input", { seq: seq++, moveX: dx / d, moveZ: dz / d, yaw: Math.atan2(dx, dz) });
-    await wait(50);
-  }
-  room.send("input", { seq: seq++, moveX: 0, moveZ: 0, yaw: 0 });
+  // The stall position comes from the seed-built dungeon (navlib) instead of
+  // a hardcoded offset — survives any level design.
+  const nav = navFor(room);
+  const stall = nav.dungeon.marketStall;
+  await nav.walkToPoint(self, stall.x, stall.z, 1.5, 30000);
   await wait(150);
+}
+const _navs = new Map();
+function navFor(room) {
+  if (!_navs.has(room)) _navs.set(room, makeNav(room));
+  return _navs.get(room);
 }
 
 async function main() {

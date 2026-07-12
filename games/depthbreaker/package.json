@@ -18,14 +18,14 @@
     "dev:backend": "npm run dev --workspace backend",
     "dev:realtime": "npm run dev --workspace realtime",
     "dev:client": "npm run dev --workspace client",
-    "smoke:skills": "node tools/smoke_skills.mjs",
+    "smoke:skills": "tsx tools/smoke_skills.mjs",
     "smoke:auth": "node tools/smoke_auth.mjs",
-    "smoke:market": "node tools/smoke_market.mjs",
-    "smoke:economy": "node tools/smoke_economy.mjs",
+    "smoke:market": "tsx tools/smoke_market.mjs",
+    "smoke:economy": "tsx tools/smoke_economy.mjs",
     "smoke:p2p": "node tools/smoke_p2p.mjs",
-    "smoke:combat": "node tools/smoke_combat.mjs",
-    "smoke:fishing": "node tools/smoke_fishing.mjs",
-    "smoke:weapons": "node tools/smoke_weapons.mjs",
-    "smoke:classes": "node tools/smoke_classes.mjs"
+    "smoke:combat": "tsx tools/smoke_combat.mjs",
+    "smoke:fishing": "tsx tools/smoke_fishing.mjs",
+    "smoke:weapons": "tsx tools/smoke_weapons.mjs",
+    "smoke:classes": "tsx tools/smoke_classes.mjs"
   }
 }

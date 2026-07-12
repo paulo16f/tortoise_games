@@ -8,6 +8,7 @@
 //   shield_wall unlocked + fires, whirlwind still locked, and the GCD blocking
 //   a second on-GCD skill cast in the same instant.
 import { Client } from "colyseus.js";
+import { makeNav } from "./navlib.mjs";
 import { SignJWT } from "jose";
 
 const REALTIME_URL = process.env.REALTIME_URL ?? "ws://localhost:2667";
@@ -79,18 +80,12 @@ async function partA() {
       .filter((e) => e.alive)
       .map((e) => ({ e, d: Math.hypot(e.x - self.x, e.z - self.z) }))
       .sort((a, b) => a.d - b.d)[0] ?? null;
-  let seq = 0;
-  const walkDeadline = Date.now() + 30000;
+  // BFS navigation over the seed-built dungeon (navlib) — beelining fails
+  // whenever the nearest enemy is across a maze wall.
+  const nav = makeNav(room);
   let pick = nearest();
-  while (pick && pick.d > 14 && Date.now() < walkDeadline) {
-    const dx = pick.e.x - self.x;
-    const dz = pick.e.z - self.z;
-    const len = Math.hypot(dx, dz) || 1;
-    room.send("input", { seq: seq++, moveX: dx / len, moveZ: dz / len, yaw: Math.atan2(dx, dz) });
-    await wait(50);
-    pick = nearest();
-  }
-  room.send("input", { seq: seq++, moveX: 0, moveZ: 0, yaw: 0 });
+  if (pick) await nav.walkNearEnemy(self, pick.e.id, 14, 40_000);
+  pick = nearest();
   if (!pick || pick.d > 16) throw new Error(`could not reach an enemy (d=${pick?.d.toFixed(1)})`);
   const enemy = pick.e;
   room.send("setTarget", { targetId: enemy.id, autoAttack: false });

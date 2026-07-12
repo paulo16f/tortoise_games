@@ -4,6 +4,7 @@
 // Combat-free: it uses starter potions for the stash round-trip (gathering is
 // covered by smoke:market) so the checks are deterministic.
 import { Client } from "colyseus.js";
+import { makeNav } from "./navlib.mjs";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:3100";
 const REALTIME_URL = process.env.REALTIME_URL ?? "ws://localhost:2667";
@@ -34,16 +35,17 @@ function bagIndex(self, itemId) { let idx = -1; self.inventory.forEach((s, i) =>
 async function walletBalance(accountId) { return (await api(`/internal/wallet/${accountId}`, { secret: ZONE_SECRET })).json?.balance ?? 0; }
 
 async function walkToStall(room, self) {
-  // marketStall = start-room center (player spawn) + (4, 3).
-  let seq = 3000; const deadline = Date.now() + 20000;
-  while (Date.now() < deadline) {
-    const dx = 4 - self.x, dz = 3 - self.z, d = Math.hypot(dx, dz);
-    if (d <= 1.5) break;
-    room.send("input", { seq: seq++, moveX: dx / d, moveZ: dz / d, yaw: Math.atan2(dx, dz) });
-    await wait(50);
-  }
-  room.send("input", { seq: seq++, moveX: 0, moveZ: 0, yaw: 0 });
+  // The stall position comes from the seed-built dungeon (navlib) instead of
+  // a hardcoded offset — survives any level design.
+  const nav = navFor(room);
+  const stall = nav.dungeon.marketStall;
+  await nav.walkToPoint(self, stall.x, stall.z, 1.5, 30000);
   await wait(150);
+}
+const _navs = new Map();
+function navFor(room) {
+  if (!_navs.has(room)) _navs.set(room, makeNav(room));
+  return _navs.get(room);
 }
 
 async function joinRun(token, characterId, name = "EcoTester") {
