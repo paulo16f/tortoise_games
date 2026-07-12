@@ -199,13 +199,14 @@ function SwingBar({
   );
 }
 const panelStyle: React.CSSProperties = {
-  background: "rgba(11,13,18,0.72)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  background: "linear-gradient(180deg, rgba(18,20,27,0.82), rgba(8,9,13,0.86))",
+  border: "1px solid rgba(201,165,74,0.35)",
   borderRadius: 8,
   padding: "10px 12px",
   backdropFilter: "blur(4px)",
   fontSize: 13,
   lineHeight: 1.4,
+  color: "#e8e2d0",
   pointerEvents: "none",
 };
 

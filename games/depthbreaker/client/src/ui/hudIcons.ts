@@ -4,10 +4,17 @@
 // Icons_Weapons/Inventory → items) — extract the chosen PNGs into
 // public/ui/synty/icons/ and add entries here; nothing else changes.
 
-/** skillId → icon URL under /ui/synty/icons/. Empty = text-label fallback. */
-export const SKILL_ICONS: Record<string, string> = {
-  // e.g. fireball: "/ui/synty/icons/skill_fireball.png",
-};
+/** skillId → icon URL under /ui/synty/icons/. Empty = text-label fallback.
+ *  Mapped from the Dark Fantasy pack's Icons_Status set by theme (fire→Burninating,
+ *  frost→Cold, lifesteal→Vampiric, execute→Dead, taunt→Targeted, …). */
+const ICON_SKILLS = [
+  "basic_attack", "cleave", "whirlwind", "charge", "soul_reap", "execute", "taunt",
+  "shield_wall", "bulwark", "fireball", "frost_nova", "corruption", "smite", "mend",
+  "renew", "blessing",
+];
+export const SKILL_ICONS: Record<string, string> = Object.fromEntries(
+  ICON_SKILLS.map((id) => [id, `/ui/synty/icons/skill_${id}.png`]),
+);
 
 /** itemId → icon URL. Empty = initials fallback. */
 export const ITEM_ICONS: Record<string, string> = {};

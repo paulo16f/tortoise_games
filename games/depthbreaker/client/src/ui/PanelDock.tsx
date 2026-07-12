@@ -46,18 +46,21 @@ function DockButton({ item }: { item: DockItem }) {
         </span>
       ))}
       style={{
+        // Diablo-themed dock button: dark well, gold rim that lights on open.
         position: "relative",
-        width: 46,
-        height: 46,
-        borderRadius: 10,
-        border: `1px solid ${open ? "rgba(147,197,253,0.9)" : "rgba(255,255,255,0.14)"}`,
-        background: open ? "rgba(14,116,144,0.55)" : "rgba(11,13,18,0.82)",
-        color: "#f8fafc",
+        width: 44,
+        height: 44,
+        borderRadius: 8,
+        border: `1px solid ${open ? "#e8c874" : "rgba(201,165,74,0.4)"}`,
+        background: open
+          ? "linear-gradient(180deg, rgba(201,165,74,0.28), rgba(10,11,15,0.92))"
+          : "linear-gradient(180deg, rgba(30,34,44,0.92), rgba(8,9,13,0.95))",
+        boxShadow: open ? "0 0 8px rgba(201,165,74,0.45)" : "inset 0 1px 0 rgba(255,255,255,0.05)",
+        color: "#f1e9d0",
         fontSize: 20,
         cursor: "pointer",
         display: "grid",
         placeItems: "center",
-        backdropFilter: "blur(4px)",
         pointerEvents: "auto",
       }}
     >
@@ -83,13 +86,14 @@ export function PanelDock() {
   return (
     <div
       style={{
+        // Bottom-anchored up the right edge so the column clears the XP orb in
+        // the bottom-right corner (it used to be centered and overlap the orb).
         position: "absolute",
-        right: 16,
-        top: "50%",
-        transform: "translateY(-50%)",
+        right: 14,
+        bottom: 150,
         display: "flex",
         flexDirection: "column",
-        gap: 8,
+        gap: 7,
         pointerEvents: "none",
       }}
     >
