@@ -10,6 +10,7 @@ import { zoneStore } from "../net/room";
 import { itemName, itemInitials } from "./itemDisplay";
 import { swingTimerState } from "./swingTimer";
 import { tooltipHandlers } from "./Tooltip";
+import { SpriteBar, slotFrame } from "./spriteKit";
 import type { EnemyView, PlayerView } from "@depthbreaker/protocol";
 
 /** Human-readable enemy AI state for the target frame. */
@@ -46,28 +47,9 @@ function Bar({
   height?: number;
 }) {
   const frac = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
-  return (
-    <div
-      style={{
-        position: "relative",
-        width: 220,
-        height,
-        background: bg,
-        borderRadius: 4,
-        overflow: "hidden",
-        border: "1px solid rgba(255,255,255,0.12)",
-      }}
-    >
-      <div
-        style={{
-          width: `${frac * 100}%`,
-          height: "100%",
-          background: color,
-          transition: "width 120ms linear",
-        }}
-      />
-    </div>
-  );
+  void bg;
+  // Ornate Synty Dark Fantasy bar frame + coloured fill (spriteKit.SpriteBar).
+  return <SpriteBar frac={frac} color={color} width={224} height={Math.max(18, height + 6)} />;
 }
 
 function isEnemy(t: PlayerView | EnemyView | null): t is EnemyView {
@@ -108,29 +90,42 @@ function SkillSlot({
     <div
       {...(tooltip ? tooltipHandlers(tooltip) : {})}
       style={{
+        // Ornate Synty slot frame (spriteKit); state shows as an inset glow on
+        // the inner opening so the metal frame stays intact.
         position: "relative",
-        width: 52,
-        height: 52,
-        borderRadius: 8,
-        overflow: "hidden",
-        border: `1px solid ${active ? "rgba(147,197,253,0.9)" : ready ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.15)"}`,
-        background: active ? "rgba(14,116,144,0.55)" : "rgba(11,13,18,0.85)",
+        width: 56,
+        height: 56,
+        ...slotFrame(),
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 12,
-        fontWeight: 800,
-        color: locked ? "rgba(148,163,184,0.45)" : "#f8fafc",
+        filter: locked ? "grayscale(0.6) brightness(0.72)" : "none",
         // The HUD root is pointerEvents:none; slots opt back in for tooltips.
         pointerEvents: "auto",
       }}
     >
-      {label}
-      {locked && (
-        <span style={{ position: "absolute", left: 4, top: 2, fontSize: 10, opacity: 0.8 }}>🔒</span>
-      )}
-      {showSweep && (
-        <>
+      <div
+        style={{
+          position: "absolute",
+          inset: 9,
+          borderRadius: 4,
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 12,
+          fontWeight: 800,
+          color: locked ? "rgba(148,163,184,0.6)" : "#f8fafc",
+          background: active ? "rgba(14,116,144,0.5)" : "rgba(8,9,13,0.45)",
+          boxShadow: active
+            ? "inset 0 0 10px rgba(147,197,253,0.85)"
+            : ready
+              ? "inset 0 0 6px rgba(255,255,255,0.14)"
+              : "none",
+        }}
+      >
+        {label}
+        {showSweep && (
           <div
             style={{
               position: "absolute",
@@ -138,12 +133,13 @@ function SkillSlot({
               background: `conic-gradient(${sweepColor} ${sweepFrac * 360}deg, transparent 0deg)`,
             }}
           />
-          {cooldown > 0 && (
-            <span style={{ position: "absolute", fontSize: 14, textShadow: "0 1px 2px #000" }}>{Math.ceil(cooldown)}</span>
-          )}
-        </>
-      )}
-      <span style={{ position: "absolute", right: 4, bottom: 2, fontSize: 10, opacity: 0.8 }}>{hotkey}</span>
+        )}
+        {cooldown > 0 && (
+          <span style={{ position: "absolute", fontSize: 14, textShadow: "0 1px 2px #000" }}>{Math.ceil(cooldown)}</span>
+        )}
+      </div>
+      {locked && <span style={{ position: "absolute", left: 6, top: 3, fontSize: 10, opacity: 0.85, zIndex: 2 }}>🔒</span>}
+      <span style={{ position: "absolute", right: 6, bottom: 3, fontSize: 10, opacity: 0.85, zIndex: 2, textShadow: "0 1px 2px #000" }}>{hotkey}</span>
     </div>
   );
 }
