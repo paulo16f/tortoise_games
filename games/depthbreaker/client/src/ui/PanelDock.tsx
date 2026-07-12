@@ -86,14 +86,20 @@ export function PanelDock() {
   return (
     <div
       style={{
-        // Bottom-anchored up the right edge so the column clears the XP orb in
-        // the bottom-right corner (it used to be centered and overlap the orb).
+        // A cohesive themed tray up the right edge, bottom-anchored so the column
+        // clears the XP orb in the corner.
         position: "absolute",
-        right: 14,
+        right: 12,
         bottom: 150,
         display: "flex",
         flexDirection: "column",
-        gap: 7,
+        gap: 6,
+        padding: "8px 7px",
+        borderRadius: 12,
+        background: "linear-gradient(180deg, rgba(16,18,24,0.72), rgba(6,7,10,0.78))",
+        border: "1px solid rgba(201,165,74,0.28)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)",
+        backdropFilter: "blur(3px)",
         pointerEvents: "none",
       }}
     >

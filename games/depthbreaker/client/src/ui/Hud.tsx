@@ -388,15 +388,20 @@ export function Hud() {
           </div>
         </div>
       )}
-      {/* Connection + legend (top-left). */}
-      <div style={{ position: "absolute", top: 16, left: 16, ...panelStyle }}>
-        <div style={{ opacity: 0.85 }}>
-          room <b>{snap.roomId || "..."}</b> | players {snap.playerCount} | enemies {snap.enemyCount} | depth {snap.depth}
-          {snap.bossPortal.active && <> | boss in {Math.ceil(snap.bossPortal.countdown)}s</>}
+      {/* Status chip + collapsible controls (top-left). */}
+      <div style={{ position: "absolute", top: 14, left: 14, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start", fontFamily: "system-ui, sans-serif" }}>
+        <div style={{ ...panelStyle, display: "flex", gap: 12, alignItems: "center", fontSize: 12.5, padding: "7px 13px" }}>
+          <span style={{ color: "#c9a54a", fontWeight: 700 }}>Depth {snap.depth}</span>
+          <span style={{ opacity: 0.8 }}>👤 {snap.playerCount}</span>
+          <span style={{ color: "#e88b8b" }}>☠ {snap.enemyCount}</span>
+          {snap.bossPortal.active && <span style={{ color: "#fbbf24", fontWeight: 700 }}>⚑ boss {Math.ceil(snap.bossPortal.countdown)}s</span>}
         </div>
-        <div style={{ opacity: 0.6, marginTop: 4, fontSize: 12 }}>
-          WASD/click move | click mob auto-attack | click node gather | Tab target | 1-0 skills | K skills | B bag | M market | T trade | N bank | F cook | J quests | G wheel | Enter/C chat | V weapon
-        </div>
+        <details style={{ ...panelStyle, fontSize: 12, padding: "6px 11px", pointerEvents: "auto", maxWidth: 300 }}>
+          <summary style={{ cursor: "pointer", opacity: 0.8, userSelect: "none" }}>Controls</summary>
+          <div style={{ opacity: 0.78, marginTop: 6, lineHeight: 1.6 }}>
+            <b>WASD</b>/click — move · click mob — attack · click node — gather · <b>Tab</b> — target · <b>1–0</b> — skills · <b>B</b> bag · <b>K</b> skills · <b>M</b> market · <b>T</b> trade · <b>N</b> bank · <b>F</b> cook · <b>J</b> quests · <b>G</b> wheel · <b>C</b> chat · <b>V</b> weapon
+          </div>
+        </details>
       </div>
     </div>
   );
