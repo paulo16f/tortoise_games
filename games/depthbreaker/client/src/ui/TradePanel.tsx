@@ -11,7 +11,7 @@ import { itemDef } from "@depthbreaker/sim";
 import { useZoneState } from "../net/useZone";
 import { zoneStore } from "../net/room";
 import { withAuth } from "../net/session";
-import { marketListings, marketMine, marketList, marketBuy, marketCancel, type MarketListing } from "../net/backend";
+import { marketListings, marketMine, marketList, marketBuy, marketCancel, goldMarketBrowse, goldMarketList, goldMarketCancel, type MarketListing, type GoldListing } from "../net/backend";
 import { useDraggablePanel } from "./useDraggablePanel";
 import { itemName, itemInitials, rarityColor } from "./itemDisplay";
 import { PanelClose } from "./PanelClose";
@@ -38,7 +38,7 @@ export function useTradeOpen(): boolean {
   return useSyncExternalStore(subscribeOpen, () => tradeOpen);
 }
 
-type Tab = "browse" | "sell" | "mine";
+type Tab = "browse" | "sell" | "mine" | "gold";
 
 export function TradePanel() {
   const open = useTradeOpen();
@@ -51,6 +51,8 @@ export function TradePanel() {
   const [tab, setTab] = useState<Tab>("browse");
   const [listings, setListings] = useState<MarketListing[]>([]);
   const [mine, setMine] = useState<MarketListing[]>([]);
+  const [goldListings, setGoldListings] = useState<GoldListing[]>([]);
+  const [goldMine, setGoldMine] = useState<GoldListing[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const gold = snap.self?.gold ?? 0;
@@ -58,9 +60,13 @@ export function TradePanel() {
   const reload = useCallback(async () => {
     setError("");
     try {
-      const [all, ours] = await withAuth(async (token) => Promise.all([marketListings(token), marketMine(token)]));
+      const [all, ours, goldBook] = await withAuth(async (token) =>
+        Promise.all([marketListings(token), marketMine(token), goldMarketBrowse(token)]),
+      );
       setListings(all);
       setMine(ours);
+      setGoldListings(goldBook.listings);
+      setGoldMine(goldBook.mine);
     } catch {
       setError("Trading needs a signed-in account.");
     }
@@ -124,7 +130,7 @@ export function TradePanel() {
       </div>
 
       <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-        {(["browse", "sell", "mine"] as const).map((t) => (
+        {(["browse", "sell", "mine", "gold"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -140,7 +146,7 @@ export function TradePanel() {
               fontWeight: 600,
             }}
           >
-            {t === "browse" ? "Browse" : t === "sell" ? "Sell" : `Mine (${mine.filter((l) => l.status === "open").length})`}
+            {t === "browse" ? "Browse" : t === "sell" ? "Sell" : t === "gold" ? "💰 Gold" : `Mine (${mine.filter((l) => l.status === "open").length})`}
           </button>
         ))}
       </div>
@@ -150,6 +156,16 @@ export function TradePanel() {
       {tab === "browse" && <BrowseTab listings={listings} gold={gold} busy={busy} onBuy={(id) => act((token) => marketBuy(token, id))} />}
       {tab === "sell" && <SellTab stash={snap.stash.items} busy={busy} onList={(itemId, count, price) => act((token) => marketList(token, itemId, count, price))} />}
       {tab === "mine" && <MineTab mine={mine} busy={busy} onCancel={(id) => act((token) => marketCancel(token, id))} />}
+      {tab === "gold" && (
+        <GoldTab
+          listings={goldListings}
+          mine={goldMine}
+          gold={gold}
+          busy={busy}
+          onList={(amount, usd) => act((token) => goldMarketList(token, amount, usd))}
+          onCancel={(id) => act((token) => goldMarketCancel(token, id))}
+        />
+      )}
     </div>
   );
 }
@@ -430,4 +446,101 @@ const numInput: React.CSSProperties = {
   background: "rgba(11,13,18,0.85)",
   color: "#f8fafc",
   fontSize: 12,
+};
+
+/** Gold exchange — the Kintara loop: sell your gold to other players for the
+ *  token. Off-chain today: listing escrows gold instantly; BUYING unlocks
+ *  with wallet linking (Phase 2), so browse rows show a lock instead of a
+ *  buy button. */
+function GoldTab({
+  listings,
+  mine,
+  gold,
+  busy,
+  onList,
+  onCancel,
+}: {
+  listings: GoldListing[];
+  mine: GoldListing[];
+  gold: number;
+  busy: boolean;
+  onList: (goldAmount: number, usdPrice: number) => void;
+  onCancel: (id: string) => void;
+}) {
+  const [amount, setAmount] = useState(500);
+  const [usd, setUsd] = useState(1.0);
+  const openMine = mine.filter((l) => l.status === "open");
+  return (
+    <div>
+      <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 8 }}>
+        Sell your gold to other players. Gold is escrowed while listed. Purchases unlock with wallet linking (Phase 2).
+      </div>
+      {/* Create listing */}
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 10 }}>
+        <input
+          type="number"
+          min={100}
+          max={5000}
+          step={100}
+          value={amount}
+          onChange={(e) => setAmount(Number(e.target.value))}
+          style={goldInput}
+          aria-label="Gold amount"
+        />
+        <span style={{ fontSize: 12, opacity: 0.7 }}>🪙 for $</span>
+        <input
+          type="number"
+          min={0.05}
+          max={10000}
+          step={0.05}
+          value={usd}
+          onChange={(e) => setUsd(Number(e.target.value))}
+          style={goldInput}
+          aria-label="USD price"
+        />
+        <button
+          onClick={() => onList(amount, usd)}
+          disabled={busy || amount < 100 || amount > gold || usd <= 0}
+          style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid rgba(201,165,74,0.5)", background: "rgba(201,165,74,0.15)", color: "#f1e9d0", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+        >
+          List
+        </button>
+      </div>
+      {/* My open listings */}
+      {openMine.map((l) => (
+        <Row key={l.id}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>🪙 {l.goldAmount} — ${l.usdPrice.toFixed(2)}</div>
+            <div style={{ fontSize: 11, opacity: 0.6 }}>your listing · escrowed</div>
+          </div>
+          <button onClick={() => onCancel(l.id)} disabled={busy} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.2)", background: "#151a22", color: "#e6e9ef", cursor: "pointer", fontSize: 12 }}>
+            Cancel
+          </button>
+        </Row>
+      ))}
+      {/* Order book */}
+      {listings.filter((l) => !l.mine).map((l) => (
+        <Row key={l.id}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>🪙 {l.goldAmount} — ${l.usdPrice.toFixed(2)}</div>
+            <div style={{ fontSize: 11, opacity: 0.6 }}>{l.seller}</div>
+          </div>
+          <span title="Purchases unlock with wallet linking (Phase 2)" style={{ fontSize: 12, opacity: 0.6 }}>🔒 Phase 2</span>
+        </Row>
+      ))}
+      {listings.length === 0 && openMine.length === 0 && (
+        <div style={{ fontSize: 12, opacity: 0.6, padding: "12px 0", textAlign: "center" }}>No gold listings yet — be the first.</div>
+      )}
+    </div>
+  );
+}
+
+const goldInput: React.CSSProperties = {
+  width: 74,
+  padding: "6px 8px",
+  borderRadius: 7,
+  border: "1px solid rgba(255,255,255,0.15)",
+  background: "#0b0d12",
+  color: "#e6e9ef",
+  fontSize: 13,
 };

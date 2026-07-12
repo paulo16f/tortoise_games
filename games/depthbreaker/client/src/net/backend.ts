@@ -141,3 +141,27 @@ export function marketBuy(token: string, listingId: string): Promise<{ balance: 
 export function marketCancel(token: string, listingId: string): Promise<void> {
   return request<void>("/api/market/cancel", { method: "POST", body: JSON.stringify({ listingId }) }, token);
 }
+
+// --- Gold exchange (Kintara loop: sell GOLD for the token; buys unlock in Phase 2) ---
+
+export interface GoldListing {
+  id: string;
+  goldAmount: number;
+  usdPrice: number;
+  status: string;
+  mine: boolean;
+  seller: string;
+  createdAt: string;
+}
+
+export async function goldMarketBrowse(token: string): Promise<{ listings: GoldListing[]; mine: GoldListing[] }> {
+  return request<{ listings: GoldListing[]; mine: GoldListing[] }>("/api/goldmarket", { method: "GET" }, token);
+}
+
+export function goldMarketList(token: string, goldAmount: number, usdPrice: number): Promise<{ id: string }> {
+  return request<{ id: string }>("/api/goldmarket/list", { method: "POST", body: JSON.stringify({ goldAmount, usdPrice }) }, token);
+}
+
+export function goldMarketCancel(token: string, listingId: string): Promise<void> {
+  return request<void>("/api/goldmarket/cancel", { method: "POST", body: JSON.stringify({ listingId }) }, token);
+}

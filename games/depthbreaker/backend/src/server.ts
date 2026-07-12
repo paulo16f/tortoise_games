@@ -10,6 +10,7 @@ import { registerCharacterRoutes } from "./routes/characters.js";
 import { registerRunRoutes } from "./routes/runs.js";
 import { registerMetaRoutes } from "./routes/meta.js";
 import { registerMarketRoutes } from "./routes/market.js";
+import { registerGoldMarketRoutes } from "./routes/goldMarket.js";
 import { registerInternalRoutes } from "./routes/internal.js";
 import { registerHealthRoutes } from "./routes/health.js";
 
@@ -51,6 +52,7 @@ export function buildServer(options: BuildServerOptions = {}): FastifyInstance &
   registerRunRoutes(app, ctx);
   registerMetaRoutes(app, ctx);
   registerMarketRoutes(app, ctx);
+  registerGoldMarketRoutes(app, ctx);
   registerInternalRoutes(app, ctx);
   registerHealthRoutes(app, ctx);
 
