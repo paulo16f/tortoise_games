@@ -242,6 +242,7 @@ export function Hud() {
           frac={self ? (self.hp ?? 0) / Math.max(1, self.maxHp ?? 1) : 0}
           fill="linear-gradient(0deg, #7f1d1d, #ef4444 85%)"
           glow="rgba(239,68,68,0.6)"
+          frame="/ui/synty/orb_left.png"
           big={Math.round(self?.hp ?? 0)}
           small={`${Math.round(self?.hp ?? 0)} / ${self?.maxHp ?? 0}`}
         />
@@ -256,6 +257,7 @@ export function Hud() {
           frac={need > 0 ? xpIntoLevel / need : 1}
           fill="linear-gradient(0deg, #1e3a8a, #60a5fa 85%)"
           glow="rgba(96,165,250,0.55)"
+          frame="/ui/synty/orb_right.png"
           big={`Lv${level}`}
           small={need > 0 ? `${xpIntoLevel}/${need}` : "MAX"}
         />
@@ -312,20 +314,16 @@ export function Hud() {
         <div
           style={{
             position: "absolute",
-            bottom: 24,
+            bottom: 16,
             left: "50%",
             transform: "translateX(-50%)",
-            display: "flex",
-            gap: 7,
-            padding: "9px 12px",
-            borderRadius: 12,
-            background: "linear-gradient(180deg, rgba(18,20,27,0.92), rgba(6,7,10,0.96))",
-            border: "1px solid rgba(201,165,74,0.35)",
-            borderTop: "2px solid rgba(201,165,74,0.6)",
-            boxShadow: "0 -2px 18px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+            padding: "18px 54px",
             pointerEvents: "auto",
           }}
         >
+          {/* Ornate Synty action-bar frame behind the slot row. */}
+          <img src="/ui/synty/actionbar.png" alt="" draggable={false} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
+          <div style={{ display: "flex", gap: 7, position: "relative", zIndex: 1 }}>
           {Array.from({ length: 10 }, (_, i) => {
             const slot = self.hotbar?.[i];
             const def = slot?.skillId ? skillDef(slot.skillId) : undefined;
@@ -387,6 +385,7 @@ export function Hud() {
               />
             );
           })}
+          </div>
         </div>
       )}
       {/* Connection + legend (top-left). */}

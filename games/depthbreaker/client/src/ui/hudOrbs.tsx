@@ -7,11 +7,12 @@ import type { CSSProperties, ReactNode } from "react";
 
 export function StatOrb({
   frac,
-  size = 116,
+  size = 122,
   fill,
   glow,
   big,
   small,
+  frame,
 }: {
   frac: number;
   size?: number;
@@ -23,12 +24,16 @@ export function StatOrb({
   big: ReactNode;
   /** Small sub-label under it (e.g. "128/170"). */
   small?: ReactNode;
+  /** Ornate orb-frame sprite (Synty). When set it replaces the CSS gold rim. */
+  frame?: string;
 }) {
   const f = Math.max(0, Math.min(1, frac));
+  // With an ornate frame, the liquid sits inside the frame's circular opening.
+  const wellInset = frame ? "15%" : "0%";
   return (
     <div style={{ position: "relative", width: size, height: size }}>
       {/* glass well + clipped liquid */}
-      <div style={well}>
+      <div style={{ ...well, inset: wellInset }}>
         <div
           style={{
             position: "absolute",
@@ -48,10 +53,14 @@ export function StatOrb({
         {/* top-left gloss */}
         <div style={gloss} />
       </div>
-      {/* gold rim */}
-      <div style={rim} />
-      {/* labels */}
-      <div style={labels}>
+      {/* ornate frame sprite, or the CSS gold rim fallback */}
+      {frame ? (
+        <img src={frame} alt="" draggable={false} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
+      ) : (
+        <div style={rim} />
+      )}
+      {/* labels (nudged up a touch to sit over the frame's opening) */}
+      <div style={{ ...labels, paddingBottom: frame ? "10%" : 0 }}>
         <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1, textShadow: "0 2px 3px #000" }}>{big}</div>
         {small != null && <div style={{ fontSize: 11, opacity: 0.9, marginTop: 2, textShadow: "0 1px 2px #000" }}>{small}</div>}
       </div>
