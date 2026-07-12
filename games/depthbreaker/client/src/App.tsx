@@ -2,7 +2,7 @@ import { Suspense, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { leaveZone } from "./net/room";
 import { bootstrap } from "./net/session";
-import { initCombatSfx } from "./game/fx/sfx";
+import { initCombatSfx, startAmbient, stopAmbient, setMuted, isSfxMuted } from "./game/fx/sfx";
 import { useControls } from "./game/input/useControls";
 import { Scene } from "./game/world/Scene";
 import { AnimationDebugView } from "./game/actors/AnimationDebugView";
@@ -26,6 +26,11 @@ import { CharacterSelect } from "./ui/CharacterSelect";
 
 function GameCanvas({ onLeave }: { onLeave: () => void }) {
   useControls();
+  // Dungeon ambience runs while in a run; stops on leave.
+  useEffect(() => {
+    startAmbient();
+    return () => stopAmbient();
+  }, []);
   return (
     <>
       <Canvas shadows camera={{ position: [0, 8, 10], fov: 42 }} gl={{ antialias: true }}>
@@ -48,10 +53,29 @@ function GameCanvas({ onLeave }: { onLeave: () => void }) {
       <GoldToasts />
       <CastBar />
       <TooltipLayer />
+      <MuteButton />
       <button onClick={onLeave} title="Leave to character select" style={leaveBtn}>
         ⎋ Leave
       </button>
     </>
+  );
+}
+
+function MuteButton() {
+  const [muted, setLocal] = useState(isSfxMuted());
+  return (
+    <button
+      onClick={() => {
+        const next = !muted;
+        setMuted(next);
+        setLocal(next);
+      }}
+      title={muted ? "Unmute sound" : "Mute sound"}
+      aria-label={muted ? "Unmute sound" : "Mute sound"}
+      style={muteBtn}
+    >
+      {muted ? "🔇" : "🔊"}
+    </button>
   );
 }
 
@@ -60,7 +84,8 @@ type Phase = "loading" | "auth" | "select" | "in-run";
 function GameApp() {
   const [phase, setPhase] = useState<Phase>("loading");
 
-  // Wire the procedural combat SFX once (arms the first-gesture audio unlock).
+  // Wire the combat SFX sample-bank once (arms the first-gesture audio unlock;
+  // plays real audio files when present, richer procedural synth otherwise).
   useEffect(() => {
     initCombatSfx();
   }, []);
@@ -121,6 +146,21 @@ const leaveBtn: React.CSSProperties = {
   background: "rgba(11,13,18,0.82)",
   color: "#e6e9ef",
   fontSize: 13,
+  cursor: "pointer",
+  pointerEvents: "auto",
+};
+
+const muteBtn: React.CSSProperties = {
+  position: "absolute",
+  top: 16,
+  right: 96,
+  width: 34,
+  height: 34,
+  borderRadius: 8,
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(11,13,18,0.82)",
+  color: "#e6e9ef",
+  fontSize: 15,
   cursor: "pointer",
   pointerEvents: "auto",
 };
