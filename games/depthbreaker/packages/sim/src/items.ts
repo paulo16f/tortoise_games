@@ -6,7 +6,7 @@
 import type { Rarity } from "./lootRoller.js";
 
 /** Mirrors ClassId in @depthbreaker/protocol (sim must not depend on protocol). */
-export type ItemClassId = "bruiser" | "mage" | "warden";
+export type ItemClassId = "knight" | "reaper" | "cleric" | "necromancer";
 
 /** "tool" is reserved for the future mining-pick tier system (not used yet). */
 export type ItemKind = "weapon" | "potion" | "food" | "junk" | "resource" | "tool";
@@ -57,9 +57,10 @@ export interface ItemDef {
 
 /** Which weapon archetypes each class may wield. */
 export const CLASS_WEAPON_TYPES: Record<ItemClassId, readonly WeaponType[]> = {
-  bruiser: ["sword", "axe", "mace", "hammer", "dagger", "spear"],
-  warden: ["sword", "mace", "staff"],
-  mage: ["staff", "wand"],
+  knight: ["sword", "axe", "mace", "hammer", "spear", "dagger"],
+  reaper: ["sword", "axe", "hammer", "spear"],
+  cleric: ["mace", "staff"],
+  necromancer: ["staff", "wand"],
 };
 
 export const ITEMS: Record<string, ItemDef> = {

@@ -45,10 +45,10 @@ async function main() {
   console.log("--- Weapon system (types / stats / gating) ---");
   const guest = await api("/api/auth/guest", { method: "POST", body: {} });
   const token = guest.json.accessToken, accountId = guest.json.accountId;
-  const made = await api("/api/characters", { method: "POST", token, body: { name: "Smith", classId: "bruiser" } });
+  const made = await api("/api/characters", { method: "POST", token, body: { name: "Smith", classId: "knight" } });
   const run = await api("/api/runs/start", { method: "POST", token, body: { characterId: made.json.character.id } });
   const client = new Client(REALTIME_URL);
-  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name: "Smith", classId: "bruiser" });
+  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name: "Smith", classId: "knight" });
   for (const t of ["welcome", "combatEvent", "lootEvent", "stash", "dailies", "skins", "spinner", "spinResult", "chat"]) room.onMessage(t, () => {});
   const self = await waitFor(() => room.state?.players?.get(room.sessionId), "self");
   await wait(400);

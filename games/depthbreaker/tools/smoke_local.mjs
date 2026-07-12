@@ -1,4 +1,4 @@
-import { Client } from "colyseus.js";
+﻿import { Client } from "colyseus.js";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:3000";
 const REALTIME_URL = process.env.REALTIME_URL ?? "ws://localhost:2567";
@@ -100,3 +100,4 @@ main().catch((err) => {
   console.error(err instanceof Error ? err.message : err);
   process.exitCode = 1;
 });
+

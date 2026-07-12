@@ -1,4 +1,4 @@
-import fs from "node:fs/promises";
+﻿import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as THREE from "three";
@@ -44,3 +44,4 @@ for (const name of ["idle", "walk", "run", "sprint"]) {
   });
   console.log(`\n${name} (dur ${c.duration.toFixed(3)}s):\n  ${parts.join("\n  ")}`);
 }
+

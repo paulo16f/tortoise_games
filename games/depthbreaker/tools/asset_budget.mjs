@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, statSync } from "node:fs";
+﻿import { existsSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
@@ -118,3 +118,4 @@ if (report.failures.length > 0) {
   for (const failure of report.failures) console.error(`asset budget failure: ${failure}`);
   process.exitCode = 1;
 }
+

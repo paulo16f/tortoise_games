@@ -30,6 +30,8 @@ export type SkillEffect =
   | { type: "execute"; range: number; damage: number; lowHpThreshold: number; bonusMult: number }
   /** Timed self-buff; only damage_reduction exists today. */
   | { type: "self_buff"; kind: "damage_reduction"; value: number; duration: number }
+  /** Instant self-heal for a fraction of max HP (cleric holy magic). */
+  | { type: "heal_self"; fraction: number }
   /** Projectile at the current target that explodes in a radius on impact. */
   | { type: "projectile_aoe"; radius: number; damage: number }
   /** Orbiting damage aura ticking on nearby enemies for a duration. */
@@ -150,28 +152,31 @@ export const SKILLS: Record<string, SkillDef> = {
     label: "FRST",
     description: "Orbiting frost shards chill nearby enemies for 6s.",
   },
+  // Cleric holy magic — a self-heal that gives the class its sustain identity.
+  mend: {
+    id: "mend",
+    name: "Mend",
+    slot: 1,
+    learnLevel: 1,
+    cooldown: 8,
+    effects: [{ type: "heal_self", fraction: 0.35 }],
+    label: "MEND",
+    description: "Channel holy light, restoring 35% of your health.",
+  },
 };
 
 /**
- * Ordered per-class kits (learn order). Kits are the authority on who knows
- * what — defs are shared, so warden temporarily reusing the warrior kit is a
- * one-line alias, not duplicated content.
+ * Ordered per-class kits (learn order). Kits are the authority on who knows what
+ * — defs are shared, so classes can reuse the same skill in different kits.
+ * Four Dark Fortress heroes: Knight (defensive bruiser), Reaper (offensive
+ * melee, no shields), Cleric (self-sustain support), Necromancer (caster).
+ * Deeper differentiation (ally heals, DoTs) is a follow-up.
  */
-const WARRIOR_KIT = [
-  "basic_attack",
-  "cleave",
-  "shield_wall",
-  "whirlwind",
-  "charge",
-  "execute",
-  "bulwark",
-];
-
 export const CLASS_KITS: Record<ClassId, readonly string[]> = {
-  bruiser: WARRIOR_KIT,
-  // Warden reuses the warrior kit until it gets its own (support) skills.
-  warden: WARRIOR_KIT,
-  mage: ["basic_attack", "fireball", "frost_nova"],
+  knight: ["basic_attack", "cleave", "shield_wall", "whirlwind", "execute", "bulwark"],
+  reaper: ["basic_attack", "cleave", "charge", "whirlwind", "execute"],
+  cleric: ["basic_attack", "mend", "shield_wall", "bulwark"],
+  necromancer: ["basic_attack", "fireball", "frost_nova"],
 };
 
 export function skillDef(id: string): SkillDef | undefined {

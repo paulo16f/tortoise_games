@@ -139,10 +139,15 @@ function makeCharacterModel(
   };
 }
 
+// Playable classes -> character model. Placeholder mapping onto the current
+// Dungeon Realms GLBs until the four POLYGON Dark Fortress heroes (knight /
+// death_knight / cleric / necromancer) are exported — then each is a one-line
+// swap to a new SYNTY_DB_* entry.
 const PLAYER_MODELS: Record<ClassId, CharacterModel> = {
-  bruiser: SYNTY_DEPTHBREAKER_MODELS.warrior,
-  warden: SYNTY_DEPTHBREAKER_MODELS.warden,
-  mage: SYNTY_DEPTHBREAKER_MODELS.mage,
+  knight: SYNTY_DEPTHBREAKER_MODELS.warrior,
+  reaper: SYNTY_DEPTHBREAKER_MODELS.undeadKnight,
+  cleric: SYNTY_DEPTHBREAKER_MODELS.warden,
+  necromancer: SYNTY_DEPTHBREAKER_MODELS.mage,
 };
 
 const ENEMY_MODELS: Record<string, CharacterModel> = {

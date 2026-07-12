@@ -17,7 +17,7 @@ describe.skipIf(!hasTestDb)("Character routes (requires TEST_DATABASE_URL)", () 
   function auth(token: string) {
     return { authorization: `Bearer ${token}` };
   }
-  function create(token: string, name: string, classId = "bruiser") {
+  function create(token: string, name: string, classId = "knight") {
     return t.app.inject({ method: "POST", url: "/api/characters", headers: auth(token), payload: { name, classId } });
   }
 
@@ -27,12 +27,12 @@ describe.skipIf(!hasTestDb)("Character routes (requires TEST_DATABASE_URL)", () 
     expect(empty.statusCode).toBe(200);
     expect(empty.json().characters).toHaveLength(0);
 
-    const made = await create(g.accessToken, "Grok", "bruiser");
+    const made = await create(g.accessToken, "Grok", "knight");
     expect(made.statusCode).toBe(201);
 
     const list = await t.app.inject({ method: "GET", url: "/api/characters", headers: auth(g.accessToken) });
     expect(list.json().characters).toHaveLength(1);
-    expect(list.json().characters[0]).toMatchObject({ name: "Grok", class_id: "bruiser", total_xp: 0 });
+    expect(list.json().characters[0]).toMatchObject({ name: "Grok", class_id: "knight", total_xp: 0 });
     // GET one also carries total_xp for the level display.
     const one = await t.app.inject({
       method: "GET",

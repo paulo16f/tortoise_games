@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { AppContext } from "../server.js";
 import { makeRequireAuth } from "../plugins/guards.js";
 
-const CLASS_IDS = ["bruiser", "mage", "warden"] as const;
+const CLASS_IDS = ["knight", "reaper", "cleric", "necromancer"] as const;
 const MAX_CHARACTERS_PER_ACCOUNT = 5;
 
 export function registerCharacterRoutes(app: FastifyInstance, ctx: AppContext): void {

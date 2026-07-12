@@ -26,5 +26,20 @@ export const ZONE_ROOM = "zone";
 export const ENEMY_AGGRO_RADIUS = 12;
 export const ENEMY_LEASH_DISTANCE = 40;
 
-/** Class ids must match the backend characters.class_id CHECK constraint. */
-export type ClassId = "bruiser" | "mage" | "warden";
+/**
+ * Playable classes (POLYGON Dark Fortress heroes). Ids must match the backend
+ * characters.class_id CHECK constraint (migration 0009).
+ * - knight: frontline melee tank
+ * - reaper: heavy two-hand melee DPS (Death Knight)
+ * - cleric: healer / support caster
+ * - necromancer: ranged burst + damage-over-time caster
+ */
+export type ClassId = "knight" | "reaper" | "cleric" | "necromancer";
+
+/** Display metadata for the character-select + HUD. */
+export const CLASS_META: Record<ClassId, { label: string; role: string; blurb: string }> = {
+  knight: { label: "Knight", role: "Tank", blurb: "Sturdy frontline melee." },
+  reaper: { label: "Reaper", role: "Melee DPS", blurb: "Slow, heavy soul-fire hits." },
+  cleric: { label: "Cleric", role: "Healer", blurb: "Holy caster; heals + wards." },
+  necromancer: { label: "Necromancer", role: "Caster", blurb: "Ranged burst from afar." },
+};

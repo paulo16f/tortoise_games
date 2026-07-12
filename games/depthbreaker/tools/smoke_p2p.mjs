@@ -37,14 +37,14 @@ async function newAccount(name) {
   const guest = await api("/api/auth/guest", { method: "POST", body: {} });
   const token = guest.json.accessToken;
   const accountId = guest.json.accountId;
-  const made = await api("/api/characters", { method: "POST", token, body: { name, classId: "bruiser" } });
+  const made = await api("/api/characters", { method: "POST", token, body: { name, classId: "knight" } });
   return { token, accountId, characterId: made.json.character.id };
 }
 
 async function joinRun(token, characterId, name) {
   const run = await api("/api/runs/start", { method: "POST", token, body: { characterId } });
   const client = new Client(REALTIME_URL);
-  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name, classId: "bruiser" });
+  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name, classId: "knight" });
   const box = { spinner: null, spinResult: null, chat: [] };
   for (const t of ["welcome", "combatEvent", "lootEvent", "stash", "dailies", "skins"]) room.onMessage(t, () => {});
   room.onMessage("spinner", (m) => { box.spinner = m; });

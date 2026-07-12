@@ -58,10 +58,10 @@ async function main() {
   console.log("--- Fishing + cooking loop (ticketed) ---");
   const guest = await api("/api/auth/guest", { method: "POST", body: {} });
   const token = guest.json.accessToken;
-  const made = await api("/api/characters", { method: "POST", token, body: { name: "Angler", classId: "bruiser" } });
+  const made = await api("/api/characters", { method: "POST", token, body: { name: "Angler", classId: "knight" } });
   const run = await api("/api/runs/start", { method: "POST", token, body: { characterId: made.json.character.id } });
   const client = new Client(REALTIME_URL);
-  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name: "Angler", classId: "bruiser" });
+  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name: "Angler", classId: "knight" });
   for (const t of ["welcome", "combatEvent", "lootEvent", "stash", "dailies", "skins", "spinner", "spinResult", "chat"]) room.onMessage(t, () => {});
   const self = await waitFor(() => room.state?.players?.get(room.sessionId), "self");
   await wait(400);

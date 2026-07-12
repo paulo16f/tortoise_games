@@ -64,10 +64,10 @@ async function main() {
   console.log("--- Combat responsiveness (engage / strafe-attack / no yank-back) ---");
   const guest = await api("/api/auth/guest", { method: "POST", body: {} });
   const token = guest.json.accessToken;
-  const made = await api("/api/characters", { method: "POST", token, body: { name: "Fighter", classId: "bruiser" } });
+  const made = await api("/api/characters", { method: "POST", token, body: { name: "Fighter", classId: "knight" } });
   const run = await api("/api/runs/start", { method: "POST", token, body: { characterId: made.json.character.id } });
   const client = new Client(REALTIME_URL);
-  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name: "Fighter", classId: "bruiser" });
+  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name: "Fighter", classId: "knight" });
   for (const t of ["welcome", "combatEvent", "lootEvent", "stash", "dailies", "skins", "spinner", "spinResult", "chat"]) room.onMessage(t, () => {});
   const self = await waitFor(() => room.state?.players?.get(room.sessionId), "self");
   await wait(400);

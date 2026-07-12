@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { levelForTotalXp } from "@depthbreaker/sim";
-import type { ClassId } from "@depthbreaker/protocol";
+import { CLASS_META, type ClassId } from "@depthbreaker/protocol";
 import { REALTIME_URL } from "../config";
 import {
   createCharacter,
@@ -18,11 +18,9 @@ import { connectToZone } from "../net/room";
 import { clearSession, useSession, withAuth } from "../net/session";
 import { logout as apiLogout } from "../net/backend";
 
-const CLASSES: { id: ClassId; label: string; blurb: string }[] = [
-  { id: "bruiser", label: "Bruiser", blurb: "Melee. High HP." },
-  { id: "mage", label: "Mage", blurb: "Ranged burst." },
-  { id: "warden", label: "Warden", blurb: "Sustain / support." },
-];
+const CLASSES: { id: ClassId; label: string; blurb: string }[] = (
+  ["knight", "reaper", "cleric", "necromancer"] as ClassId[]
+).map((id) => ({ id, label: CLASS_META[id].label, blurb: `${CLASS_META[id].role} — ${CLASS_META[id].blurb}` }));
 const MAX_CHARACTERS = 5;
 
 export function CharacterSelect({ onEnterGame }: { onEnterGame: () => void }) {
@@ -32,7 +30,7 @@ export function CharacterSelect({ onEnterGame }: { onEnterGame: () => void }) {
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newClass, setNewClass] = useState<ClassId>("bruiser");
+  const [newClass, setNewClass] = useState<ClassId>("knight");
 
   const refreshList = async () => {
     try {

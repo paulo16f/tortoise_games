@@ -131,7 +131,7 @@ export class PlayerState extends Schema {
     this.accountId = "";
     this.characterId = "";
     this.name = "";
-    this.classId = "bruiser";
+    this.classId = "knight";
     this.skinId = "";
     this.x = 0;
     this.y = 0;

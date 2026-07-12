@@ -116,7 +116,6 @@ import { loadConfig, type RealtimeConfig } from "./config.js";
 
 const COLLISION_RADIUS = 0.45;
 const BAG_CAPACITY = 16;
-const PLAYER_MAX_HP = 140;
 const PLAYER_CRIT_CHANCE = 0.15;
 const INITIAL_ENEMY_COUNT = 3;
 const INITIAL_ELITE_COUNT = 2;
@@ -144,22 +143,27 @@ interface ClassProfile {
   attackRaw: number;
   attackInterval: number;
   attackRange: number;
+  maxHp: number;
+  /** True when basic attacks fire a projectile (casters) vs melee. */
+  ranged: boolean;
 }
 
 function classProfile(classId: ClassId): ClassProfile {
   switch (classId) {
-    case "mage":
-      return { attackRaw: 14, attackInterval: 1.1, attackRange: 15 };
-    case "warden":
-      return { attackRaw: 10, attackInterval: 1.0, attackRange: 8 };
-    case "bruiser":
+    case "necromancer":
+      return { attackRaw: 14, attackInterval: 1.1, attackRange: 15, maxHp: 105, ranged: true };
+    case "cleric":
+      return { attackRaw: 10, attackInterval: 1.1, attackRange: 9, maxHp: 130, ranged: true };
+    case "reaper":
+      return { attackRaw: 16, attackInterval: 1.2, attackRange: 3.0, maxHp: 135, ranged: false };
+    case "knight":
     default:
-      return { attackRaw: 12, attackInterval: 1.0, attackRange: 2.6 };
+      return { attackRaw: 11, attackInterval: 1.0, attackRange: 2.6, maxHp: 170, ranged: false };
   }
 }
 
 function defaultWeaponForClass(classId: ClassId): string {
-  return classId === "mage" ? "ash_staff" : "iron_sword";
+  return classId === "necromancer" || classId === "cleric" ? "ash_staff" : "iron_sword";
 }
 
 function basicAttackRaw(p: PlayerState, rt: PlayerRuntime): number {
@@ -389,8 +393,8 @@ export class ZoneRoom extends Room<ZoneState> {
 
   override async onAuth(_client: Client, options: unknown): Promise<AuthData> {
     const opts = (options ?? {}) as { ticket?: string; classId?: ClassId; name?: string };
-    const classId: ClassId =
-      opts.classId === "mage" || opts.classId === "warden" ? opts.classId : "bruiser";
+    const VALID_CLASSES: readonly ClassId[] = ["knight", "reaper", "cleric", "necromancer"];
+    const classId: ClassId = opts.classId && VALID_CLASSES.includes(opts.classId) ? opts.classId : "knight";
     const name = (opts.name ?? "Adventurer").slice(0, 20);
 
     if (opts.ticket) {
@@ -409,6 +413,7 @@ export class ZoneRoom extends Room<ZoneState> {
     if (auth.claims) this.state.seed = auth.claims.seed;
     this.ensureSeeded();
 
+    const profile = classProfile(auth.classId);
     const player = new PlayerState();
     player.id = client.sessionId;
     player.accountId = auth.claims?.accountId ?? "";
@@ -417,8 +422,9 @@ export class ZoneRoom extends Room<ZoneState> {
     player.classId = auth.classId;
     player.skinId = auth.claims?.skinId ?? "";
     player.weaponId = defaultWeaponForClass(auth.classId);
-    player.maxHp = PLAYER_MAX_HP;
-    player.hp = PLAYER_MAX_HP;
+    // Per-class HP: the Knight is a sturdy tank, the Necromancer squishy.
+    player.maxHp = profile.maxHp;
+    player.hp = profile.maxHp;
     // Persistent MMO-lite level: the join ticket carries the character's total
     // XP; in-run kills add on top (awardKill). Ticketless dev joins start Lv1.
     player.level = levelForTotalXp(auth.claims?.totalXp ?? 0);
@@ -444,7 +450,7 @@ export class ZoneRoom extends Room<ZoneState> {
       bulwarkSeconds: 0,
       bulwarkValue: 0,
       respawnTimer: 0,
-      profile: classProfile(auth.classId),
+      profile,
       runId: auth.claims?.runId ?? null,
       characterId: auth.claims?.characterId ?? "",
       accountId: auth.claims?.accountId ?? "",
@@ -776,7 +782,7 @@ export class ZoneRoom extends Room<ZoneState> {
       const actionId = this.nextActionId();
       this.setAction(p, "attack", actionDuration(DEFAULT_MELEE_ATTACK_TIMING), enemy.state.id, actionId);
 
-      if (p.classId === "mage") {
+      if (rt.profile.ranged) {
         this.scheduleImpact(actionId, DEFAULT_MELEE_ATTACK_TIMING.windup, () => {
           const source = this.state.players.get(id);
           const target = this.enemies.find((e) => e.state.id === enemy.state.id);
@@ -1475,6 +1481,17 @@ export class ZoneRoom extends Room<ZoneState> {
         const actionId = this.nextActionId();
         this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), p.id, actionId);
         this.emitCombat({ sourceId: p.id, targetId: p.id, amount: 0, kind: "skill", actionId });
+        return;
+      }
+
+      case "heal_self": {
+        const { newHp, effective } = applyHeal(p.hp, p.maxHp, effect.fraction);
+        p.hp = newHp;
+        this.applyHealThreat(playerId, effective);
+        const actionId = this.nextActionId();
+        this.setAction(p, "skill", actionDuration(DEFAULT_SKILL_TIMING), p.id, actionId);
+        // Negative amount renders as a green heal number (see CombatFloaters).
+        this.emitCombat({ sourceId: p.id, targetId: p.id, amount: -effective, kind: "heal", actionId });
         return;
       }
 

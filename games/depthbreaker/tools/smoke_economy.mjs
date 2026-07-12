@@ -49,7 +49,7 @@ async function walkToStall(room, self) {
 async function joinRun(token, characterId, name = "EcoTester") {
   const run = await api("/api/runs/start", { method: "POST", token, body: { characterId } });
   const client = new Client(REALTIME_URL);
-  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name, classId: "bruiser" });
+  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name, classId: "knight" });
   for (const t of ["welcome", "combatEvent", "lootEvent", "spinner", "spinResult", "chat"]) room.onMessage(t, () => {});
   const box = { stash: null, dailies: null, skins: null };
   room.onMessage("stash", (m) => { box.stash = m; });
@@ -64,7 +64,7 @@ async function main() {
   const guest = await api("/api/auth/guest", { method: "POST", body: {} });
   const token = guest.json.accessToken;
   const accountId = guest.json.accountId;
-  const made = await api("/api/characters", { method: "POST", token, body: { name: "EcoTester", classId: "bruiser" } });
+  const made = await api("/api/characters", { method: "POST", token, body: { name: "EcoTester", classId: "knight" } });
   const characterId = made.json.character.id;
 
   const s1 = await joinRun(token, characterId);

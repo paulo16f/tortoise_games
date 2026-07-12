@@ -47,7 +47,7 @@ async function main() {
   check("new account has no characters", empty.status === 200 && empty.json.characters.length === 0);
 
   // Create → list shows it with total_xp (number, not bigint string).
-  const made = await call("/api/characters", { method: "POST", token: gToken, body: { name: "SmokeHero", classId: "bruiser" } });
+  const made = await call("/api/characters", { method: "POST", token: gToken, body: { name: "SmokeHero", classId: "knight" } });
   check("create character 201", made.status === 201, `status=${made.status}`);
   const charId = made.json.character.id;
   const list = await call("/api/characters", { token: gToken });

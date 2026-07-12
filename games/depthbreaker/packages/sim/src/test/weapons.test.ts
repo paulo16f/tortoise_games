@@ -34,27 +34,31 @@ describe("weapon system", () => {
   });
 
   it("class gating follows the weapon archetype", () => {
-    // Mage: staff/wand only.
-    expect(canEquipWeapon("mage", "ash_staff")).toBe(true);
-    expect(canEquipWeapon("mage", "apprentice_wand")).toBe(true);
-    expect(canEquipWeapon("mage", "iron_sword")).toBe(false);
-    expect(canEquipWeapon("mage", "dwarven_axe")).toBe(false);
-    // Bruiser: melee types, no staves.
-    expect(canEquipWeapon("bruiser", "war_hammer")).toBe(true);
-    expect(canEquipWeapon("bruiser", "iron_dagger")).toBe(true);
-    expect(canEquipWeapon("bruiser", "ash_staff")).toBe(false);
-    // Warden: sword/mace/staff — no axes or daggers.
-    expect(canEquipWeapon("warden", "iron_sword")).toBe(true);
-    expect(canEquipWeapon("warden", "storm_staff")).toBe(true);
-    expect(canEquipWeapon("warden", "dwarven_axe")).toBe(false);
+    // Necromancer: staff/wand only.
+    expect(canEquipWeapon("necromancer", "ash_staff")).toBe(true);
+    expect(canEquipWeapon("necromancer", "apprentice_wand")).toBe(true);
+    expect(canEquipWeapon("necromancer", "iron_sword")).toBe(false);
+    expect(canEquipWeapon("necromancer", "dwarven_axe")).toBe(false);
+    // Knight: melee types, no staves.
+    expect(canEquipWeapon("knight", "war_hammer")).toBe(true);
+    expect(canEquipWeapon("knight", "iron_dagger")).toBe(true);
+    expect(canEquipWeapon("knight", "ash_staff")).toBe(false);
+    // Cleric: mace/staff — no swords, axes, or daggers.
+    expect(canEquipWeapon("cleric", "storm_staff")).toBe(true);
+    expect(canEquipWeapon("cleric", "iron_dagger")).toBe(false);
+    expect(canEquipWeapon("cleric", "dwarven_axe")).toBe(false);
+    // Reaper: heavy melee — no staves or daggers.
+    expect(canEquipWeapon("reaper", "war_hammer")).toBe(true);
+    expect(canEquipWeapon("reaper", "iron_dagger")).toBe(false);
     // Non-weapons are never equippable.
-    expect(canEquipWeapon("bruiser", "health_potion")).toBe(false);
+    expect(canEquipWeapon("knight", "health_potion")).toBe(false);
   });
 
   it("every class can wield its starter weapon", () => {
-    expect(canEquipWeapon("bruiser", "iron_sword")).toBe(true);
-    expect(canEquipWeapon("warden", "iron_sword")).toBe(true);
-    expect(canEquipWeapon("mage", "ash_staff")).toBe(true);
+    expect(canEquipWeapon("knight", "iron_sword")).toBe(true);
+    expect(canEquipWeapon("reaper", "iron_sword")).toBe(true);
+    expect(canEquipWeapon("cleric", "ash_staff")).toBe(true);
+    expect(canEquipWeapon("necromancer", "ash_staff")).toBe(true);
     for (const c of Object.keys(CLASS_WEAPON_TYPES) as (keyof typeof CLASS_WEAPON_TYPES)[]) {
       expect(CLASS_WEAPON_TYPES[c].length).toBeGreaterThan(0);
     }

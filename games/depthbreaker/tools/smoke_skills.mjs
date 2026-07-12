@@ -42,7 +42,7 @@ async function joinRoom(opts) {
 
 async function partA() {
   console.log("--- Part A: ticketless bruiser (Lv1) ---");
-  const { room, self } = await joinRoom({ name: "SkillChkA", classId: "bruiser" });
+  const { room, self } = await joinRoom({ name: "SkillChkA", classId: "knight" });
 
   const bar = hotbar(self);
   console.log("  hotbar:", bar.map((s) => s.id || "·").join(" | "));
@@ -114,7 +114,7 @@ async function partB() {
     .setExpirationTime("60s")
     .sign(new TextEncoder().encode(DEV_SECRET));
 
-  const { room, self } = await joinRoom({ name: "SkillChkB", classId: "bruiser", ticket });
+  const { room, self } = await joinRoom({ name: "SkillChkB", classId: "knight", ticket });
 
   check("base level derived from ticket txp (Lv5)", self.level === 5, `level=${self.level}`);
   const bar = hotbar(self);

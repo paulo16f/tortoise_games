@@ -10,7 +10,7 @@ import {
 } from "../skills.js";
 import type { ClassId } from "../constants.js";
 
-const CLASS_IDS: ClassId[] = ["bruiser", "mage", "warden"];
+const CLASS_IDS: ClassId[] = ["knight", "reaper", "cleric", "necromancer"];
 
 describe("skill catalog integrity", () => {
   it("every kit id resolves to a def", () => {
@@ -48,7 +48,7 @@ describe("hotbarLayout", () => {
   });
 
   it("empty slots are empty strings", () => {
-    const layout = hotbarLayout("mage");
+    const layout = hotbarLayout("necromancer");
     for (const id of layout) {
       if (id !== "") expect(skillDef(id)).toBeDefined();
     }
@@ -58,7 +58,7 @@ describe("hotbarLayout", () => {
 
 describe("skillsKnownAt (learn-by-level)", () => {
   it("level 1 excludes higher learnLevel skills", () => {
-    const known = skillsKnownAt("bruiser", 1);
+    const known = skillsKnownAt("knight", 1);
     const ids = known.map((d) => d.id);
     expect(ids).toContain("basic_attack");
     expect(ids).toContain("cleave");

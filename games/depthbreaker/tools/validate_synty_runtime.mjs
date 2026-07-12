@@ -1,4 +1,4 @@
-import fs from "node:fs/promises";
+﻿import fs from "node:fs/promises";
 import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -349,3 +349,4 @@ if (manifestChanged) {
 }
 
 console.log(`[ok] Synty runtime manifest validated: ${manifest.assets.filter((a) => a.runtimeApproved).length} assets approved`);
+

@@ -93,12 +93,12 @@ async function main() {
   const guest = await api("/api/auth/guest", { method: "POST", body: {} });
   const token = guest.json.accessToken;
   const accountId = guest.json.accountId;
-  const made = await api("/api/characters", { method: "POST", token, body: { name: "MarketMiner", classId: "bruiser" } });
+  const made = await api("/api/characters", { method: "POST", token, body: { name: "MarketMiner", classId: "knight" } });
   const run = await api("/api/runs/start", { method: "POST", token, body: { characterId: made.json.character.id } });
   check("backend chain (guest→char→run)", run.status === 201 && !!run.json.joinTicket);
 
   const client = new Client(REALTIME_URL);
-  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name: "MarketMiner", classId: "bruiser" });
+  const room = await client.joinOrCreate("zone", { ticket: run.json.joinTicket, name: "MarketMiner", classId: "knight" });
   for (const t of ["welcome", "combatEvent", "stash", "dailies", "skins", "spinner", "spinResult", "chat"]) room.onMessage(t, () => {});
   const lootSeen = [];
   room.onMessage("lootEvent", (m) => { if (m.playerId === room.sessionId) lootSeen.push(m.itemId); });

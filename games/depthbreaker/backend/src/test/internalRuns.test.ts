@@ -22,7 +22,7 @@ describe.skipIf(!hasTestDb)("Runs + internal reporting (requires TEST_DATABASE_U
       method: "POST",
       url: "/api/characters",
       headers: auth,
-      payload: { name: "Testa", classId: "mage" },
+      payload: { name: "Testa", classId: "necromancer" },
     });
     expect(charRes.statusCode).toBe(201);
     const characterId = charRes.json().character.id as string;
