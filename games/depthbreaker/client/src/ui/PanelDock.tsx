@@ -92,11 +92,11 @@ export function PanelDock() {
   return (
     <div
       style={{
-        // A cohesive themed tray up the right edge, bottom-anchored so the column
-        // clears the XP orb in the corner.
+        // A cohesive themed tray down the right edge, hanging below the minimap
+        // (wireframe: map top-right, icons column under it).
         position: "absolute",
         right: 12,
-        bottom: 150,
+        top: 204,
         display: "flex",
         flexDirection: "column",
         gap: 6,

@@ -140,9 +140,10 @@ function SplashScreen() {
 }
 
 const leaveBtn: React.CSSProperties = {
+  // Left of the minimap (which owns the top-right corner per the wireframe).
   position: "absolute",
   top: 16,
-  right: 16,
+  right: 200,
   padding: "8px 12px",
   borderRadius: 8,
   border: "1px solid rgba(201,165,74,0.4)",
@@ -156,7 +157,7 @@ const leaveBtn: React.CSSProperties = {
 const muteBtn: React.CSSProperties = {
   position: "absolute",
   top: 16,
-  right: 96,
+  right: 280,
   width: 34,
   height: 34,
   borderRadius: 8,

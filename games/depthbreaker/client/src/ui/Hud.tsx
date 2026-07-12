@@ -232,35 +232,38 @@ export function Hud() {
         userSelect: "none",
       }}
     >
-      {/* Local player panel (bottom-left). */}
-      {/* Health orb (bottom-left, Diablo globe) */}
-      <div style={{ position: "absolute", left: 22, bottom: 18, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-        <div style={{ fontSize: 12.5, color: "#e2e8f0", textShadow: "0 1px 2px #000", pointerEvents: "none", whiteSpace: "nowrap" }}>
-          {self?.name ?? "—"} <span style={{ opacity: 0.6 }}>· {self?.classId ?? "?"}</span>
+      {/* Bottom-center cluster (reference wireframe): [health orb][action bar][xp orb]
+          — the Diablo layout, orbs flanking the skill tray. */}
+      <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "flex-end", gap: 10 }}>
+        {/* Health orb (left of the bar) */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+          <div style={{ fontSize: 12.5, color: "#e2e8f0", textShadow: "0 1px 2px #000", pointerEvents: "none", whiteSpace: "nowrap" }}>
+            {self?.name ?? "—"} <span style={{ opacity: 0.6 }}>· {self?.classId ?? "?"}</span>
+          </div>
+          <StatOrb
+            frac={self ? (self.hp ?? 0) / Math.max(1, self.maxHp ?? 1) : 0}
+            fill="linear-gradient(0deg, #7f1d1d, #ef4444 85%)"
+            glow="rgba(239,68,68,0.6)"
+            frame="/ui/synty/orb_left.png"
+            big={Math.round(self?.hp ?? 0)}
+            small={`${Math.round(self?.hp ?? 0)} / ${self?.maxHp ?? 0}`}
+          />
         </div>
-        <StatOrb
-          frac={self ? (self.hp ?? 0) / Math.max(1, self.maxHp ?? 1) : 0}
-          fill="linear-gradient(0deg, #7f1d1d, #ef4444 85%)"
-          glow="rgba(239,68,68,0.6)"
-          frame="/ui/synty/orb_left.png"
-          big={Math.round(self?.hp ?? 0)}
-          small={`${Math.round(self?.hp ?? 0)} / ${self?.maxHp ?? 0}`}
-        />
-      </div>
-
-      {/* Experience orb + gold (bottom-right) */}
-      <div style={{ position: "absolute", right: 22, bottom: 18, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-        <div style={{ fontSize: 12.5, color: "#fbbf24", fontWeight: 700, fontVariantNumeric: "tabular-nums", textShadow: "0 1px 2px #000", pointerEvents: "none" }}>
-          🪙 {self?.gold ?? 0}
+        <ActionBarCluster self={self} />
+        {/* Experience orb + gold (right of the bar) */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+          <div style={{ fontSize: 12.5, color: "#fbbf24", fontWeight: 700, fontVariantNumeric: "tabular-nums", textShadow: "0 1px 2px #000", pointerEvents: "none" }}>
+            🪙 {self?.gold ?? 0}
+          </div>
+          <StatOrb
+            frac={need > 0 ? xpIntoLevel / need : 1}
+            fill="linear-gradient(0deg, #1e3a8a, #60a5fa 85%)"
+            glow="rgba(96,165,250,0.55)"
+            frame="/ui/synty/orb_right.png"
+            big={`Lv${level}`}
+            small={need > 0 ? `${xpIntoLevel}/${need}` : "MAX"}
+          />
         </div>
-        <StatOrb
-          frac={need > 0 ? xpIntoLevel / need : 1}
-          fill="linear-gradient(0deg, #1e3a8a, #60a5fa 85%)"
-          glow="rgba(96,165,250,0.55)"
-          frame="/ui/synty/orb_right.png"
-          big={`Lv${level}`}
-          small={need > 0 ? `${xpIntoLevel}/${need}` : "MAX"}
-        />
       </div>
 
       {/* Target panel (top-center) while targeting a living entity. */}
@@ -309,14 +312,33 @@ export function Hud() {
         </div>
       )}
 
-      {/* Action bar (bottom-center): the skill tray, 10 slots from the hotbar. */}
-      {self && (
+      {/* Status chip + collapsible controls (top-left). */}
+      <div style={{ position: "absolute", top: 14, left: 14, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start", fontFamily: "system-ui, sans-serif" }}>
+        <div style={{ ...panelStyle, display: "flex", gap: 12, alignItems: "center", fontSize: 12.5, padding: "7px 13px" }}>
+          <span style={{ color: "#c9a54a", fontWeight: 700 }}>Depth {snap.depth}</span>
+          <span style={{ opacity: 0.8 }}>👤 {snap.playerCount}</span>
+          <span style={{ color: "#e88b8b" }}>☠ {snap.enemyCount}</span>
+          {snap.bossPortal.active && <span style={{ color: "#fbbf24", fontWeight: 700 }}>⚑ boss {Math.ceil(snap.bossPortal.countdown)}s</span>}
+        </div>
+        <details style={{ ...panelStyle, fontSize: 12, padding: "6px 11px", pointerEvents: "auto", maxWidth: 300 }}>
+          <summary style={{ cursor: "pointer", opacity: 0.8, userSelect: "none" }}>Controls</summary>
+          <div style={{ opacity: 0.78, marginTop: 6, lineHeight: 1.6 }}>
+            <b>WASD</b>/click — move · click mob — attack · click node — gather · <b>Tab</b> — target · <b>1–0</b> — skills · <b>B</b> bag · <b>K</b> skills · <b>M</b> market · <b>T</b> trade · <b>N</b> bank · <b>F</b> cook · <b>J</b> quests · <b>G</b> wheel · <b>C</b> chat · <b>V</b> weapon
+          </div>
+        </details>
+      </div>
+    </div>
+  );
+}
+
+/** The skill tray, 10 slots from the hotbar, framed by the ornate Synty bar.
+ *  Flows inside the bottom-center cluster between the two stat orbs. */
+function ActionBarCluster({ self }: { self: ReturnType<typeof useZoneState>["self"] }) {
+  if (!self) return null;
+  return (
         <div
           style={{
-            position: "absolute",
-            bottom: 16,
-            left: "50%",
-            transform: "translateX(-50%)",
+            position: "relative",
             padding: "18px 54px",
             pointerEvents: "auto",
           }}
@@ -387,22 +409,5 @@ export function Hud() {
           })}
           </div>
         </div>
-      )}
-      {/* Status chip + collapsible controls (top-left). */}
-      <div style={{ position: "absolute", top: 14, left: 14, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start", fontFamily: "system-ui, sans-serif" }}>
-        <div style={{ ...panelStyle, display: "flex", gap: 12, alignItems: "center", fontSize: 12.5, padding: "7px 13px" }}>
-          <span style={{ color: "#c9a54a", fontWeight: 700 }}>Depth {snap.depth}</span>
-          <span style={{ opacity: 0.8 }}>👤 {snap.playerCount}</span>
-          <span style={{ color: "#e88b8b" }}>☠ {snap.enemyCount}</span>
-          {snap.bossPortal.active && <span style={{ color: "#fbbf24", fontWeight: 700 }}>⚑ boss {Math.ceil(snap.bossPortal.countdown)}s</span>}
-        </div>
-        <details style={{ ...panelStyle, fontSize: 12, padding: "6px 11px", pointerEvents: "auto", maxWidth: 300 }}>
-          <summary style={{ cursor: "pointer", opacity: 0.8, userSelect: "none" }}>Controls</summary>
-          <div style={{ opacity: 0.78, marginTop: 6, lineHeight: 1.6 }}>
-            <b>WASD</b>/click — move · click mob — attack · click node — gather · <b>Tab</b> — target · <b>1–0</b> — skills · <b>B</b> bag · <b>K</b> skills · <b>M</b> market · <b>T</b> trade · <b>N</b> bank · <b>F</b> cook · <b>J</b> quests · <b>G</b> wheel · <b>C</b> chat · <b>V</b> weapon
-          </div>
-        </details>
-      </div>
-    </div>
   );
 }

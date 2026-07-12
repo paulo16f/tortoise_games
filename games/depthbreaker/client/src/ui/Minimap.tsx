@@ -105,10 +105,10 @@ export function Minimap() {
 }
 
 const wrap: React.CSSProperties = {
+  // Top-right corner per the layout wireframe; the dock tray hangs below it.
   position: "absolute",
-  top: 60,
-  // Left of the dock tray column so the two never collide on short viewports.
-  right: 80,
+  top: 16,
+  right: 16,
   width: SIZE,
   height: SIZE,
   borderRadius: 10,

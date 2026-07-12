@@ -66,9 +66,11 @@ export function ChatPanel() {
   return (
     <div
       style={{
+        // Bottom-left corner per the layout wireframe (the health orb moved to
+        // the bottom-center cluster, so the corner belongs to chat now).
         position: "absolute",
         left: 16,
-        bottom: 196,
+        bottom: 16,
         width: 320,
         maxWidth: "40vw",
         fontFamily: "system-ui, sans-serif",
