@@ -1,7 +1,7 @@
 ﻿import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Billboard } from "@react-three/drei";
-import type { Group, MeshStandardMaterial } from "three";
+import type { Group, Mesh, MeshStandardMaterial } from "three";
 import { MathUtils } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import { zoneStore } from "../../net/room";
@@ -31,6 +31,10 @@ export function Enemy({ id, isTarget }: EnemyProps) {
   const flashAt = useRef(Number.NEGATIVE_INFINITY);
   const hovered = useRef(false);
   const initialized = useRef(false);
+  const hpFill = useRef<Mesh>(null);
+  const hpChip = useRef<Mesh>(null);
+  const hpDisplay = useRef(1);
+  const hpChipVal = useRef(1);
 
   useEffect(
     () =>
@@ -51,8 +55,9 @@ export function Enemy({ id, isTarget }: EnemyProps) {
     }
 
     const profile = resolveEnemyModel(e.defId)?.motionProfile ?? DEFAULT_MOTION_PROFILE;
-    const positionT = Math.min(1, profile.positionLerp * delta);
-    const turnT = Math.min(1, profile.turnLerp * delta);
+    // Frame-rate-independent smoothing so remote motion feels identical at any FPS.
+    const positionT = 1 - Math.exp(-profile.positionLerp * delta);
+    const turnT = 1 - Math.exp(-profile.turnLerp * delta);
     const dx = e.x - g.position.x;
     const dz = e.z - g.position.z;
     if (!initialized.current || Math.hypot(dx, dz) > profile.positionSnapDistance) {
@@ -67,6 +72,21 @@ export function Enemy({ id, isTarget }: EnemyProps) {
     g.rotation.y = lerpAngle(g.rotation.y, e.yaw, turnT);
     g.visible = true;
     if (reticle.current) reticle.current.rotation.z -= delta * 1.5;
+
+    // Health bar: smooth the red fill, and trail a yellow "chip" that drains
+    // toward it so a burst of damage reads as a satisfying chunk.
+    const hpTarget = e.maxHp > 0 ? Math.max(0, e.hp / e.maxHp) : 1;
+    hpDisplay.current = MathUtils.lerp(hpDisplay.current, hpTarget, 1 - Math.exp(-16 * delta));
+    if (hpDisplay.current >= hpChipVal.current) hpChipVal.current = hpDisplay.current; // healed: snap up
+    else hpChipVal.current = MathUtils.lerp(hpChipVal.current, hpDisplay.current, 1 - Math.exp(-4 * delta));
+    if (hpFill.current) {
+      hpFill.current.scale.x = Math.max(0.0001, hpDisplay.current);
+      hpFill.current.position.x = -(1 - hpDisplay.current) / 2;
+    }
+    if (hpChip.current) {
+      hpChip.current.scale.x = Math.max(0.0001, hpChipVal.current);
+      hpChip.current.position.x = -(1 - hpChipVal.current) / 2;
+    }
 
     const sinceFlash = performance.now() - flashAt.current;
     const flashing = sinceFlash >= 0 && sinceFlash < HIT_FLASH_MS;
@@ -91,7 +111,6 @@ export function Enemy({ id, isTarget }: EnemyProps) {
 
   const e = zoneStore.state?.enemies.get(id);
   const alive = e?.alive ?? true;
-  const hpFrac = e && e.maxHp > 0 ? Math.max(0, e.hp / e.maxHp) : 1;
   const model = resolveEnemyModel(e?.defId ?? "");
   const visualHeight = model?.visualHeight ?? 1.4;
   const radius = model?.radius ?? 0.5;
@@ -154,8 +173,14 @@ export function Enemy({ id, isTarget }: EnemyProps) {
             <planeGeometry args={[1.0, 0.12]} />
             <meshBasicMaterial color="#1f2937" />
           </mesh>
-          <mesh position={[-(1.0 * (1 - hpFrac)) / 2, 0, 0.001]}>
-            <planeGeometry args={[1.0 * hpFrac, 0.1]} />
+          {/* Chip (lags on damage), then the live fill. Both width-1 geometry,
+              scaled + left-anchored per frame in useFrame. */}
+          <mesh ref={hpChip} position={[0, 0, 0.0006]}>
+            <planeGeometry args={[1.0, 0.1]} />
+            <meshBasicMaterial color="#fbbf24" />
+          </mesh>
+          <mesh ref={hpFill} position={[0, 0, 0.0012]}>
+            <planeGeometry args={[1.0, 0.1]} />
             <meshBasicMaterial color="#ef4444" />
           </mesh>
         </Billboard>

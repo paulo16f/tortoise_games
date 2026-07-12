@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { leaveZone } from "./net/room";
 import { bootstrap } from "./net/session";
+import { initCombatSfx } from "./game/fx/sfx";
 import { useControls } from "./game/input/useControls";
 import { Scene } from "./game/world/Scene";
 import { AnimationDebugView } from "./game/actors/AnimationDebugView";
@@ -56,6 +57,11 @@ type Phase = "loading" | "auth" | "select" | "in-run";
 
 function GameApp() {
   const [phase, setPhase] = useState<Phase>("loading");
+
+  // Wire the procedural combat SFX once (arms the first-gesture audio unlock).
+  useEffect(() => {
+    initCombatSfx();
+  }, []);
 
   // On load, try to restore a session from the refresh cookie. In ticketless
   // dev mode with no backend, skip straight to a minimal guest select.

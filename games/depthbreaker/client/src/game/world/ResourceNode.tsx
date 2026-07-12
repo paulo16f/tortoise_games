@@ -17,6 +17,8 @@ import { setGameCursor } from "../cursors";
 import { startCastBar } from "../../ui/CastBar";
 import { GATHER_CAST_SECONDS } from "@depthbreaker/protocol";
 import { DUNGEON_ASSETS } from "./syntyDungeonAssets";
+import { spawnImpactBurst } from "../fx/ImpactFx";
+import { playGather } from "../fx/sfx";
 
 const GATHER_CLICK_RANGE = 2.8; // client-side convenience; server enforces 3
 const RING_IN_RANGE = "#fbbf24";
@@ -49,6 +51,7 @@ export function ResourceNode({ id }: { id: string }) {
   const modelGroup = useRef<Group>(null);
   const ringMesh = useRef<Mesh>(null);
   const hovered = useRef(false);
+  const wasDepleted = useRef(false);
   const node = zoneStore.state?.nodes.get(id);
   const style = NODE_STYLE[node?.kind ?? "iron_vein"] ?? NODE_STYLE.iron_vein;
   const { scene } = useGLTF(DUNGEON_ASSETS[style.asset]);
@@ -67,6 +70,15 @@ export function ResourceNode({ id }: { id: string }) {
       return;
     }
     g.visible = true;
+
+    // Gather payoff: on the depleted transition, a burst + clink at the vein.
+    if (live.depleted && !wasDepleted.current) {
+      wasDepleted.current = true;
+      spawnImpactBurst(live.x, 0.9, live.z, { count: 10, color: style.tint, speed: 2.6, size: 0.14, life: 0.45, up: 2.2 });
+      playGather();
+    } else if (!live.depleted) {
+      wasDepleted.current = false;
+    }
 
     // Depleted veins shrink; a cheap but readable state change. Only the model
     // scales — the range ring keeps its world size.
@@ -89,15 +101,19 @@ export function ResourceNode({ id }: { id: string }) {
       mat.opacity = inRange ? 0.55 : 0.16;
     }
 
-    // Hover glow, same pattern as enemies.
+    // Hover glow + a subtle idle glint so ore draws the eye between gathers.
+    const pulse = 0.1 + (Math.sin(performance.now() * 0.002) * 0.5 + 0.5) * 0.16;
     for (const mat of materials.current) {
       if (!mat.emissive) continue;
-      if (hovered.current && !live.depleted) {
-        mat.emissive.set(style.tint);
-        mat.emissiveIntensity = 0.55;
-      } else {
+      if (live.depleted) {
         mat.emissive.set("#000000");
         mat.emissiveIntensity = 0;
+      } else if (hovered.current) {
+        mat.emissive.set(style.tint);
+        mat.emissiveIntensity = 0.6;
+      } else {
+        mat.emissive.set(style.tint);
+        mat.emissiveIntensity = pulse;
       }
     }
   });

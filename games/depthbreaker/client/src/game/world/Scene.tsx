@@ -9,6 +9,8 @@ import { Enemy } from "../actors/Enemy";
 import { CameraRig } from "./CameraRig";
 import { CombatFloaters } from "../fx/CombatFloaters";
 import { Projectiles } from "../fx/Projectiles";
+import { ImpactFx } from "../fx/ImpactFx";
+import { AmbientDust } from "../fx/AmbientDust";
 import { DungeonClickPlane } from "./DungeonClickPlane";
 import { BossPortal } from "./BossPortal";
 import { ResourceNode } from "./ResourceNode";
@@ -80,6 +82,8 @@ export function Scene() {
 
       <CombatFloaters />
       <Projectiles />
+      <ImpactFx />
+      <AmbientDust />
       <BossPortal />
       <CameraRig />
       <Effects />

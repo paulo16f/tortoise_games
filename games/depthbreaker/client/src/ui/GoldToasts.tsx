@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useZoneState } from "../net/useZone";
+import { playGold } from "../game/fx/sfx";
 
 interface GoldToast {
   id: number;
@@ -35,6 +36,7 @@ export function GoldToasts() {
     const delta = gold - prevGold.current;
     prevGold.current = gold;
     if (delta === 0) return;
+    if (delta > 0) playGold();
     setToasts((prev) => [...prev.slice(-4), { id: seq++, delta, bornAt: performance.now() }]);
   }, [gold]);
 

@@ -4,6 +4,7 @@ import type { Mesh } from "three";
 import { zoneStore } from "../../net/room";
 import { combatBus } from "../../net/combatBus";
 import { PROJECTILE_SPEED } from "./fxConstants";
+import { spawnImpactBurst } from "./ImpactFx";
 
 const POOL_SIZE = 8;
 const HIT_RADIUS = 0.4;
@@ -47,6 +48,8 @@ export function Projectiles() {
         bolt.targetId = f.targetId;
         bolt.actionId = f.actionId;
         bolt.bornAt = performance.now();
+        // Muzzle flash at the caster.
+        spawnImpactBurst(bolt.x, bolt.y, bolt.z, { count: 5, color: BOLT_COLOR, speed: 2, size: 0.1, life: 0.2, up: 0.6 });
       }),
     [],
   );
@@ -70,7 +73,14 @@ export function Projectiles() {
       const dz = tz - bolt.z;
       const dist = Math.hypot(dx, dy, dz);
       const step = PROJECTILE_SPEED * delta;
-      if (dist <= Math.max(HIT_RADIUS, step) || now - bolt.bornAt > MAX_AGE_MS) {
+      if (dist <= Math.max(HIT_RADIUS, step)) {
+        // Reached the target — impact burst (the bolt no longer just vanishes).
+        spawnImpactBurst(tx, ty, tz, { count: 10, color: BOLT_COLOR, speed: 3.6, size: 0.14, life: 0.32 });
+        bolt.active = false;
+        mesh.visible = false;
+        return;
+      }
+      if (now - bolt.bornAt > MAX_AGE_MS) {
         bolt.active = false;
         mesh.visible = false;
         return;

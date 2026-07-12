@@ -2,9 +2,10 @@
 // hotbar. Reads the killer-filtered loot toasts off the zone snapshot; each
 // entry fades out over its lifetime and is dropped once older than TOAST_TTL_MS.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useZoneState } from "../net/useZone";
 import { rarityColor, itemName } from "./itemDisplay";
+import { playLoot } from "../game/fx/sfx";
 
 const TOAST_TTL_MS = 2500;
 
@@ -17,6 +18,16 @@ export function LootToasts() {
     const timer = window.setInterval(() => force((n) => n + 1), 200);
     return () => window.clearInterval(timer);
   }, [snap.lootToasts.length]);
+
+  // Chime once per newly-arrived loot toast (ids are monotonic).
+  const lastLootId = useRef(-1);
+  useEffect(() => {
+    const maxId = snap.lootToasts.reduce((m, t) => Math.max(m, t.id), -1);
+    if (maxId > lastLootId.current) {
+      if (lastLootId.current >= 0) playLoot();
+      lastLootId.current = maxId;
+    }
+  }, [snap.lootToasts]);
 
   const now = performance.now();
   const visible = snap.lootToasts.filter((t) => now - t.bornAt < TOAST_TTL_MS);

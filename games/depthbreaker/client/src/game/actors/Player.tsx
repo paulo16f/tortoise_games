@@ -26,14 +26,15 @@ export function Player({ id, isLocal }: PlayerProps) {
   const modelMats = useRef<MeshStandardMaterial[]>([]);
   const skillFx = useRef<Group>(null);
   const flinchStart = useRef(Number.NEGATIVE_INFINITY);
+  const initialized = useRef(false);
 
   useEffect(
     () =>
       combatBus.subscribe((f) => {
+        // Any incoming hit/crit flinches the victim — PvE and PvP alike (the old
+        // gate skipped player-sourced damage, muting PvP).
         if (f.kind !== "hit" && f.kind !== "crit") return;
-        if (f.targetId === id && !zoneStore.state?.players.get(f.sourceId)) {
-          flinchStart.current = performance.now() + f.delayMs;
-        }
+        if (f.targetId === id) flinchStart.current = performance.now() + f.delayMs;
       }),
     [id],
   );
@@ -45,10 +46,19 @@ export function Player({ id, isLocal }: PlayerProps) {
     if (!p) return;
 
     const profile = resolvePlayerModel(p.classId)?.motionProfile ?? DEFAULT_MOTION_PROFILE;
-    const positionT = Math.min(1, profile.positionLerp * delta);
-    const turnT = Math.min(1, profile.turnLerp * delta);
-    g.position.x = MathUtils.lerp(g.position.x, p.x, positionT);
-    g.position.z = MathUtils.lerp(g.position.z, p.z, positionT);
+    // Frame-rate-independent smoothing (1 - e^-rate·dt) so feel is identical at
+    // any FPS. Snap on a big gap (dash/respawn teleport) instead of sliding.
+    const posT = 1 - Math.exp(-profile.positionLerp * delta);
+    const turnT = 1 - Math.exp(-profile.turnLerp * delta);
+    const gap = Math.hypot(p.x - g.position.x, p.z - g.position.z);
+    if (!initialized.current || gap > profile.positionSnapDistance) {
+      g.position.x = p.x;
+      g.position.z = p.z;
+      initialized.current = true;
+    } else {
+      g.position.x = MathUtils.lerp(g.position.x, p.x, posT);
+      g.position.z = MathUtils.lerp(g.position.z, p.z, posT);
+    }
     g.position.y = p.y;
     g.rotation.y = lerpAngle(g.rotation.y, p.yaw, turnT);
     g.visible = p.alive;
