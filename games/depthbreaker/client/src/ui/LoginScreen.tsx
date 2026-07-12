@@ -2,30 +2,13 @@
 // On success it stores the session (session.ts) and hands control back to App,
 // which advances to character select. Registering while a guest is active
 // upgrades that guest account in place server-side, keeping its characters.
+// Styled as an atmospheric fantasy title screen (see menu/menuTheme).
 
 import { useState } from "react";
 import { guestLogin, login as apiLogin, register as apiRegister } from "../net/backend";
 import { getSession, setSession } from "../net/session";
-
-const card: React.CSSProperties = {
-  width: 360,
-  background: "rgba(17,21,28,0.9)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  borderRadius: 12,
-  padding: 24,
-  boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
-};
-const field: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "10px 12px",
-  borderRadius: 8,
-  border: "1px solid rgba(255,255,255,0.15)",
-  background: "#0b0d12",
-  color: "#e6e9ef",
-  fontSize: 14,
-  marginBottom: 10,
-};
+import { MenuBackdrop } from "./menu/MenuBackdrop";
+import { MENU, framePanel, goldButton, ghostButton, menuField, menuScreen, linkButton, goldRule } from "./menu/menuTheme";
 
 export function LoginScreen({ onAuthed }: { onAuthed: () => void }) {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -55,7 +38,6 @@ export function LoginScreen({ onAuthed }: { onAuthed: () => void }) {
       if (mode === "login") {
         setSession(await apiLogin(email.trim(), password), "email");
       } else {
-        // Upgrade the current guest in place if we have one; else a fresh account.
         setSession(await apiRegister(email.trim(), password, getSession()?.accessToken), "email");
       }
       onAuthed();
@@ -68,107 +50,93 @@ export function LoginScreen({ onAuthed }: { onAuthed: () => void }) {
     });
 
   return (
-    <div style={screen}>
-      <div style={card}>
-        <h1 style={{ margin: "0 0 4px", fontSize: 28, letterSpacing: 0.5 }}>Depthbreaker</h1>
-        <div style={{ opacity: 0.6, fontSize: 13, marginBottom: 20 }}>
-          {mode === "login" ? "Log in to your account" : "Create an account"}
+    <div style={menuScreen}>
+      <MenuBackdrop />
+
+      <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", width: 380 }}>
+        {/* Wordmark */}
+        <div style={{ textAlign: "center", marginBottom: 22 }}>
+          <h1 style={title}>DEPTHBREAKER</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
+            <div style={{ ...goldRule, flex: 1 }} />
+            <span style={{ color: MENU.gold, fontSize: 18, lineHeight: 1 }}>◆</span>
+            <div style={{ ...goldRule, flex: 1 }} />
+          </div>
+          <div style={{ color: MENU.parchmentDim, fontSize: 12.5, letterSpacing: 2.5, marginTop: 8, textTransform: "uppercase" }}>
+            Descend · Plunder · Endure
+          </div>
         </div>
 
-        <input
-          type="email"
-          placeholder="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={field}
-        />
-        <input
-          type="password"
-          placeholder="password (min 8 chars)"
-          autoComplete={mode === "login" ? "current-password" : "new-password"}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && canSubmit && submit()}
-          style={{ ...field, marginBottom: 6 }}
-        />
-        <div style={{ fontSize: 11, opacity: 0.55, minHeight: 14, marginBottom: 12 }}>
-          {password.length > 0 && !passwordValid ? "Password must be 8–128 characters" : ""}
+        {/* Auth card */}
+        <div style={{ ...framePanel, width: "100%", padding: 22, boxSizing: "border-box" }}>
+          <div style={{ color: MENU.parchmentDim, fontSize: 13, marginBottom: 16, textAlign: "center" }}>
+            {mode === "login" ? "Enter your credentials" : "Forge a new account"}
+          </div>
+
+          <input
+            type="email"
+            placeholder="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{ ...menuField, marginBottom: 10 }}
+          />
+          <input
+            type="password"
+            placeholder="password (min 8 chars)"
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && canSubmit && submit()}
+            style={menuField}
+          />
+          <div style={{ fontSize: 11, color: MENU.parchmentDim, minHeight: 14, margin: "6px 0 10px" }}>
+            {password.length > 0 && !passwordValid ? "Password must be 8–128 characters" : ""}
+          </div>
+
+          {error && <div style={{ color: MENU.danger, fontSize: 12.5, marginBottom: 12, textAlign: "center" }}>{error}</div>}
+
+          <button onClick={submit} disabled={!canSubmit} style={{ ...goldButton(canSubmit), width: "100%" }}>
+            {busy ? "…" : mode === "login" ? "Log In" : "Register"}
+          </button>
+
+          <button
+            onClick={() => {
+              setMode(mode === "login" ? "register" : "login");
+              setError(null);
+            }}
+            style={{ ...linkButton, width: "100%", marginTop: 12, padding: 4 }}
+          >
+            {mode === "login" ? "Need an account? Register" : "Have an account? Log in"}
+          </button>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0" }}>
+            <div style={{ ...goldRule, flex: 1 }} />
+            <span style={{ color: MENU.parchmentDim, fontSize: 11 }}>or</span>
+            <div style={{ ...goldRule, flex: 1 }} />
+          </div>
+
+          <button onClick={asGuest} disabled={busy} style={{ ...ghostButton(!busy), width: "100%" }}>
+            Continue as guest
+          </button>
         </div>
-
-        {error && <div style={{ color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>{error}</div>}
-
-        <button onClick={submit} disabled={!canSubmit} style={primaryBtn(canSubmit)}>
-          {busy ? "…" : mode === "login" ? "Log in" : "Register"}
-        </button>
-
-        <button
-          onClick={() => {
-            setMode(mode === "login" ? "register" : "login");
-            setError(null);
-          }}
-          style={linkBtn}
-        >
-          {mode === "login" ? "Need an account? Register" : "Have an account? Log in"}
-        </button>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0" }}>
-          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.12)" }} />
-          <span style={{ opacity: 0.5, fontSize: 12 }}>or</span>
-          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.12)" }} />
-        </div>
-
-        <button onClick={asGuest} disabled={busy} style={ghostBtn}>
-          Continue as guest
-        </button>
       </div>
     </div>
   );
 }
 
-const screen: React.CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "radial-gradient(circle at 50% 30%, #131722, #0b0d12)",
-  color: "#e6e9ef",
-  fontFamily: "system-ui, sans-serif",
-};
-
-function primaryBtn(enabled: boolean): React.CSSProperties {
-  return {
-    width: "100%",
-    padding: 12,
-    borderRadius: 8,
-    border: "none",
-    background: enabled ? "#3b82f6" : "#334155",
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: 600,
-    cursor: enabled ? "pointer" : "default",
-  };
-}
-const linkBtn: React.CSSProperties = {
-  width: "100%",
-  marginTop: 8,
-  padding: 6,
-  background: "transparent",
-  border: "none",
-  color: "#93c5fd",
-  fontSize: 13,
-  cursor: "pointer",
-};
-const ghostBtn: React.CSSProperties = {
-  width: "100%",
-  padding: 11,
-  borderRadius: 8,
-  border: "1px solid rgba(255,255,255,0.15)",
-  background: "#0b0d12",
-  color: "#e6e9ef",
-  fontSize: 14,
-  cursor: "pointer",
+const title: React.CSSProperties = {
+  margin: 0,
+  fontFamily: MENU.display,
+  fontSize: 46,
+  fontWeight: 700,
+  letterSpacing: 6,
+  color: MENU.parchment,
+  textShadow: `0 2px 0 #000, 0 0 26px rgba(201,165,74,0.35)`,
+  background: `linear-gradient(180deg, ${MENU.goldBright}, ${MENU.gold} 55%, ${MENU.goldDim})`,
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  WebkitTextFillColor: "transparent",
 };
 
 function friendlyError(e: unknown): string {
