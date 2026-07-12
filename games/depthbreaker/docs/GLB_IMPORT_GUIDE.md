@@ -229,3 +229,38 @@ locomotion note) — **not** a per-bone client override.
    `PLAYER_MODELS` + preload, in `useModel.ts`.
 4. Weapons: drop GLB → one line in `WEAPON_MODELS`.
 5. `validate:assets` + `typecheck` + browser check.
+
+---
+
+## 6. Swapping ALL movement animations (ANIMATION pack shopping list)
+
+The runtime consumes clips **by name** — re-exporting a character with better
+animations under the same 6 names (+ optional `cast`) needs **zero code
+changes**. Fallbacks are automatic: a missing `cast` falls back to `attack`;
+missing `hit`/`death` fall back gracefully; setting a skill's clip ahead of
+the art never breaks (see `locomotionController.combatClip`).
+
+Map these source animations from your owned packs onto the runtime names in
+the Unity exporter (`DepthbreakerGltfExport.cs` → `Clips[]`):
+
+| Runtime clip | Source pack | Suggested animation |
+|---|---|---|
+| `idle` | ANIMATION_Idles | any standing idle (per-class variety welcome) |
+| `walk` | ANIMATION_Base_Locomotion | forward walk (in-place / root motion stripped) |
+| `run` | ANIMATION_Base_Locomotion | forward run/jog (in-place) |
+| `attack` | ANIMATION_Sword_Combat | a one-handed swing (melee classes); Bow_Combat draw-shoot works for ranged |
+| `cast` *(optional)* | ANIMATION_Sword_Combat / Idles | any two-handed raise / channel pose — used by fireball, smite, corruption, heals, wards |
+| `hit` | ANIMATION_Sword_Combat | a flinch/impact react |
+| `death` | ANIMATION_Sword_Combat | a fall/collapse (non-looping) |
+
+Rules that keep it working:
+1. **In-place only** — strip root motion; the server moves the character.
+2. Names are case-sensitive and exact.
+3. Per-class variety is free: each class GLB can bake DIFFERENT source
+   animations under the SAME names (reaper scythe swing vs knight sword).
+4. After export: drop into
+   `client/public/models/synty/depthbreaker/characters/`, update the model's
+   `manifest.json` (`clips` list; add `cast` there too), then
+   `npm run validate:assets` — it fails loudly on missing/misnamed clips.
+5. Eyeball in the browser via `?debugAnim` (the animation debug view) before
+   flipping `runtimeApproved`.
