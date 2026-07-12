@@ -149,10 +149,12 @@ async function main() {
   slammers.sort((a, b) => dist(a, self) - dist(b, self));
   const slammer = slammers[0];
   if (slammer) {
-    // Get inside the slam radius and stay put so the elite/boss slams us.
-    await walkNear(room, self, slammer.id, 3.5, 25000);
+    // Get INSIDE the slam radius (elite 3.2 / boss 4.6) and stay put so it slams
+    // us — stopping at 2.8 guarantees we're within reach (elites are rarer now,
+    // so give the walk + slam-interval more time to land reliably).
+    await walkNear(room, self, slammer.id, 2.8, 30000);
     room.send("setTarget", { targetId: slammer.id, autoAttack: true });
-    await waitFor(() => teles.length > 0, "slam telegraph", 16000).catch(() => {});
+    await waitFor(() => teles.length > 0, "slam telegraph", 22000).catch(() => {});
     check("elite/boss broadcasts a telegraphed slam ring", teles.length > 0, teles[0] ? `radius=${teles[0].radius}` : "none reached");
   } else {
     check("a special-capable enemy exists", false, "no elite/boss found");

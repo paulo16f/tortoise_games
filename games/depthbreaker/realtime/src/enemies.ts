@@ -287,6 +287,9 @@ export class EnemyController {
     // radius, even from beyond melee reach, so it reads as a gap-closing threat.
     if (this.def.special && this.specialTimer <= 0 && d <= this.def.special.radius) {
       this.specialTimer = this.def.special.interval;
+      // Reserve the basic-attack timer for the slam's full wind-up + recovery so
+      // it can't also fire a normal swing mid-slam (a double-hit / cancelled tell).
+      this.attackCooldown = Math.max(this.attackCooldown, this.def.special.windup + this.def.special.recovery);
       s.fsm = "combat";
       this.faceToward(target.x, target.z);
       return { attackTargetId: null, special: true };

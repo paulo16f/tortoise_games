@@ -118,7 +118,7 @@ const COLLISION_RADIUS = 0.45;
 const BAG_CAPACITY = 16;
 const PLAYER_CRIT_CHANCE = 0.15;
 const INITIAL_ENEMY_COUNT = 3;
-const INITIAL_ELITE_COUNT = 2;
+const INITIAL_ELITE_COUNT = 1;
 const MAX_LIVE_ENEMIES = 8;
 const DEAD_ENEMY_DESPAWN_SECONDS = ENEMY_DYING_SECONDS;
 const WAVE_INTERVAL_SECONDS = 12;
@@ -131,7 +131,7 @@ const TARGET_SELECTION_RANGE = 18;
 // Ability input buffer: a skill pressed within this window of becoming castable
 // is queued and fires the instant the GCD/cooldown clears, instead of being
 // dropped — the ARPG "the input took" feel (audit: combat-server #1).
-const INPUT_BUFFER_SECONDS = 0.4;
+const INPUT_BUFFER_SECONDS = 0.6;
 
 // Mining (WoCC pickUpObject-style harvest, with a short cast). Ranges, cast
 // time, and stall stock are shared with the client via protocol market.ts.
@@ -151,9 +151,9 @@ interface ClassProfile {
 function classProfile(classId: ClassId): ClassProfile {
   switch (classId) {
     case "necromancer":
-      return { attackRaw: 14, attackInterval: 1.1, attackRange: 15, maxHp: 105, ranged: true };
+      return { attackRaw: 14, attackInterval: 1.1, attackRange: 15, maxHp: 120, ranged: true };
     case "cleric":
-      return { attackRaw: 10, attackInterval: 1.1, attackRange: 9, maxHp: 130, ranged: true };
+      return { attackRaw: 12, attackInterval: 1.1, attackRange: 9, maxHp: 130, ranged: true };
     case "reaper":
       return { attackRaw: 16, attackInterval: 1.2, attackRange: 3.0, maxHp: 135, ranged: false };
     case "knight":
@@ -701,7 +701,7 @@ export class ZoneRoom extends Room<ZoneState> {
     }
 
     const roll = Math.random();
-    const def = roll < ELITE_CHANCE + 0.25 * intensity ? ELITE_GRUNT : roll < 0.6 ? SWARMER : GRUNT;
+    const def = roll < ELITE_CHANCE + 0.15 * intensity ? ELITE_GRUNT : roll < 0.6 ? SWARMER : GRUNT;
     const point = this.randomSpawnPoint(def);
     this.spawnEnemy(def, point.x, point.z);
   }
@@ -1475,6 +1475,10 @@ export class ZoneRoom extends Room<ZoneState> {
     // Commit: per-skill cooldown + GCD, then execute the effect list.
     if (def.cooldown > 0) rt.cooldowns.set(def.id, def.cooldown);
     if (!def.offGcd) this.startGlobalCooldown(rt, p);
+    // Reserve the swing timer for the cast: otherwise an auto-attack that comes
+    // due mid-windup overwrites the skill's action state, and the skill's
+    // scheduled impact (which re-checks isCurrentAction) silently fizzles.
+    rt.attackCooldown = Math.max(rt.attackCooldown, actionDuration(DEFAULT_SKILL_TIMING));
     for (const effect of def.effects) this.runEffect(playerId, rt, p, effect, target);
   }
 

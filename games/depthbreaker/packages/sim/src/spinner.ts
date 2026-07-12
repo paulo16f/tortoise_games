@@ -12,7 +12,7 @@ export interface SpinPrize {
 
 /** 20 wheel segments. One gold jackpot; the rest are ore/shard bundles. */
 export const SPINNER_PRIZES: readonly SpinPrize[] = [
-  { kind: "gold", itemId: "gold", count: 50 },
+  { kind: "gold", itemId: "gold", count: 120 },
   { kind: "item", itemId: "iron_ore", count: 3 },
   { kind: "item", itemId: "iron_ore", count: 1 },
   { kind: "item", itemId: "iron_ore", count: 2 },

@@ -23,7 +23,7 @@ export const RESPAWN_SECONDS = 4;
 export const ZONE_ROOM = "zone";
 
 /** Enemy tuning shared so the client can show ranges if it wants. */
-export const ENEMY_AGGRO_RADIUS = 12;
+export const ENEMY_AGGRO_RADIUS = 10;
 export const ENEMY_LEASH_DISTANCE = 40;
 
 /**
