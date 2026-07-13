@@ -141,12 +141,12 @@ describe("distinct class identities", () => {
   });
 
   it("Necromancer sustains at range (drain life) and nukes single targets (bone spear)", () => {
-    const drain = SKILLS.drain_life.effects.find((e) => e.type === "lifesteal_strike");
+    const drain = SKILLS.drain_life?.effects.find((e) => e.type === "lifesteal_strike");
     expect(drain).toBeDefined();
     // Ranged siphon — well beyond melee reach (the effect executor is range-driven).
     if (drain?.type === "lifesteal_strike") expect(drain.range).toBeGreaterThanOrEqual(10);
-    const spear = SKILLS.bone_spear.effects.find((e) => e.type === "projectile_aoe");
-    const fire = SKILLS.fireball.effects.find((e) => e.type === "projectile_aoe");
+    const spear = SKILLS.bone_spear?.effects.find((e) => e.type === "projectile_aoe");
+    const fire = SKILLS.fireball?.effects.find((e) => e.type === "projectile_aoe");
     // Bone spear: harder hit, tighter blast than fireball (single-target identity).
     if (spear?.type === "projectile_aoe" && fire?.type === "projectile_aoe") {
       expect(spear.damage).toBeGreaterThan(fire.damage);
@@ -165,7 +165,7 @@ describe("distinct class identities", () => {
     for (const [classId, id] of Object.entries(DEFENSIVES)) {
       if (!id) continue;
       expect(CLASS_KITS[classId as ClassId]).toContain(id);
-      expect(SKILLS[id].offGcd).toBe(true);
+      expect(SKILLS[id]?.offGcd).toBe(true);
     }
   });
 });
