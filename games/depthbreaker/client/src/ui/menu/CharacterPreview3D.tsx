@@ -77,8 +77,8 @@ function Plinth() {
   );
 }
 
-export function CharacterPreview3D({ classId }: { classId: string }) {
-  const model = resolvePlayerModel(classId);
+export function CharacterPreview3D({ classId, skinId }: { classId: string; skinId?: string }) {
+  const model = resolvePlayerModel(classId, skinId || undefined);
   const url = model?.url;
   return (
     <div style={{ width: "100%", height: "100%" }}>

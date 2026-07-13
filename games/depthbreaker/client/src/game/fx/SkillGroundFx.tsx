@@ -20,6 +20,7 @@ import { combatBus } from "../../net/combatBus";
 import { resolveEnemyModel, resolvePlayerModel } from "../actors/useModel";
 import { spawnImpactBurst } from "./ImpactFx";
 import { vfxFor, type GroundKind, type GroundSpec } from "./skillVfx";
+import { spawnFlipbook } from "./FlipbookFx";
 
 const POOL = 16;
 const GROUND_Y = 0.06;
@@ -58,6 +59,8 @@ function spawnGround(x: number, z: number, g: GroundSpec, key: string): void {
   slot.radius = g.radius;
   slot.bornAt = now;
   slot.life = g.life ?? DEFAULT_LIFE[g.kind];
+  // Real-VFX layer: a sheet on the spec plays a flat flipbook at the anchor.
+  if (g.sheet) spawnFlipbook(x, 0.07, z, g.sheet, true);
 }
 
 function playerPos(id: string): { x: number; z: number } | null {
@@ -111,6 +114,7 @@ export function SkillGroundFx() {
           if (a && performance.now() - (recent.get(key) ?? 0) >= DEDUP_MS) {
             recent.set(key, performance.now());
             spawnImpactBurst(a.x, a.y, a.z, { count: 10, color: vfx.cast.color, speed: 2.4, size: 0.13, life: 0.36, up: 1.3 });
+            if (vfx.cast.sheet) spawnFlipbook(a.x, a.y, a.z, vfx.cast.sheet);
           }
         }
       }),

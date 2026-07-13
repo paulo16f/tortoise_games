@@ -12,6 +12,7 @@ import { zoneStore } from "../../net/room";
 import { combatBus } from "../../net/combatBus";
 import { resolveEnemyModel, resolvePlayerModel } from "../actors/useModel";
 import { vfxFor } from "./skillVfx";
+import { spawnFlipbook } from "./FlipbookFx";
 
 const POOL = 72;
 const GRAVITY = 6;
@@ -106,6 +107,8 @@ export function ImpactFx() {
           const damaging = f.kind === "hit" || f.kind === "crit" || (f.kind === "skill" && f.amount > 0);
           const spec = damaging ? vfxFor(f.skillId)?.impact : undefined;
           if (spec) {
+            // Real-VFX layer: billboard flipbook at the impact point.
+            if (spec.sheet) spawnFlipbook(a.x, a.y, a.z, spec.sheet);
             // Per-skill impact; a crit reads bigger/faster while keeping the skill colour.
             const critK = f.kind === "crit" ? 1.4 : 1;
             spawnImpactBurst(a.x, a.y, a.z, {

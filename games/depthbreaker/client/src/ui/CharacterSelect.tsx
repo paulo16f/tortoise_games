@@ -35,6 +35,7 @@ export function CharacterSelect({ onEnterGame }: { onEnterGame: () => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [newClass, setNewClass] = useState<ClassId>("knight");
+  const [newVariant, setNewVariant] = useState<"a" | "b">("a");
 
   const refreshList = async (selectId?: string) => {
     try {
@@ -53,6 +54,8 @@ export function CharacterSelect({ onEnterGame }: { onEnterGame: () => void }) {
 
   const selected = useMemo(() => chars?.find((c) => c.id === selectedId) ?? null, [chars, selectedId]);
   const previewClass: ClassId = creating ? newClass : ((selected?.class_id as ClassId) ?? "knight");
+  const VARIANT_B_SKIN: Record<ClassId, string> = { knight: "knight_f", cleric: "warden_m", reaper: "reaper_b", necromancer: "necro_b" };
+  const previewSkin = creating && newVariant === "b" ? VARIANT_B_SKIN[newClass] : (selected?.skin_id ?? "");
   const nameValid = /^[A-Za-z][A-Za-z0-9 _-]*$/.test(newName.trim()) && newName.trim().length >= 3 && newName.trim().length <= 20;
   const atLimit = (chars?.length ?? 0) >= MAX_CHARACTERS;
 
@@ -61,7 +64,7 @@ export function CharacterSelect({ onEnterGame }: { onEnterGame: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      const created = await withAuth((t) => createCharacter(t, newName.trim(), newClass));
+      const created = await withAuth((t) => createCharacter(t, newName.trim(), newClass, newVariant));
       setCreating(false);
       setNewName("");
       await refreshList(created?.id);
@@ -169,7 +172,7 @@ export function CharacterSelect({ onEnterGame }: { onEnterGame: () => void }) {
         <div style={{ ...framePanel, flex: 1, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
           {/* 3D hero fills the stage */}
           <div style={{ flex: 1, minHeight: 0 }}>
-            <CharacterPreview3D classId={previewClass} />
+            <CharacterPreview3D classId={previewClass} skinId={previewSkin} />
           </div>
 
           {/* Footer: either the selected-hero CTA or the creation form */}
@@ -178,6 +181,8 @@ export function CharacterSelect({ onEnterGame }: { onEnterGame: () => void }) {
               <CreatePanel
                 newName={newName}
                 setNewName={setNewName}
+                newVariant={newVariant}
+                setNewVariant={setNewVariant}
                 newClass={newClass}
                 setNewClass={setNewClass}
                 nameValid={nameValid}
@@ -223,6 +228,8 @@ export function CharacterSelect({ onEnterGame }: { onEnterGame: () => void }) {
 function CreatePanel({
   newName,
   setNewName,
+  newVariant,
+  setNewVariant,
   newClass,
   setNewClass,
   nameValid,
@@ -233,6 +240,8 @@ function CreatePanel({
   newName: string;
   setNewName: (v: string) => void;
   newClass: ClassId;
+  newVariant: "a" | "b";
+  setNewVariant: (v: "a" | "b") => void;
   setNewClass: (c: ClassId) => void;
   nameValid: boolean;
   busy: boolean;
@@ -256,6 +265,28 @@ function CreatePanel({
         })}
       </div>
       <div style={{ color: MENU.parchmentDim, fontSize: 12, minHeight: 16 }}>{meta.blurb}</div>
+      {/* Body variant toggle — two free starter forms per class. */}
+      <div style={{ display: "flex", gap: 8 }}>
+        {(["a", "b"] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => setNewVariant(v)}
+            style={{
+              flex: 1,
+              padding: "7px 0",
+              borderRadius: 6,
+              border: `1px solid ${newVariant === v ? MENU.gold : MENU.goldDim}`,
+              background: newVariant === v ? "rgba(201,165,74,0.15)" : "rgba(10,11,15,0.7)",
+              color: newVariant === v ? MENU.gold : MENU.parchment,
+              cursor: "pointer",
+              fontSize: 12.5,
+              fontWeight: 700,
+            }}
+          >
+            {v === "a" ? "Form I" : "Form II"}
+          </button>
+        ))}
+      </div>
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <input
           placeholder="champion name (3–20)"

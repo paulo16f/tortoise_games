@@ -27,6 +27,8 @@ export interface CharacterSummary {
   id: string;
   name: string;
   class_id: string;
+  /** Equipped skin (starter body variant or cosmetic); "" = class default. */
+  skin_id?: string;
   /** Persistent cross-run XP; drives the displayed level via levelForTotalXp. */
   total_xp: number;
 }
@@ -85,10 +87,10 @@ export function logout(): Promise<void> {
 
 // --- Characters ---
 
-export async function createCharacter(token: string, name: string, classId: ClassId): Promise<CharacterSummary> {
+export async function createCharacter(token: string, name: string, classId: ClassId, variant: "a" | "b" = "a"): Promise<CharacterSummary> {
   const body = await request<{ character: CharacterSummary }>(
     "/api/characters",
-    { method: "POST", body: JSON.stringify({ name, classId }) },
+    { method: "POST", body: JSON.stringify({ name, classId, variant }) },
     token,
   );
   return body.character;

@@ -39,6 +39,11 @@ const SYNTY_DB_MAGE = "/models/synty/depthbreaker/characters/mage.glb";
 const SYNTY_DB_SKELETON = "/models/synty/depthbreaker/characters/skeleton.glb";
 const SYNTY_DB_UNDEAD_KNIGHT = "/models/synty/depthbreaker/characters/undead_knight.glb";
 const SYNTY_DB_BOSS_SKELETON = "/models/synty/depthbreaker/characters/boss_skeleton.glb";
+const SYNTY_DB_KNIGHT_F = "/models/synty/depthbreaker/characters/knight_f.glb";
+const SYNTY_DB_WARDEN_M = "/models/synty/depthbreaker/characters/warden_m.glb";
+const SYNTY_DB_REAPER = "/models/synty/depthbreaker/characters/reaper.glb";
+const SYNTY_DB_REAPER_B = "/models/synty/depthbreaker/characters/reaper_b.glb";
+const SYNTY_DB_NECRO_B = "/models/synty/depthbreaker/characters/necro_b.glb";
 const SYNTY_DB_SWORD = "/models/synty/depthbreaker/weapons/sword.glb";
 const SYNTY_DB_STAFF = "/models/synty/depthbreaker/weapons/staff.glb";
 
@@ -122,6 +127,11 @@ export const SYNTY_DEPTHBREAKER_MODELS = {
   mage: makeCharacterModel(SYNTY_DB_MAGE, "mage", "humanoidPlayer", { weaponUrl: SYNTY_DB_STAFF, handBoneNames: ["Hand_R"], targetHeight: 1.75, visualHeight: 1.75, radius: 0.43, weaponTransform: { scale: 0.78, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
   skeleton: makeCharacterModel(SYNTY_DB_SKELETON, "skeleton", "lightEnemy", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 1.7, visualHeight: 1.7, radius: 0.42, weaponTransform: { scale: 0.72, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
   undeadKnight: makeCharacterModel(SYNTY_DB_UNDEAD_KNIGHT, "undead_knight", "eliteEnemy", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 1.95, visualHeight: 1.95, radius: 0.55, weaponTransform: { scale: 0.85, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
+  knightF: makeCharacterModel(SYNTY_DB_KNIGHT_F, "knight_f", "humanoidPlayer", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 1.8, visualHeight: 1.8, radius: 0.45, weaponTransform: { scale: 0.8, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
+  wardenM: makeCharacterModel(SYNTY_DB_WARDEN_M, "warden_m", "humanoidPlayer", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 1.8, visualHeight: 1.8, radius: 0.45, weaponTransform: { scale: 0.8, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
+  reaper: makeCharacterModel(SYNTY_DB_REAPER, "reaper", "humanoidPlayer", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 1.9, visualHeight: 1.9, radius: 0.5, weaponTransform: { scale: 0.85, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
+  reaperB: makeCharacterModel(SYNTY_DB_REAPER_B, "reaper_b", "humanoidPlayer", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 1.8, visualHeight: 1.8, radius: 0.45, weaponTransform: { scale: 0.8, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
+  necroB: makeCharacterModel(SYNTY_DB_NECRO_B, "necro_b", "humanoidPlayer", { weaponUrl: SYNTY_DB_STAFF, handBoneNames: ["Hand_R"], targetHeight: 1.75, visualHeight: 1.75, radius: 0.43, weaponTransform: { scale: 0.78, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
   bossSkeleton: makeCharacterModel(SYNTY_DB_BOSS_SKELETON, "boss_skeleton", "heavyBoss", { weaponUrl: SYNTY_DB_SWORD, handBoneNames: ["Hand_R"], targetHeight: 2.35, visualHeight: 2.35, radius: 0.78, weaponTransform: { scale: 1.0, rotation: [-1.45, -0.35, 0.35], position: [0.02, 0, 0.02] } }),
 } satisfies Record<string, CharacterModel>;
 
@@ -145,7 +155,7 @@ function makeCharacterModel(
 // swap to a new SYNTY_DB_* entry.
 const PLAYER_MODELS: Record<ClassId, CharacterModel> = {
   knight: SYNTY_DEPTHBREAKER_MODELS.warrior,
-  reaper: SYNTY_DEPTHBREAKER_MODELS.undeadKnight,
+  reaper: SYNTY_DEPTHBREAKER_MODELS.reaper,
   cleric: SYNTY_DEPTHBREAKER_MODELS.warden,
   necromancer: SYNTY_DEPTHBREAKER_MODELS.mage,
 };
@@ -159,6 +169,10 @@ const ENEMY_MODELS: Record<string, CharacterModel> = {
 
 /** Cosmetic skin id -> the model it renders (SYNTY_DEPTHBREAKER_MODELS key). */
 const SKIN_MODELS: Record<string, CharacterModel> = {
+  knightF: SYNTY_DEPTHBREAKER_MODELS.knightF,
+  wardenM: SYNTY_DEPTHBREAKER_MODELS.wardenM,
+  reaperB: SYNTY_DEPTHBREAKER_MODELS.reaperB,
+  necroB: SYNTY_DEPTHBREAKER_MODELS.necroB,
   skeleton: SYNTY_DEPTHBREAKER_MODELS.skeleton,
   undeadKnight: SYNTY_DEPTHBREAKER_MODELS.undeadKnight,
   bossSkeleton: SYNTY_DEPTHBREAKER_MODELS.bossSkeleton,

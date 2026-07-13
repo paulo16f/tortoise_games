@@ -303,9 +303,9 @@
       "walkRuntimeApproved": true,
       "runtimeApproved": true,
       "fallback": "/models/kaykit/characters/kaykit_knight.glb",
-      "naturalHeight": 1.79117,
-      "restMinY": -0.00312,
-      "assetVersion": "a06d939bddb8",
+      "naturalHeight": 1.88509,
+      "restMinY": -0.01068,
+      "assetVersion": "51e8b93bf93c",
       "strideNorm": {
         "walk": 0.83745,
         "run": 1.01034
@@ -337,9 +337,9 @@
       "walkRuntimeApproved": true,
       "runtimeApproved": true,
       "fallback": "/models/kaykit/characters/kaykit_knight.glb",
-      "naturalHeight": 1.78695,
-      "restMinY": 0.0011,
-      "assetVersion": "5473ea3a49f1",
+      "naturalHeight": 1.78303,
+      "restMinY": -0.00298,
+      "assetVersion": "3078dc5773a9",
       "strideNorm": {
         "walk": 0.96747,
         "run": 1.16719
@@ -371,9 +371,9 @@
       "walkRuntimeApproved": true,
       "runtimeApproved": true,
       "fallback": "/models/kaykit/characters/kaykit_mage.glb",
-      "naturalHeight": 1.79399,
-      "restMinY": -0.00547,
-      "assetVersion": "4ffbd7af0e06",
+      "naturalHeight": 1.88035,
+      "restMinY": -0.00468,
+      "assetVersion": "0f5db921f746",
       "strideNorm": {
         "walk": 0.96108,
         "run": 1.15949

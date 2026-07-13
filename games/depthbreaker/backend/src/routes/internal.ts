@@ -16,6 +16,7 @@ import {
   advanceStreak,
   streakGold,
   skinDef,
+  isStarterSkin,
   spinPrizeAt,
   SPINNER_SEGMENTS,
   itemDef,
@@ -336,7 +337,8 @@ export function registerInternalRoutes(app: FastifyInstance, ctx: AppContext): v
           [id],
         );
         if (!char.rowCount) return { code: 404 as const, error: "character_not_found" };
-        if (skinId !== "") {
+        // Starter body variants (price 0) are always owned by everyone.
+        if (skinId !== "" && !isStarterSkin(skinId)) {
           const owned = await client.query("SELECT 1 FROM account_skins WHERE account_id = $1 AND skin_id = $2", [char.rows[0]!.account_id, skinId]);
           if (!owned.rowCount) return { code: 403 as const, error: "not_owned" };
         }

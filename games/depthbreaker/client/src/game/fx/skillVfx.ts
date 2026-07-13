@@ -7,7 +7,20 @@
 // The user can later drop flipbook/texture art and reference it from a `texture`
 // field added here; procedural specs below need no art.
 
+/** A flipbook sprite sheet (from tools/video_to_flipbook.mjs — Higgsfield
+ *  clips on pure black; black vanishes under additive blending). */
+export interface SheetSpec {
+  url: string;
+  cols: number;
+  rows: number;
+  fps: number;
+  /** World-units size of the quad (default 2.2). */
+  size?: number;
+}
+
 export interface ImpactSpec {
+  /** Optional flipbook played at the impact point (billboard). */
+  sheet?: SheetSpec;
   count: number;
   color: string;
   speed: number;
@@ -30,6 +43,8 @@ export interface ProjectileSpec {
 export type GroundKind = "ring" | "pool" | "nova" | "arc" | "shout";
 
 export interface GroundSpec {
+  /** Optional flipbook laid flat at the anchor (plays alongside the shape). */
+  sheet?: SheetSpec;
   kind: GroundKind;
   color: string;
   /** Target outer radius in world units. */
@@ -48,7 +63,7 @@ export interface VfxSpec {
   /** A flat ground effect (ring/pool/nova/arc/shout). */
   ground?: GroundSpec;
   /** A brief flash at the caster on the cast event (amount 0, self-targeted). */
-  cast?: { color: string };
+  cast?: { color: string; sheet?: SheetSpec };
 }
 
 const HOLY = "#ffe27a";

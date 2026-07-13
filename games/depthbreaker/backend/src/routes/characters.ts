@@ -13,7 +13,7 @@ export function registerCharacterRoutes(app: FastifyInstance, ctx: AppContext): 
     const res = await pool.query(
       // total_xp is bigint (pg → string); cast to int (value is capped well
       // under 2^31) so the client gets a number for levelForTotalXp().
-      `SELECT id, name, class_id, total_xp::int AS total_xp, created_at FROM characters
+      `SELECT id, name, class_id, skin_id, total_xp::int AS total_xp, created_at FROM characters
        WHERE account_id = $1 AND deleted_at IS NULL ORDER BY created_at`,
       [request.accountId],
     );
@@ -31,12 +31,17 @@ export function registerCharacterRoutes(app: FastifyInstance, ctx: AppContext): 
           properties: {
             name: { type: "string", minLength: 3, maxLength: 20, pattern: "^[A-Za-z][A-Za-z0-9 _-]*$" },
             classId: { type: "string", enum: [...CLASS_IDS] },
+            variant: { type: "string", enum: ["a", "b"] },
           },
         },
       },
     },
     async (request, reply) => {
-      const { name, classId } = request.body as { name: string; classId: string };
+      const { name, classId, variant } = request.body as { name: string; classId: string; variant?: "a" | "b" };
+      // Body variant "b" equips the class's free starter skin from creation
+      // (variant "a"/absent = the class default model, skin_id "").
+      const VARIANT_B_SKIN: Record<string, string> = { knight: "knight_f", cleric: "warden_m", reaper: "reaper_b", necromancer: "necro_b" };
+      const skinId = variant === "b" ? (VARIANT_B_SKIN[classId] ?? "") : "";
       const countRes = await pool.query<{ count: string }>(
         "SELECT count(*) FROM characters WHERE account_id = $1 AND deleted_at IS NULL",
         [request.accountId],
@@ -45,9 +50,9 @@ export function registerCharacterRoutes(app: FastifyInstance, ctx: AppContext): 
         return reply.code(409).send({ error: "character_limit_reached" });
       }
       const res = await pool.query(
-        `INSERT INTO characters (account_id, name, class_id)
-         VALUES ($1, $2, $3) RETURNING id, name, class_id, created_at`,
-        [request.accountId, name.trim(), classId],
+        `INSERT INTO characters (account_id, name, class_id, skin_id)
+         VALUES ($1, $2, $3, $4) RETURNING id, name, class_id, created_at`,
+        [request.accountId, name.trim(), classId, skinId],
       );
       return reply.code(201).send({ character: res.rows[0] });
     },
@@ -56,7 +61,7 @@ export function registerCharacterRoutes(app: FastifyInstance, ctx: AppContext): 
   app.get("/api/characters/:id", { preHandler: requireAuth }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const res = await pool.query(
-      `SELECT id, name, class_id, total_xp::int AS total_xp, created_at FROM characters
+      `SELECT id, name, class_id, skin_id, total_xp::int AS total_xp, created_at FROM characters
        WHERE id = $1 AND account_id = $2 AND deleted_at IS NULL`,
       [id, request.accountId],
     );

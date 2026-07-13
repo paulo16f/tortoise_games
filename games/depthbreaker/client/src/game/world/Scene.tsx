@@ -11,6 +11,7 @@ import { CombatFloaters } from "../fx/CombatFloaters";
 import { Projectiles } from "../fx/Projectiles";
 import { ImpactFx } from "../fx/ImpactFx";
 import { SkillGroundFx } from "../fx/SkillGroundFx";
+import { FlipbookLayer } from "../fx/FlipbookFx";
 import { Telegraphs } from "../fx/Telegraphs";
 import { AmbientDust } from "../fx/AmbientDust";
 import { DungeonClickPlane } from "./DungeonClickPlane";
@@ -88,6 +89,7 @@ export function Scene() {
       <Projectiles />
       <ImpactFx />
       <SkillGroundFx />
+      <FlipbookLayer />
       <Telegraphs />
       <AmbientDust />
       <BossPortal />

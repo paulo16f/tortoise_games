@@ -27,13 +27,25 @@ export const SKIN_CATALOG: readonly SkinDef[] = [
   { id: "skeleton", name: "Risen Skeleton", kind: "model", price: 200, model: "skeleton" },
   { id: "undead_knight", name: "Undead Knight", kind: "model", price: 350, model: "undeadKnight" },
   { id: "bone_colossus", name: "Bone Colossus", kind: "model", price: 600, model: "bossSkeleton" },
+  // Starter BODY variants (price 0 = always owned, never sold): the ♂/♀
+  // choice at character creation is just one of these equipped from day one.
+  { id: "knight_f", name: "Knight (Female)", kind: "model", price: 0, model: "knightF" },
+  { id: "warden_m", name: "Cleric (Male)", kind: "model", price: 0, model: "wardenM" },
+  { id: "reaper_b", name: "Reaper (Risen)", kind: "model", price: 0, model: "reaperB" },
+  { id: "necro_b", name: "Necromancer (Witch)", kind: "model", price: 0, model: "necroB" },
 ] as const;
 
 export function skinDef(id: string): SkinDef | undefined {
   return SKIN_CATALOG.find((s) => s.id === id);
 }
 
-/** All valid skin ids the shop sells (excludes the "" default). */
+/** Free body-variant skins: always owned, equippable by anyone, never sold. */
+export function isStarterSkin(id: string): boolean {
+  return skinDef(id)?.price === 0;
+}
+
+/** All valid skin ids the shop sells (excludes the "" default + starters). */
 export function isSellableSkin(id: string): boolean {
-  return SKIN_CATALOG.some((s) => s.id === id);
+  const def = skinDef(id);
+  return !!def && def.price > 0;
 }
