@@ -305,7 +305,7 @@
       "fallback": "/models/kaykit/characters/kaykit_knight.glb",
       "naturalHeight": 1.79117,
       "restMinY": -0.00312,
-      "assetVersion": "494d825a2af3",
+      "assetVersion": "a06d939bddb8",
       "strideNorm": {
         "walk": 0.83745,
         "run": 1.01034
@@ -339,7 +339,7 @@
       "fallback": "/models/kaykit/characters/kaykit_knight.glb",
       "naturalHeight": 1.78695,
       "restMinY": 0.0011,
-      "assetVersion": "495a7cbc9a06",
+      "assetVersion": "65b5c792c4f1",
       "strideNorm": {
         "walk": 0.96747,
         "run": 1.16719
@@ -373,7 +373,7 @@
       "fallback": "/models/kaykit/characters/kaykit_mage.glb",
       "naturalHeight": 1.79399,
       "restMinY": -0.00547,
-      "assetVersion": "f76a1eba5519",
+      "assetVersion": "c0ba4eb9c032",
       "strideNorm": {
         "walk": 0.96108,
         "run": 1.15949
@@ -407,7 +407,7 @@
       "fallback": "/models/kaykit/characters/kaykit_skeleton_warrior.glb",
       "naturalHeight": 1.83556,
       "restMinY": -0.00033,
-      "assetVersion": "c666af1d6a8b",
+      "assetVersion": "57124eaf886e",
       "strideNorm": {
         "walk": 0.96554,
         "run": 1.16487
@@ -441,7 +441,7 @@
       "fallback": "/models/kaykit/characters/kaykit_skeleton_warrior.glb",
       "naturalHeight": 1.62796,
       "restMinY": -0.00797,
-      "assetVersion": "2ad9a33bd938",
+      "assetVersion": "b83ec89ecea5",
       "strideNorm": {
         "walk": 0.95481,
         "run": 1.15192
@@ -475,7 +475,7 @@
       "fallback": "/models/kaykit/characters/kaykit_skeleton_minion.glb",
       "naturalHeight": 1.82552,
       "restMinY": -0.00033,
-      "assetVersion": "2d39821857e9",
+      "assetVersion": "968a60319853",
       "strideNorm": {
         "walk": 0.9655,
         "run": 1.16482

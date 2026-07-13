@@ -8,8 +8,13 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { SkeletonUtils } from "three-stdlib";
-import type { Group } from "three";
+import { Box3, Vector3, type Group } from "three";
 import { resolvePlayerModel } from "../../game/actors/useModel";
+
+/** Same normalization contract as the in-game AnimatedCharacter: scale the GLB
+ *  to a known height and plant its feet on y=0, so the fixed camera always
+ *  frames a full body no matter how each pack authored its rig. */
+const PREVIEW_HEIGHT = 1.7;
 
 function Hero({ url }: { url: string }) {
   const gltf = useGLTF(url);
@@ -18,6 +23,13 @@ function Hero({ url }: { url: string }) {
     c.traverse((o) => {
       o.castShadow = true;
     });
+    // Normalize: measure the rest pose, scale to PREVIEW_HEIGHT, foot-plant.
+    const box = new Box3().setFromObject(c);
+    const size = new Vector3();
+    box.getSize(size);
+    const scale = size.y > 0.0001 ? PREVIEW_HEIGHT / size.y : 1;
+    c.scale.setScalar(scale);
+    c.position.y = -box.min.y * scale;
     return c;
   }, [gltf.scene]);
   const { actions, names } = useAnimations(gltf.animations, clone);
@@ -63,7 +75,10 @@ export function CharacterPreview3D({ classId }: { classId: string }) {
       <Canvas
         shadows
         dpr={[1, 1.75]}
-        camera={{ position: [0, 1.15, 3.5], fov: 34 }}
+        // Aim at mid-torso (not the feet at the origin) so the whole
+        // normalized 1.7u body — head included — fits the frame.
+        camera={{ position: [0, 1.35, 3.9], fov: 34 }}
+        onCreated={({ camera }) => camera.lookAt(0, 0.85, 0)}
         gl={{ alpha: true, antialias: true }}
         style={{ background: "transparent" }}
       >

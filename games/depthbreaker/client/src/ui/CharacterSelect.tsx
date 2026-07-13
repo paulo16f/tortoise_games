@@ -242,7 +242,8 @@ function CreatePanel({
   const meta = CLASS_META[newClass];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ display: "flex", gap: 8 }}>
+      {/* All four class cards must fit: wrap + shrink instead of clipping. */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {CLASS_ORDER.map((id) => {
           const active = id === newClass;
           return (
@@ -292,7 +293,11 @@ function rosterRow(active: boolean): React.CSSProperties {
 
 function classCard(active: boolean): React.CSSProperties {
   return {
-    flex: 1,
+    // flex-basis 0 + minWidth lets four cards share the row evenly and shrink
+    // (the 4th card was clipped off the right edge before).
+    flex: "1 1 0",
+    minWidth: 96,
+    boxSizing: "border-box",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",

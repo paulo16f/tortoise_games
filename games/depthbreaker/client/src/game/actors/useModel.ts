@@ -43,19 +43,19 @@ const SYNTY_DB_SWORD = "/models/synty/depthbreaker/weapons/sword.glb";
 const SYNTY_DB_STAFF = "/models/synty/depthbreaker/weapons/staff.glb";
 
 /**
- * Weapon archetype -> held GLB. Only sword/staff are imported so far; the other
- * melee types fall back to the sword and casters to the staff until their
- * POLYGON Dungeon Realms models are exported (then it's one line each here).
+ * Weapon archetype -> held GLB. Each archetype now has its own POLYGON model
+ * (exported by Depthbreaker/Export Weapon GLBs). Bow keeps the staff fallback:
+ * no bow mesh exists in the owned packs yet.
  */
 const WEAPON_MODELS: Record<WeaponType, string> = {
   sword: SYNTY_DB_SWORD,
-  axe: SYNTY_DB_SWORD,
-  mace: SYNTY_DB_SWORD,
-  hammer: SYNTY_DB_SWORD,
-  dagger: SYNTY_DB_SWORD,
-  spear: SYNTY_DB_SWORD,
+  axe: "/models/synty/depthbreaker/weapons/axe.glb",
+  mace: "/models/synty/depthbreaker/weapons/mace.glb",
+  hammer: "/models/synty/depthbreaker/weapons/hammer.glb",
+  dagger: "/models/synty/depthbreaker/weapons/dagger.glb",
+  spear: "/models/synty/depthbreaker/weapons/spear.glb",
   staff: SYNTY_DB_STAFF,
-  wand: SYNTY_DB_STAFF,
+  wand: "/models/synty/depthbreaker/weapons/wand.glb",
   bow: SYNTY_DB_STAFF,
 };
 
