@@ -113,7 +113,7 @@ export class LocomotionController {
       const clipName = this.combatClip(inputs.combat.kind, inputs.combat.clip);
       const key = `${inputs.combat.kind}:${inputs.combat.clip ?? ""}:${inputs.combat.actionId ?? inputs.combat.kind}`;
       if (clipName && this.combatKey !== key) {
-        this.triggerOneShot(clipName);
+        this.triggerOneShot(clipName, inputs.combat.kind);
         this.combatKey = key;
       }
       if (clipName) targets.set(clipName, 1);
@@ -208,14 +208,21 @@ export class LocomotionController {
     }
   }
 
-  private triggerOneShot(name: string): void {
+  private triggerOneShot(name: string, kind: "attack" | "hit" | "death" = "attack"): void {
     const action = this.actions[name];
     if (!action) return;
     action.reset();
     action.setLoop(LoopOnce, 1);
     action.clampWhenFinished = true;
     action.enabled = true;
-    action.timeScale = 1;
+    // Fit the clip into the server's action window so it always COMPLETES
+    // instead of being chopped when the action ends: source packs author
+    // luxurious clips (heavy combo 2.1s, hit react 0.9s) but the server
+    // windows are snappy (~0.6s swing, 0.3s hit-react, 4s death). Speeding
+    // the clip up (never slowing it down) reads as a full, punchy motion.
+    const budget = kind === "hit" ? 0.34 : kind === "death" ? 3.5 : 0.62;
+    const duration = action.getClip().duration;
+    action.timeScale = Math.max(1, duration / budget);
     action.play();
   }
 

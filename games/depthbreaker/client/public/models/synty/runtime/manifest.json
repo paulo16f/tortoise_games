@@ -339,7 +339,7 @@
       "fallback": "/models/kaykit/characters/kaykit_knight.glb",
       "naturalHeight": 1.78695,
       "restMinY": 0.0011,
-      "assetVersion": "65b5c792c4f1",
+      "assetVersion": "5473ea3a49f1",
       "strideNorm": {
         "walk": 0.96747,
         "run": 1.16719
@@ -373,7 +373,7 @@
       "fallback": "/models/kaykit/characters/kaykit_mage.glb",
       "naturalHeight": 1.79399,
       "restMinY": -0.00547,
-      "assetVersion": "c0ba4eb9c032",
+      "assetVersion": "4ffbd7af0e06",
       "strideNorm": {
         "walk": 0.96108,
         "run": 1.15949

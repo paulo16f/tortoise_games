@@ -16,22 +16,31 @@ import { resolvePlayerModel } from "../../game/actors/useModel";
  *  frames a full body no matter how each pack authored its rig. */
 const PREVIEW_HEIGHT = 1.7;
 
-function Hero({ url }: { url: string }) {
+function Hero({ url, naturalHeight, restMinY }: { url: string; naturalHeight?: number; restMinY?: number }) {
   const gltf = useGLTF(url);
   const clone = useMemo(() => {
     const c = SkeletonUtils.clone(gltf.scene) as Group;
     c.traverse((o) => {
       o.castShadow = true;
     });
-    // Normalize: measure the rest pose, scale to PREVIEW_HEIGHT, foot-plant.
-    const box = new Box3().setFromObject(c);
-    const size = new Vector3();
-    box.getSize(size);
-    const scale = size.y > 0.0001 ? PREVIEW_HEIGHT / size.y : 1;
+    // Normalize with the MANIFEST's measured rest-pose metrics (same contract
+    // as AnimatedCharacter). Box3 on a skinned mesh reads the raw bind-pose
+    // geometry — on Synty rigs (~0.006 bone scale) that yields a giant model.
+    let height = naturalHeight;
+    let minY = restMinY;
+    if (height === undefined || minY === undefined) {
+      const box = new Box3().setFromObject(c);
+      const size = new Vector3();
+      box.getSize(size);
+      height = size.y;
+      minY = box.min.y;
+    }
+    let scale = height > 1e-3 ? PREVIEW_HEIGHT / height : 1;
+    if (!Number.isFinite(scale) || scale < 0.05 || scale > 50) scale = 1;
     c.scale.setScalar(scale);
-    c.position.y = -box.min.y * scale;
+    c.position.y = -minY * scale;
     return c;
-  }, [gltf.scene]);
+  }, [gltf.scene, naturalHeight, restMinY]);
   const { actions, names } = useAnimations(gltf.animations, clone);
   const spin = useRef<Group>(null);
 
@@ -69,7 +78,8 @@ function Plinth() {
 }
 
 export function CharacterPreview3D({ classId }: { classId: string }) {
-  const url = resolvePlayerModel(classId)?.url;
+  const model = resolvePlayerModel(classId);
+  const url = model?.url;
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <Canvas
@@ -88,7 +98,9 @@ export function CharacterPreview3D({ classId }: { classId: string }) {
         <directionalLight position={[-3, 2, -2]} intensity={0.8} color="#6f8dff" />
         <group position={[0, -0.02, 0]}>
           <Plinth />
-          <Suspense fallback={null}>{url && <Hero key={url} url={url} />}</Suspense>
+          <Suspense fallback={null}>
+            {url && <Hero key={url} url={url} naturalHeight={model?.naturalHeight} restMinY={model?.restMinY} />}
+          </Suspense>
         </group>
       </Canvas>
     </div>
