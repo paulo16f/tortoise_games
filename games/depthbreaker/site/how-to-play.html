@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How to Play — Depthbreaker</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <div class="logo">DEPTHBREAKER<span class="beta">BETA</span></div>
+  <nav>
+    <a href="how-to-play.html" class="active">How to Play</a>
+    <a href="docs.html">Docs</a>
+    <a class="btn-play small" id="play-top" href="#">PLAY</a>
+  </nav>
+</header>
+
+<main class="doc">
+  <aside class="toc">
+    <h3>Player guide</h3>
+    <a href="#start">Start Here</a>
+    <a href="#classes">Pick a Class</a>
+    <a href="#depth">The Depth</a>
+    <a href="#combat">Combat</a>
+    <a href="#gathering">Gathering &amp; Cooking</a>
+    <a href="#quests">Dailies &amp; Streaks</a>
+    <a href="#economy">Economy &amp; Trading</a>
+    <a href="#wheel">Fortune Wheel</a>
+  </aside>
+
+  <article>
+    <h1>HOW TO PLAY DEPTHBREAKER</h1>
+    <p class="muted">From your first login to breaking depth and trading — written for players, not developers.</p>
+
+    <h2 id="start">Start Here: Your First Run</h2>
+    <p>Play as a guest instantly, or register with email so your progress is safe anywhere. Pick a class, choose your champion's form (each class has two), name them, and <b>Enter World</b>.</p>
+    <ul>
+      <li><kbd>WASD</kbd> or click the ground to move. Click a monster to target it; press <kbd>1</kbd> to toggle auto-attack.</li>
+      <li>Skills sit on keys <kbd>1–0</kbd>. They unlock automatically as you level — check the Skill Book (<kbd>K</kbd>).</li>
+      <li>The market stall in the starting room buys your loot and sells potions and gear. Cooking station and bank are right there too.</li>
+    </ul>
+    <div class="tipbox">Tip: your health orb is bottom-left, XP orb bottom-right. If it turns red, run — dying is cheap but time is gold.</div>
+
+    <h2 id="classes">Pick a Class</h2>
+    <table>
+      <tr><th>Class</th><th>Role</th><th>Signature</th></tr>
+      <tr><td>Knight</td><td>Tank</td><td>Challenging Shout pulls every enemy onto you; Shield Wall blocks everything for 3s.</td></tr>
+      <tr><td>Reaper</td><td>Melee DPS</td><td>Soul Reap heals you for 70% of the damage; Rupture leaves them bleeding.</td></tr>
+      <tr><td>Cleric</td><td>Healer that kills</td><td>Smite + Holy Nova for damage, Renew heals the most wounded ally near you.</td></tr>
+      <tr><td>Necromancer</td><td>Ranged caster</td><td>Corruption rots them over time; Drain Life heals you from 12 meters away.</td></tr>
+    </table>
+    <p>All four classes are solo-viable. Every class has 7 skills.</p>
+
+    <h2 id="depth">The Depth</h2>
+    <p>The dungeon has a floor boss. Kill it and <b>the floor gives way — Depth +1</b>. Every depth makes enemies stronger <i>and richer</i>: more XP, more gold, better odds. How deep you go is the whole game.</p>
+    <div class="tipbox warn">Deeper enemies hit harder. Bring a group past Depth 3 — or be very good.</div>
+
+    <h2 id="combat">Combat</h2>
+    <ul>
+      <li>Auto-attack runs on a swing timer; skills weave between swings and share a global cooldown.</li>
+      <li>Elites and bosses telegraph a ground slam — <b>step out of the ring</b> or eat heavy damage.</li>
+      <li>Watch the boss portal timer in the top-left chip. When the boss walks out, the whole floor knows.</li>
+    </ul>
+
+    <h2 id="gathering">Gathering &amp; Cooking</h2>
+    <ul>
+      <li>Iron veins and crystal veins — click to mine (ore sells; crystal sells better).</li>
+      <li>Fishing spots — regular and deep. Cook raw fish at the stall's cooking station (<kbd>F</kbd>): cooked fish heals and sells for more.</li>
+      <li>Getting hit interrupts gathering. Clear the room first.</li>
+    </ul>
+
+    <h2 id="quests">Dailies &amp; Streaks</h2>
+    <p>Three daily quests rotate every day (mine X, slay X, reach depth X, cook X…). Claim in the quest panel (<kbd>J</kbd>). Claiming on consecutive days builds a <b>streak</b> that boosts the gold reward — don't break the chain.</p>
+
+    <h2 id="economy">Economy &amp; Trading</h2>
+    <p>Gold is earned by playing — kills (scaled by depth), dailies, selling loot and resources. Gold is spent on gear, potions, and cosmetic skins.</p>
+    <ul>
+      <li><b>Trading Post (<kbd>T</kbd>)</b> — the player market. List items from your bank at your price; other players buy them with gold.</li>
+      <li><b>💰 Gold tab</b> — list your gold for other players to buy. Purchases unlock with wallet linking (coming with the token).</li>
+      <li><b>Bank (<kbd>N</kbd>)</b> — persistent storage at the stall; survives every run. Tradable goods live here.</li>
+      <li>Daily gold earnings are capped per account — the economy stays fair for everyone.</li>
+    </ul>
+
+    <h2 id="wheel">Fortune Wheel</h2>
+    <p>One free spin every 24 hours (<kbd>G</kbd>). Twenty segments — most pay resources, one pays a fat stack of gold. It never costs anything to spin your free spin.</p>
+
+    <p class="muted" style="margin-top:36px">Want deeper detail? Open the <a href="docs.html">full documentation</a> — same topics, all the numbers.</p>
+  </article>
+</main>
+
+<footer>Depthbreaker — built by breakers, for breakers.</footer>
+<script>document.getElementById("play-top").href = "http://localhost:5184";</script>
+</body>
+</html>

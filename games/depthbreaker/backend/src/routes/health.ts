@@ -9,6 +9,19 @@ import { DEV_SESSION_SECRET, DEV_ZONE_SHARED_SECRET } from "../config.js";
 export function registerHealthRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { config, pool } = ctx;
 
+  // Public site stats (landing page counters). Cheap aggregates, no auth.
+  app.get("/api/stats", async (_request, reply) => {
+    const online = await ctx.pool.query<{ n: string }>(
+      "SELECT count(*) AS n FROM runs WHERE status = 'active' AND started_at > now() - interval '1 hour'",
+    );
+    const monthly = await ctx.pool.query<{ n: string }>(
+      `SELECT count(DISTINCT c.account_id) AS n FROM runs r
+       JOIN characters c ON c.id = r.character_id
+       WHERE r.started_at > now() - interval '30 days'`,
+    );
+    return reply.send({ online: Number(online.rows[0]?.n ?? 0), monthly: Number(monthly.rows[0]?.n ?? 0) });
+  });
+
   app.get("/api/health", async (_request, reply) => {
     const checks: Record<string, { ok: boolean; detail?: string }> = {};
 
