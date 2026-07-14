@@ -28,7 +28,10 @@ export function Minimap() {
     const ox = (SIZE - (maxX - minX) * scale) / 2 - minX * scale;
     const oz = (SIZE - (maxZ - minZ) * scale) / 2 - minZ * scale;
     const px = (x: number) => x * scale + ox;
-    const pz = (z: number) => z * scale + oz;
+    // Flip Z: world +Z is "south" on the top-down camera, but canvas Y grows
+    // downward — so the minimap read upside-down. Reflect Z around the map's
+    // Z span to align the minimap with the on-screen view.
+    const pz = (z: number) => (minZ + maxZ - z) * scale + oz;
 
     // The static base (walkable floor + stall/portal landmarks), drawn once.
     const base = document.createElement("canvas");
@@ -36,7 +39,8 @@ export function Minimap() {
     const g = base.getContext("2d")!;
     g.scale(2, 2);
     g.fillStyle = "rgba(148,163,184,0.28)";
-    for (const r of dungeon.walkable) g.fillRect(px(r.minX), pz(r.minZ), (r.maxX - r.minX) * scale, (r.maxZ - r.minZ) * scale);
+    // pz is Z-flipped, so maxZ is the top edge on screen.
+    for (const r of dungeon.walkable) g.fillRect(px(r.minX), pz(r.maxZ), (r.maxX - r.minX) * scale, (r.maxZ - r.minZ) * scale);
     // Market stall landmark (gold diamond).
     g.fillStyle = "#e8c874";
     const sx = px(dungeon.marketStall.x), sz = pz(dungeon.marketStall.z);
