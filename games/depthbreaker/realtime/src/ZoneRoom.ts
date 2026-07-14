@@ -28,6 +28,7 @@ import {
   type UseItemMessage,
   type UseSkillMessage,
   type GatherNodeMessage,
+  type FishHereMessage,
   type CraftMessage,
   type BuyItemMessage,
   type SellItemMessage,
@@ -50,6 +51,7 @@ import {
   DEPTHBREAKER_DUNGEON,
   buildDungeon,
   isDungeonWalkable,
+  nearestDungeonWalkablePoint,
   MARKET_STOCK,
   MARKET_RANGE,
   GATHER_RANGE,
@@ -349,6 +351,10 @@ export class ZoneRoom extends Room<ZoneState> {
 
     this.onMessage(CM.GatherNode, (client, message: GatherNodeMessage) => {
       this.gatherNode(client.sessionId, message?.nodeId ?? "");
+    });
+
+    this.onMessage(CM.FishHere, (client, message: FishHereMessage) => {
+      this.fishHere(client.sessionId, message?.x ?? 0, message?.z ?? 0);
     });
 
     this.onMessage(CM.Craft, (client, message: CraftMessage) => {
@@ -996,6 +1002,54 @@ export class ZoneRoom extends Room<ZoneState> {
       liveNode.depleted = true;
       this.nodeRespawns.set(nodeId, NODE_RESPAWN_SECONDS);
     });
+  }
+
+  /** Fish the open water on the island map. No node: the client sends a water
+   *  point; the server checks the player is on land, the point is water
+   *  (not walkable) within reach and adjacent to shore, then runs the fishing
+   *  cast. Deeper water (farther from land) yields better fish. */
+  private fishHere(playerId: string, x: number, z: number): void {
+    const rt = this.runtimes.get(playerId);
+    const p = this.state.players.get(playerId);
+    if (!rt || !p || !p.alive) return;
+    // Point must be WATER (off the walkable land) and within a short reach.
+    if (isDungeonWalkable(x, z, 0.3, this.dungeon)) return;
+    if (Math.hypot(x - p.x, z - p.z) > GATHER_RANGE) return;
+    // ...and near the shore: some land within ~5u of the target (no fishing
+    // in the deep middle of the ocean, only off the island's edge).
+    const shore = nearestDungeonWalkablePoint(x, z, 0.3, this.dungeon);
+    const distToShore = Math.hypot(shore.x - x, shore.z - z);
+    if (distToShore > 6) return;
+
+    const actionId = this.nextActionId();
+    this.facePlayerToPoint(p, x, z);
+    this.setAction(p, "skill", FISH_CAST_SECONDS + 0.4, playerId, actionId);
+    this.scheduleImpact(actionId, FISH_CAST_SECONDS, () => {
+      const source = this.state.players.get(playerId);
+      const liveRt = this.runtimes.get(playerId);
+      if (!source || !liveRt || !source.alive || !this.isCurrentAction(source, actionId)) return;
+      // Deeper water (>3u from shore) fishes like the old deep spot.
+      const deep = distToShore > 3;
+      const grants: { itemId: string; count: number }[] = deep
+        ? [{ itemId: "raw_cavefish", count: 1 }, ...(Math.random() < 0.25 ? [{ itemId: "raw_gilded_bass", count: 1 }] : [])]
+        : [{ itemId: "raw_minnow", count: 1 }, ...(Math.random() < 0.4 ? [{ itemId: "raw_cavefish", count: 1 }] : [])];
+      if (!this.bagHasRoomFor(liveRt.bag, grants[0]!.itemId)) return;
+      for (const grant of grants) {
+        const leftover = addStacked(liveRt.bag, BAG_CAPACITY, grant.itemId, grant.count);
+        const deposited = grant.count - leftover;
+        if (deposited > 0) {
+          const def = itemDef(grant.itemId);
+          this.broadcast(ServerMessage.LootEvent, { playerId: source.id, itemId: grant.itemId, rarity: def?.rarity ?? "" } as LootEventMessage);
+          this.bumpDaily(liveRt, "gather", grant.itemId, deposited);
+        }
+      }
+      this.syncBag(source, liveRt);
+    });
+  }
+
+  private facePlayerToPoint(p: PlayerState, x: number, z: number): void {
+    const dx = x - p.x, dz = z - p.z;
+    if (Math.hypot(dx, dz) > 1e-3) p.yaw = Math.atan2(dx, dz);
   }
 
   /** True when the player stands at the market stall. */

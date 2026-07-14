@@ -22,6 +22,8 @@ import { CookingStation } from "./CookingStation";
 import { Fountain } from "./Fountain";
 import { ClickMarker } from "./ClickMarker";
 import { RuntimeDungeon } from "./RuntimeDungeon";
+import { IslandMap } from "./IslandMap";
+import { USE_OFFICIAL_MAP } from "@depthbreaker/protocol";
 import { SunLight } from "./SunLight";
 import { DungeonGround } from "./DungeonGround";
 import { Effects } from "./Effects";
@@ -51,7 +53,13 @@ export function Scene() {
           rooms are ~90% fogged before they toggle, so no visible pop-in, but
           the playfield around the camera stays clearly lit (62 was too tight —
           it blacked out the screen edges under the top-down camera). */}
-      <fog attach="fog" args={["#08090c", 28, 80]} />
+      {/* Dungeon fog is tight (room cull); the open island needs a far, sky-
+          coloured fade so the terrain doesn't vanish 80u out. */}
+      {USE_OFFICIAL_MAP ? (
+        <fog attach="fog" args={["#9fc4e8", 120, 320]} />
+      ) : (
+        <fog attach="fog" args={["#08090c", 28, 80]} />
+      )}
 
       {/* Soft cool-over-warm fill instead of flat ambient. */}
       <hemisphereLight args={["#4a5a6a", "#181410", 0.35]} />
@@ -65,8 +73,14 @@ export function Scene() {
         <Lightformer intensity={0.35} color="#3a5f7a" position={[-12, 3, -8]} rotation={[0, Math.PI / 3, 0]} scale={[10, 10, 1]} />
       </Environment>
 
-      <DungeonGround />
-      <RuntimeDungeon />
+      {USE_OFFICIAL_MAP ? (
+        <IslandMap />
+      ) : (
+        <>
+          <DungeonGround />
+          <RuntimeDungeon />
+        </>
+      )}
       <DungeonClickPlane />
 
       {playerIds.map((id) => (

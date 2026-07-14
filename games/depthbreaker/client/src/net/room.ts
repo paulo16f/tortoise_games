@@ -351,6 +351,10 @@ class ZoneStore {
     this.room?.send(ClientMessage.GatherNode, payload);
   }
 
+  sendFishHere(x: number, z: number): void {
+    this.room?.send(ClientMessage.FishHere, { x, z });
+  }
+
   sendCraft(recipeId: string): void {
     const payload: CraftMessage = { recipeId };
     this.room?.send(ClientMessage.Craft, payload);

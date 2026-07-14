@@ -17,6 +17,7 @@ import {
   roomCountForDepth,
   type Room,
 } from "@depthbreaker/sim";
+import { buildOfficialMap } from "./officialMap.js";
 import type {
   DungeonMapDefinition,
   DungeonProp,
@@ -124,7 +125,20 @@ function tilesForRect(rect: Rect, tint: string, seen: Set<string>, out: DungeonV
  * deterministic: the same (seed, depth) always yields a deep-equal map, so the
  * server and client (which both import this one function) never disagree.
  */
+/** When true, every buildDungeon call returns the hand-built island map
+ *  (seed/depth ignored — one official world) instead of a procedural dungeon.
+ *  Server, client, and the navlib smokes all read buildDungeon, so this single
+ *  switch moves the whole game onto the island. */
+export const USE_OFFICIAL_MAP = true;
+
 export function buildDungeon(seed32: number, depth: number): DungeonMapDefinition {
+  if (USE_OFFICIAL_MAP) return buildOfficialMap();
+  return buildProceduralDungeon(seed32, depth);
+}
+
+/** The original seeded procedural dungeon (now a fallback behind the official
+ *  map switch). Kept fully tested — it's the generator, not dead code. */
+export function buildProceduralDungeon(seed32: number, depth: number): DungeonMapDefinition {
   const graph = generateDungeonFromSeed(seed32, roomCountForDepth(depth));
   // Separate substream for dressing (elite promotion, spawn jitter, props) so it
   // never disturbs the frozen graph replay.

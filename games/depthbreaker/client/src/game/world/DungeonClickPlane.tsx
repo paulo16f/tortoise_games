@@ -1,9 +1,13 @@
 import { useMemo } from "react";
 import { type ThreeEvent } from "@react-three/fiber";
-import { buildDungeon, nearestDungeonWalkablePoint, type DungeonMapDefinition } from "@depthbreaker/protocol";
+import { buildDungeon, isDungeonWalkable, nearestDungeonWalkablePoint, type DungeonMapDefinition } from "@depthbreaker/protocol";
 import { zoneStore } from "../../net/room";
 import { useZoneState } from "../../net/useZone";
 import { setClickDestination } from "../input/controls";
+
+// Extra margin so the click plane covers the water RING around the island —
+// clicking there fishes (the server validates shore + reach).
+const WATER_MARGIN = 40;
 
 function mapBounds(dungeon: DungeonMapDefinition) {
   const minX = Math.min(...dungeon.walkable.map((rect) => rect.minX));
@@ -13,8 +17,8 @@ function mapBounds(dungeon: DungeonMapDefinition) {
   return {
     centerX: (minX + maxX) / 2,
     centerZ: (minZ + maxZ) / 2,
-    width: maxX - minX,
-    depth: maxZ - minZ,
+    width: maxX - minX + WATER_MARGIN * 2,
+    depth: maxZ - minZ + WATER_MARGIN * 2,
   };
 }
 
@@ -28,6 +32,12 @@ export function DungeonClickPlane() {
     ev.stopPropagation();
     const targetId = zoneStore.state?.players.get(zoneStore.selfId)?.targetId ?? "";
     if (targetId) zoneStore.sendTarget("");
+    // Clicking open water (off the island) casts a fishing line — the server
+    // validates the player is on the shore within reach. Land clicks move.
+    if (!isDungeonWalkable(ev.point.x, ev.point.z, 0.3, dungeon)) {
+      zoneStore.sendFishHere(ev.point.x, ev.point.z);
+      return;
+    }
     const point = nearestDungeonWalkablePoint(ev.point.x, ev.point.z, 0.45, dungeon);
     setClickDestination(point.x, point.z);
   };

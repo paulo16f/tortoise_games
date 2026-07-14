@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { roomCountForDepth } from "@depthbreaker/sim";
-import { buildDungeon } from "../mapGen.js";
+import { buildProceduralDungeon as buildDungeon } from "../mapGen.js";
 import { isDungeonWalkable, isPointInRect, nearestDungeonWalkablePoint, type Rect, type Vec2 } from "../map.js";
 
 const SEEDS = [1, 555, 8675309, 4294967295];

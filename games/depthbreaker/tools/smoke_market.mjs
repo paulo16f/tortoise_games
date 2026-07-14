@@ -137,12 +137,10 @@ async function main() {
   await wait(400);
   check("sell rejected away from the stall", self.gold === goldBeforeFarSell && bagCount(self, "iron_ore") + bagCount(self, "crystal_shard") === oreAfter);
 
-  // Walk to the market stall and sell everything gathered.
-  const stallGuess = { x: 4, z: 3 }; // marketStall = start room center + (4,3); spawn ring ≈ center
-  const spawnRef = { x: 0, z: 0 };
-  // Derive the stall from the map definition the server used: playerSpawn is the
-  // room center; the run seed is in the welcome/state. Walk relative to origin.
-  await walkTo(room, self, spawnRef.x + stallGuess.x, spawnRef.z + stallGuess.z, 1.5);
+  // Walk to the market stall — read its real position from the seed-built map
+  // (navlib) instead of a hardcoded offset, so this survives any map.
+  const stall = navFor(room).dungeon.marketStall;
+  await walkTo(room, self, stall.x, stall.z, 1.5);
   const goldBefore = self.gold;
   let sold = 0;
   for (let guard = 0; guard < 40; guard++) {

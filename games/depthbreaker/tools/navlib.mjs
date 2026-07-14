@@ -8,7 +8,7 @@
 import { buildDungeon, isDungeonWalkable } from "@depthbreaker/protocol";
 
 const GRID = 0.5;
-const HALF = 200; // grid cells each side of origin (covers ±100 world units)
+const HALF = 620; // grid cells each side of origin (covers ±310 world units — the island map is ~±260)
 const RADIUS = 0.3;
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));

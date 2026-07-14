@@ -5,7 +5,26 @@
 // (heals more than bread). Fishing depletes the spot (35s respawn) like mining,
 // so we fish, wait out the respawn, fish again to afford a 2-fish recipe.
 import { Client } from "colyseus.js";
+import { isDungeonWalkable } from "@depthbreaker/protocol";
 import { makeNav } from "./navlib.mjs";
+
+// Find the shore water nearest `near`: a WATER point ~2u off the island whose
+// adjacent LAND cell you can stand on to fish (island map — no fishing nodes).
+function findShore(dungeon, near) {
+  let best = null, bestD = Infinity;
+  for (let x = -80; x <= 145; x += 1) {
+    for (let z = -230; z <= 135; z += 1) {
+      if (!isDungeonWalkable(x, z, 0.45, dungeon)) continue; // stand cell = land
+      for (const [dx, dz] of [[2, 0], [-2, 0], [0, 2], [0, -2]]) {
+        const wx = x + dx, wz = z + dz;
+        if (isDungeonWalkable(wx, wz, 0.3, dungeon)) continue; // must be water
+        const d = Math.hypot(x - near.x, z - near.z);
+        if (d < bestD) { bestD = d; best = { stand: { x, z }, water: { x: wx, z: wz } }; }
+      }
+    }
+  }
+  return best;
+}
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:3100";
 const REALTIME_URL = process.env.REALTIME_URL ?? "ws://localhost:2667";
@@ -43,14 +62,16 @@ function navFor(room) {
   return _navs.get(room);
 }
 
-// Fish a node until it yields (or times out): walk in range, send gather, wait
-// out the ~2.2s cast, retry after respawn if depleted.
-async function fishOnce(room, self, node, label) {
-  const before = bagCount(self, "raw_minnow") + bagCount(self, "raw_cavefish") + bagCount(self, "raw_gilded_bass");
-  await walkTo(room, self, node.x, node.z, 2.4);
-  room.send("gatherNode", { nodeId: node.id });
-  await wait(2600); // 2.2s fish cast + margin
-  const after = bagCount(self, "raw_minnow") + bagCount(self, "raw_cavefish") + bagCount(self, "raw_gilded_bass");
+const rawFish = (self) => bagCount(self, "raw_minnow") + bagCount(self, "raw_cavefish") + bagCount(self, "raw_gilded_bass");
+
+// Fish the open water: stand on the shore, click a nearby water point, wait the
+// cast. No node/depletion — the water is always fishable.
+async function fishOnce(room, self, shore, label) {
+  const before = rawFish(self);
+  await walkTo(room, self, shore.stand.x, shore.stand.z, 1.2);
+  room.send("fishHere", { x: shore.water.x, z: shore.water.z });
+  await wait(2600); // fish cast + margin
+  const after = rawFish(self);
   check(label, after > before, `raw fish ${before}->${after}`);
 }
 
@@ -66,30 +87,25 @@ async function main() {
   const self = await waitFor(() => room.state?.players?.get(room.sessionId), "self");
   await wait(400);
 
-  // The guaranteed town pond.
-  const pond = (() => { let p = null; room.state.nodes.forEach((n) => { if (n.id === "fish-town") p = n; }); return p; })();
-  check("town fishing pond exists in the map", !!pond, pond ? `kind=${pond.kind}` : "missing");
-  if (!pond) { await room.leave(); process.exitCode = 1; return; }
+  // Island fishing: find the shore water nearest spawn and cast there.
+  const dungeon = navFor(room).dungeon;
+  const shore = findShore(dungeon, self);
+  check("found a fishable shore near spawn", !!shore, shore ? `stand (${shore.stand.x},${shore.stand.z}) water (${shore.water.x},${shore.water.z})` : "none");
+  if (!shore) { await room.leave(); process.exitCode = 1; return; }
 
-  // Fish once — raw fish lands in the bag.
-  await fishOnce(room, self, pond, "fishing the pond yields raw fish");
-  check("pond depleted after fishing", room.state.nodes.get(pond.id)?.depleted === true);
-
-  // Cooking is refused without enough ingredients (need 2 raw_minnow).
-  const stationX = self.x, stationZ = self.z; // remember for later; station derived below
-  const minnowsBefore = bagCount(self, "raw_minnow");
-  if (minnowsBefore < 2) {
-    // Wait out the respawn and fish again to afford cook_minnow.
-    await waitFor(() => room.state.nodes.get(pond.id)?.depleted === false, "pond respawn", 45000);
-    await fishOnce(room, self, pond, "pond respawns and can be fished again");
+  // Fish the water — raw fish lands in the bag. No depletion; fish until we have
+  // 2 minnows for a recipe (retry a few casts; shallow water gives minnows).
+  await fishOnce(room, self, shore, "fishing the shore yields raw fish");
+  for (let i = 0; i < 6 && bagCount(self, "raw_minnow") < 2; i++) {
+    room.send("fishHere", { x: shore.water.x, z: shore.water.z });
+    await wait(2600);
   }
   const minnows = bagCount(self, "raw_minnow");
   check("have >=2 raw minnows to cook", minnows >= 2, `minnows=${minnows}`);
 
-  // Walk to the cooking station (spawn + (-4,+3); spawn ~ ring center near origin).
-  // Derive it from where we are: the pond is spawn+(-5,-4); station is spawn+(-4,+3).
-  // Simpler: the station sits ~7u from the pond — just walk toward spawn area +.
-  await walkTo(room, self, pond.x + 1, pond.z + 7, 3.0); // toward the town center/station cluster
+  // Walk to the cooking station (read from the map; long town crossing).
+  const station = dungeon.cookingStation;
+  await walkTo(room, self, station.x, station.z, 2.5, 40000);
   await wait(200);
   // Cook a minnow meal.
   const cookedBefore = bagCount(self, "cooked_minnow");

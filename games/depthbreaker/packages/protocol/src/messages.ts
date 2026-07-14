@@ -19,6 +19,9 @@ export const ClientMessage = {
   UseItem: "useItem",
   /** Gather a mining/fishing node (short server-side cast; range-checked). */
   GatherNode: "gatherNode",
+  /** Fish the open water at a point (island map — no fishing nodes; the server
+   *  validates the point is water, near shore, and within reach). */
+  FishHere: "fishHere",
   /** Cook a recipe at the cooking station (server-validated bag math). */
   Craft: "craft",
   /** Buy an item from the market stall (server-priced; range-checked). */
@@ -108,6 +111,12 @@ export interface EquipWeaponMessage {
 export interface UseItemMessage {
   /** Bag slot index of the consumable to use. */
   index: number;
+}
+
+export interface FishHereMessage {
+  /** World-space water point the player clicked (server validates it). */
+  x: number;
+  z: number;
 }
 
 export interface GatherNodeMessage {
