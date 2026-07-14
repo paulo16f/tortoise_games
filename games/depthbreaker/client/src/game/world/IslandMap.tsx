@@ -33,10 +33,12 @@ export function IslandMap() {
   const dwarfAtlas = useTexture(DWARF_ATLAS_URL);
   const [align, setAlign] = useState<Align | null>(null);
 
-  // Solve the GLB→world transform from marker empties baked into the GLB. Uses
-  // as many anchors as are present (spawn, boss, stall, the three zone centres)
-  // and AVERAGES the offset so no single mis-placed marker skews it — this is
-  // what tightens the grid-vs-floor registration.
+  // Solve the GLB→world transform from marker empties baked into the GLB, and
+  // AVERAGE the offset over several so no single one skews it. CRITICAL: every
+  // anchor's `world` must be the RAW marker position (playerSpawn/bossPortal/zone
+  // centres are markers). Do NOT use d.marketStall/cookingStation here — those are
+  // snapped to the CABIN meshes (~11u off the Stall_Market marker) and would shift
+  // the whole visual map ~1–2u ("colliders sit right of the objects").
   const solved = useMemo<Align | null>(() => {
     const d = buildDungeon(1, 0);
     const roomCenter = (id: string) => {
@@ -46,7 +48,6 @@ export function IslandMap() {
     const anchorDefs: { world: { x: number; z: number } | null; glb: string }[] = [
       { world: d.playerSpawn, glb: "Spawn_Town" },
       { world: d.bossPortal, glb: "Boss_Area1" },
-      { world: d.marketStall, glb: "Stall_Market" },
       { world: roomCenter("normal"), glb: "Zone_Area1" },
       { world: roomCenter("elite"), glb: "Zone_Area2" },
       { world: roomCenter("boss"), glb: "Zone_Area3" },
