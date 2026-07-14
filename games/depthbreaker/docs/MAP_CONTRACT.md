@@ -85,3 +85,47 @@ and stay).
 Notes: user's level bands are 1-10 / 10-20 / 30-40 (as specified — the 20-30
 gap is presumably future Area 2.5 or intentional difficulty jump; confirm
 before implementing gates).
+
+---
+
+## Naming convention — how the export auto-classifies meshes (BETA pipeline)
+
+The map is definitive but a **beta**: a teammate keeps adding meshes. Nothing
+needs hand-wiring per mesh — the Unity exporter (`games/map/Assets/Editor/
+DepthbreakerMapExport.cs`) classifies **by mesh name**, then `npm run sync:map`
+distils it. Keep names in these buckets and re-export; new geometry just works.
+
+**Walkable floor** — name contains `Floor` / `Path` / `Platform` / `Bridge` /
+`Stair`. The player stands on the **lowest** up-facing floor per cell, so they
+walk *under* arches/overhangs and *on* the ground. A **`Bridge`** deck is the
+exception: where a bridge covers a cell you walk **on** the deck (the ground
+around it stays walkable, so a low crossing never disappears).
+
+**Collision** (player can't pass; per-cell body-height test, so wall **openings/
+doorways stay open**) — name contains `Wall` `Pillar` `Rock` `Cliff` `Tree`
+`Birch` `Trunk` `Bramble` `Bush` `Crystal` `Well` `Statue` `Brazier` `Barrel`
+`Crate` `Chest` `Column` `Obelisk` `Fence` `Balustrade` `Rubble` `Forge`
+`Smelter` `Anvil` `Gate` `Building` `Market` `Duct` `Boulder`, or any solid
+`Lava*` **structure**. NOT obstacles: `Bridge`/`Stair`/arch **spans** (you pass
+under/over them) — their support pillars still block via `Pillar`.
+
+**Hazard** — the lava **plane** only (`*Lava*Plane*`): non-walkable, you can't
+stand on it. Solid lava structures (ducts, pillars) collide like any obstacle.
+
+**Functional objects = the map's OWN buildings** (no procedural model rendered):
+- **Fountain / heal safe-zone** → the stone circle at the `Spawn_Town` empty.
+- **Market** (sell resources) → the `weapon_market` cabin mesh.
+- **Cooking** (cook fish) → the `BakeryMarket` cabin mesh.
+The client hides its placeholder basin/chest/campfire and puts the interaction
+on the building. Keep these mesh names stable, or update the `featureCentre`
+map in `tools/build_official_map.mjs`.
+
+**Marker empties** (leaf transforms, exported as points): `Spawn_Town`,
+`Zone_Area{1,2,3}`, `Boss_Area{1,2,3}`, `Coliseum_Center`, `Stall_Market`,
+`Node_{Iron|Crystal|Fish}_NN`. Add more with the same prefixes.
+
+**Round trip:** teammate edits the scene → `Depthbreaker ▸ Export Map` in Unity
+→ `npm run sync:map` → the game reflects it (walkability, collision, features,
+markers). Textures: Synty atlases mostly embed; a few materials (the dwarven
+walls, `HighLevelFloor`) are re-tinted/re-atlased client-side in `IslandMap.tsx`
+because the FBX→glTF chain drops their base-colour link.

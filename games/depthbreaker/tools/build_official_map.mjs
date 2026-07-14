@@ -30,12 +30,59 @@ const boundRects = layout.meshes
     maxZ: +(m.cz + m.sz / 2).toFixed(2),
   }));
 
+// --- Obstacle footprints — the player COLLIDES with these (footprint carved
+// from walkability). ONLY solid, opening-free shapes go here (columns + compact
+// buildings): a rectangular AABB fills the doorway of a wall and over-blocks an
+// angled cliff, so WALLS and ROCKS are handled precisely per-cell by the Unity
+// exporter's obstacle raycast instead (needs a re-export). Bridges/stairs are
+// walkable. A small inset avoids nibbling the neighbouring floor. ---
+const isObstacle = (name, top) =>
+  top > 4 &&
+  /stone_pillar|dwarf_pillar|rubble_pillar|vegetablemarket|bakerymarket|weapon_market|blacksmith|dwarf_forge|smelter|anvil/i.test(name) &&
+  !/floor|bridge|stair|path|alcove|wall/i.test(name);
+const INSET = 0.35;
+const blockRects = layout.meshes
+  .filter((m) => isObstacle(m.name, m.cy + m.sy / 2))
+  .map((m) => ({
+    minX: +(m.cx - m.sx / 2 + INSET).toFixed(2),
+    maxX: +(m.cx + m.sx / 2 - INSET).toFixed(2),
+    minZ: +(m.cz - m.sz / 2 + INSET).toFixed(2),
+    maxZ: +(m.cz + m.sz / 2 - INSET).toFixed(2),
+  }))
+  .filter((r) => r.maxX > r.minX && r.maxZ > r.minZ);
+
 // --- Markers ---
 const markers = {};
 for (const mk of layout.markers) {
   if (/light|camera/i.test(mk.name)) continue;
   markers[mk.name] = { x: +mk.x.toFixed(2), z: +mk.z.toFixed(2) };
 }
+
+// --- Feature anchors (by MESH name) — the game's functional objects ARE the
+// map's own buildings: market = weapon_market cabin, cooking = BakeryMarket
+// cabin. We emit their footprint centre; the client hides its procedural model
+// and puts the interaction there. (Fountain = the stone circle at Spawn_Town.) ---
+const featureCentre = (re) => {
+  const m = layout.meshes.find((mm) => re.test(mm.name));
+  return m ? { x: +m.cx.toFixed(2), z: +m.cz.toFixed(2) } : null;
+};
+const features = {};
+const market = featureCentre(/weapon_market/i);
+const cooking = featureCentre(/bakerymarket/i);
+if (market) features.market = market;
+if (cooking) features.cooking = cooking;
+
+// --- Lava hazard: the raycast hits a lava-BED floor (~1.5) under the plane, so
+// those cells read walkable. Carve them out — but only the LOW cells (< 2.5),
+// so a floor/bridge crossing above the lava stays walkable. ---
+const lavaRects = layout.meshes
+  .filter((m) => /lava/i.test(m.name))
+  .map((m) => ({ minX: m.cx - m.sx / 2, maxX: m.cx + m.sx / 2, minZ: m.cz - m.sz / 2, maxZ: m.cz + m.sz / 2 }));
+const inLava = (x, z) => lavaRects.some((r) => x >= r.minX && x <= r.maxX && z >= r.minZ && z <= r.maxZ);
+// The lava BED (raycast surface) sits at ~1.5, the lava plane at 1.8; real floor
+// in the same region is 2.5+. Carve only cells at/below the lava (< 2.0) so the
+// south floor inside the lava's big AABB is NOT removed.
+const LAVA_MAX_Y = 2.0;
 
 // --- Walkability + height grid → packed base64 ---
 const cols = grid.cols, rows = grid.rows, n = cols * rows;
@@ -46,11 +93,14 @@ const HEIGHT_Q = 4; // 0.25u resolution
 const bits = new Uint8Array(Math.ceil(n / 8));
 // Height: uint8 = round(h * HEIGHT_Q), clamped. Non-walkable cells store 0.
 const hbytes = new Uint8Array(n);
-let walkCount = 0;
+let walkCount = 0, lavaCarved = 0;
 for (let i = 0; i < n; i++) {
   if (walkStr[i] === "1") {
-    bits[i >> 3] |= 1 << (i & 7);
     const h = parseFloat(heightArr[i]);
+    const gx = i % cols, gz = (i - gx) / cols;
+    const wx = grid.originX + gx * grid.cell, wz = grid.originZ + gz * grid.cell;
+    if (Number.isFinite(h) && h < LAVA_MAX_Y && inLava(wx, wz)) { lavaCarved++; continue; } // walking on lava
+    bits[i >> 3] |= 1 << (i & 7);
     hbytes[i] = Math.max(0, Math.min(255, Math.round((Number.isFinite(h) ? h : 0) * HEIGHT_Q)));
     walkCount++;
   }
@@ -65,8 +115,16 @@ import type { Rect, Vec2 } from "./map.js";
  *  plane). Walkability comes from WALK_GRID, not these. */
 export const BOUND_RECTS: readonly Rect[] = ${JSON.stringify(boundRects)};
 
+/** Obstacle footprints (walls, pillars, buildings, railings) subtracted from
+ *  walkability — the player collides with these instead of walking through. */
+export const BLOCK_RECTS: readonly Rect[] = ${JSON.stringify(blockRects)};
+
 /** Authored scene markers (spawn, zones, bosses, node anchors, stall). */
 export const MAP_MARKERS: Readonly<Record<string, Vec2>> = ${JSON.stringify(markers)};
+
+/** Feature anchors keyed off the map's own building meshes — the functional
+ *  market/cooking objects sit on these (client hides its procedural model). */
+export const MAP_FEATURES: Readonly<Record<string, Vec2>> = ${JSON.stringify(features)};
 
 /** Raycast walkability + surface height. \`bits\` is a 1-bit-per-cell walkable
  *  mask; \`height\` is uint8 = surfaceY * ${HEIGHT_Q} (0.25u steps) per walkable
@@ -84,4 +142,4 @@ export const WALK_GRID = {
 `;
 
 writeFileSync(resolve(root, "packages/protocol/src/officialMapData.ts"), out);
-console.log(`officialMapData.ts: ${boundRects.length} bound rects, ${Object.keys(markers).length} markers, grid ${cols}x${rows} (${walkCount} walkable)`);
+console.log(`officialMapData.ts: ${boundRects.length} bound rects, ${blockRects.length} block rects, ${Object.keys(markers).length} markers, grid ${cols}x${rows} (${walkCount} walkable, ${lavaCarved} lava-carved)`);

@@ -8,7 +8,7 @@ import { type ThreeEvent } from "@react-three/fiber";
 import { Billboard, Text, useGLTF } from "@react-three/drei";
 import { SkeletonUtils } from "three-stdlib";
 import type { Group } from "three";
-import { buildDungeon } from "@depthbreaker/protocol";
+import { buildDungeon, groundHeightAt, USE_OFFICIAL_MAP } from "@depthbreaker/protocol";
 import { useZoneState } from "../../net/useZone";
 import { localPlayerPos } from "../entityRefs";
 import { setClickDestination } from "../input/controls";
@@ -20,7 +20,11 @@ const OPEN_RANGE = 5; // client-side convenience; server enforces 6 on transacti
 
 export function MarketStall() {
   const snap = useZoneState();
-  const stall = useMemo(() => buildDungeon(snap.seed, snap.depth).marketStall, [snap.seed, snap.depth]);
+  const stall = useMemo(() => {
+    const d = buildDungeon(snap.seed, snap.depth);
+    const s = d.marketStall;
+    return { x: s.x, y: groundHeightAt(s.x, s.z, d), z: s.z };
+  }, [snap.seed, snap.depth]);
   const crate = useGLTF(DUNGEON_ASSETS.crate);
   const chest = useGLTF(DUNGEON_ASSETS.chest_open);
   const group = useRef<Group>(null);
@@ -60,9 +64,15 @@ export function MarketStall() {
   };
 
   return (
-    <group ref={group} position={[stall.x, 0, stall.z]}>
-      <primitive object={crateClone} scale={5.5} />
-      <primitive object={chestClone} position={[0.9, 0, 0.4]} rotation={[0, -0.6, 0]} scale={2.6} />
+    <group ref={group} position={[stall.x, stall.y, stall.z]}>
+      {/* On the official map the weapon_market cabin IS the stall — hide the
+          placeholder crate/chest and keep just the label + click hit-plane. */}
+      {!USE_OFFICIAL_MAP && (
+        <>
+          <primitive object={crateClone} scale={5.5} />
+          <primitive object={chestClone} position={[0.9, 0, 0.4]} rotation={[0, -0.6, 0]} scale={2.6} />
+        </>
+      )}
       <Billboard position={[0, 2.4, 0]}>
         <Text fontSize={0.42} color="#fbbf24" outlineWidth={0.02} outlineColor="#000000">
           Market

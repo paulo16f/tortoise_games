@@ -17,6 +17,7 @@ import { setGameCursor } from "../cursors";
 import { startCastBar } from "../../ui/CastBar";
 import { GATHER_CAST_SECONDS, FISH_CAST_SECONDS } from "@depthbreaker/protocol";
 import { DUNGEON_ASSETS } from "./syntyDungeonAssets";
+import { groundY } from "./groundMap";
 import { spawnImpactBurst } from "../fx/ImpactFx";
 import { playGather } from "../fx/sfx";
 
@@ -148,7 +149,7 @@ export function ResourceNode({ id }: { id: string }) {
   };
 
   return (
-    <group ref={group} position={[node.x, 0, node.z]}>
+    <group ref={group} position={[node.x, groundY(node.x, node.z), node.z]}>
       <group ref={modelGroup}>
         <primitive object={clone} scale={style.scale} />
       </group>

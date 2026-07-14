@@ -8,7 +8,7 @@ import { type ThreeEvent } from "@react-three/fiber";
 import { Billboard, Text, useGLTF } from "@react-three/drei";
 import { SkeletonUtils } from "three-stdlib";
 import type { Group } from "three";
-import { buildDungeon } from "@depthbreaker/protocol";
+import { buildDungeon, groundHeightAt, USE_OFFICIAL_MAP } from "@depthbreaker/protocol";
 import { useZoneState } from "../../net/useZone";
 import { localPlayerPos } from "../entityRefs";
 import { setClickDestination } from "../input/controls";
@@ -20,7 +20,11 @@ const OPEN_RANGE = 5; // client-side convenience; server enforces 6 on crafts
 
 export function CookingStation() {
   const snap = useZoneState();
-  const station = useMemo(() => buildDungeon(snap.seed, snap.depth).cookingStation, [snap.seed, snap.depth]);
+  const station = useMemo(() => {
+    const d = buildDungeon(snap.seed, snap.depth);
+    const s = d.cookingStation;
+    return { x: s.x, y: groundHeightAt(s.x, s.z, d), z: s.z };
+  }, [snap.seed, snap.depth]);
   const campfire = useGLTF(DUNGEON_ASSETS.campfire);
   const group = useRef<Group>(null);
 
@@ -51,8 +55,10 @@ export function CookingStation() {
   };
 
   return (
-    <group ref={group} position={[station.x, 0, station.z]}>
-      <primitive object={campfireClone} scale={3.2} />
+    <group ref={group} position={[station.x, station.y, station.z]}>
+      {/* On the official map the BakeryMarket cabin IS the cooking station —
+          hide the placeholder campfire, keep the label + click hit-plane. */}
+      {!USE_OFFICIAL_MAP && <primitive object={campfireClone} scale={3.2} />}
       {/* Warm firelight so the station reads at a glance. */}
       <pointLight position={[0, 1.1, 0]} color="#ff9d5c" intensity={5} distance={7} decay={2} />
       <Billboard position={[0, 2.2, 0]}>

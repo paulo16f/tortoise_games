@@ -7,6 +7,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh, MeshBasicMaterial } from "three";
 import { controlState } from "../input/controls";
+import { groundY } from "./groundMap";
 
 const PULSE_SECONDS = 0.6;
 
@@ -25,7 +26,7 @@ export function ClickMarker() {
     if (dest && lastDest.current !== dest) {
       lastDest.current = dest;
       bornAt.current = performance.now();
-      m.position.set(dest.x, 0.06, dest.z);
+      m.position.set(dest.x, groundY(dest.x, dest.z) + 0.06, dest.z);
     }
     if (!lastDest.current) {
       m.visible = false;

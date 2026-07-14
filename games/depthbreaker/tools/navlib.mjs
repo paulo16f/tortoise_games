@@ -28,9 +28,13 @@ export function makeNav(room) {
     const s = [Math.round(fromX / GRID), Math.round(fromZ / GRID)];
     const t = [Math.round(toX / GRID), Math.round(toZ / GRID)];
     const prev = new Map([[key(...s), null]]);
+    // Head-index queue (not q.shift(), which is O(n) → O(n²) BFS): the official
+    // island is ~120k cells at this 0.5u grid, so a shift-based flood to a far
+    // node overruns the walk timeout and falls back to a stuck straight line.
     const q = [s];
-    while (q.length) {
-      const [x, z] = q.shift();
+    let head = 0;
+    while (head < q.length) {
+      const [x, z] = q[head++];
       if (Math.abs(x - t[0]) + Math.abs(z - t[1]) <= 3) {
         const path = [];
         let cur = key(x, z);

@@ -5,7 +5,8 @@
 // busy fight never re-renders React for dot movement).
 
 import { useEffect, useMemo, useRef } from "react";
-import { buildDungeon } from "@depthbreaker/protocol";
+import { buildDungeon, isDungeonWalkable } from "@depthbreaker/protocol";
+import { ARPG_CAMERA } from "../game/world/cameraPreset";
 import { zoneStore } from "../net/room";
 import { useZoneState } from "../net/useZone";
 
@@ -27,20 +28,33 @@ export function Minimap() {
     const scale = SIZE / Math.max(maxX - minX + PAD * 2, maxZ - minZ + PAD * 2);
     const ox = (SIZE - (maxX - minX) * scale) / 2 - minX * scale;
     const oz = (SIZE - (maxZ - minZ) * scale) / 2 - minZ * scale;
-    const px = (x: number) => x * scale + ox;
-    // Flip Z: world +Z is "south" on the top-down camera, but canvas Y grows
-    // downward — so the minimap read upside-down. Reflect Z around the map's
-    // Z span to align the minimap with the on-screen view.
+    // Orient to the fixed Diablo camera (yaw = π: it looks toward +Z with world
+    // +X on the LEFT of the screen). So minimap "up" = world +Z (flip Z, since
+    // canvas Y grows down) and minimap "right" = world −X (flip X). Both dots
+    // and the base go through px/pz, so everything shares this projection.
+    const flipX = ARPG_CAMERA.yaw === Math.PI;
+    const px = (x: number) => (flipX ? (minX + maxX - x) : x) * scale + ox;
     const pz = (z: number) => (minZ + maxZ - z) * scale + oz;
 
-    // The static base (walkable floor + stall/portal landmarks), drawn once.
+    // The static base — the REAL walkable footprint (the same grid the player
+    // walks), sampled cell-by-cell so the minimap silhouette matches the world
+    // instead of coarse floor-slab boxes. Drawn once.
     const base = document.createElement("canvas");
     base.width = base.height = SIZE * 2; // 2x for crispness
     const g = base.getContext("2d")!;
     g.scale(2, 2);
-    g.fillStyle = "rgba(148,163,184,0.28)";
-    // pz is Z-flipped, so maxZ is the top edge on screen.
+    // Dim base: the whole floor extent (slab footprints) so non-walkable zones
+    // (lava, blocked interiors) still read as "map, hazard" instead of a hole.
+    g.fillStyle = "rgba(120,110,95,0.30)";
     for (const r of dungeon.walkable) g.fillRect(px(r.minX), pz(r.maxZ), (r.maxX - r.minX) * scale, (r.maxZ - r.minZ) * scale);
+    // Bright overlay: the actual walkable ground the player can stand on.
+    g.fillStyle = "rgba(170,185,205,0.55)";
+    const dot = Math.max(1, scale * 1.7); // overlap adjacent cells → no gaps
+    for (let x = Math.floor(minX); x <= Math.ceil(maxX); x++) {
+      for (let z = Math.floor(minZ); z <= Math.ceil(maxZ); z++) {
+        if (isDungeonWalkable(x, z, 0.1, dungeon)) g.fillRect(px(x) - dot / 2, pz(z) - dot / 2, dot, dot);
+      }
+    }
     // Market stall landmark (gold diamond).
     g.fillStyle = "#e8c874";
     const sx = px(dungeon.marketStall.x), sz = pz(dungeon.marketStall.z);

@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Billboard, Text } from "@react-three/drei";
 import type { Group } from "three";
 import { useZoneState } from "../../net/useZone";
+import { groundY } from "./groundMap";
 
 export function BossPortal() {
   const snap = useZoneState();
@@ -16,7 +17,7 @@ export function BossPortal() {
   if (!portal.active) return null;
 
   return (
-    <group ref={group} position={[portal.x, 0.08, portal.z]}>
+    <group ref={group} position={[portal.x, groundY(portal.x, portal.z) + 0.08, portal.z]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.2, 1.8, 48]} />
         <meshStandardMaterial color="#7c3aed" emissive="#7c3aed" emissiveIntensity={2.2} transparent opacity={0.82} />

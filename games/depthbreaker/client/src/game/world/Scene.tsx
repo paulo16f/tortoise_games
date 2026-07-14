@@ -23,6 +23,7 @@ import { Fountain } from "./Fountain";
 import { ClickMarker } from "./ClickMarker";
 import { RuntimeDungeon } from "./RuntimeDungeon";
 import { IslandMap } from "./IslandMap";
+import { DebugWalkGrid } from "./DebugWalkGrid";
 import { USE_OFFICIAL_MAP } from "@depthbreaker/protocol";
 import { SunLight } from "./SunLight";
 import { DungeonGround } from "./DungeonGround";
@@ -81,6 +82,7 @@ export function Scene() {
           <RuntimeDungeon />
         </>
       )}
+      {USE_OFFICIAL_MAP && <DebugWalkGrid />}
       <DungeonClickPlane />
 
       {playerIds.map((id) => (
