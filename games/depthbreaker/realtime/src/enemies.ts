@@ -110,6 +110,41 @@ export const BOSS_BRUTE: EnemyDef = {
   special: { interval: 6, windup: 0.85, recovery: 0.6, radius: 4.6, damage: 34 },
 };
 
+// --- Per-area rosters (Milestone 2) ------------------------------------------
+// Each of the three town-ringing areas has its own minion / elite / boss, scaled
+// by its level band, plus a Coliseum world boss. Ids are themed so distinct
+// meshes drop in later (client ENEMY_MODELS) — today they reuse the skeleton /
+// undead-knight / boss-skeleton meshes. Stats scale off the base archetypes so
+// combat tuning stays in one place.
+function scaled(base: EnemyDef, id: string, mult: number, level: number): EnemyDef {
+  return {
+    ...base,
+    id,
+    level,
+    maxHp: Math.round(base.maxHp * mult),
+    attackDamage: Math.round(base.attackDamage * mult),
+    xpValue: Math.round(base.xpValue * mult),
+    currencyValue: Math.round(base.currencyValue * mult),
+    special: base.special ? { ...base.special, damage: Math.round(base.special.damage * mult) } : undefined,
+  };
+}
+
+export interface AreaRoster {
+  minion: EnemyDef;
+  elite: EnemyDef;
+  boss: EnemyDef;
+}
+
+/** Indexed by area (0 = Area 1 … 2 = Area 3). Bands ≈ Lv 1-10 / 10-20 / 30-40. */
+export const AREA_ROSTERS: AreaRoster[] = [
+  { minion: scaled(GRUNT, "goblin", 1.0, 4), elite: scaled(ELITE_GRUNT, "goblin_warrior", 1.0, 7), boss: scaled(BOSS_BRUTE, "goblin_warchief", 1.0, 10) },
+  { minion: scaled(GRUNT, "skeleton_soldier", 2.2, 14), elite: scaled(ELITE_GRUNT, "skeleton_knight", 2.3, 17), boss: scaled(BOSS_BRUTE, "skeleton_lord", 2.6, 20) },
+  { minion: scaled(GRUNT, "demon_imp", 5.0, 32), elite: scaled(ELITE_GRUNT, "demon_brute", 5.4, 36), boss: scaled(BOSS_BRUTE, "demon_lord", 6.0, 40) },
+];
+
+/** The Coliseum arena's world boss — the toughest single fight on the map. */
+export const COLISEUM_BOSS: EnemyDef = scaled(BOSS_BRUTE, "coliseum_champion", 3.0, 25);
+
 /** A live combat target the enemy can act on (player or another entity). */
 export interface CombatTarget {
   id: string;

@@ -160,11 +160,20 @@ const PLAYER_MODELS: Record<ClassId, CharacterModel> = {
   necromancer: SYNTY_DEPTHBREAKER_MODELS.mage,
 };
 
+// defId -> mesh. The three areas' themed enemies reuse the skeleton / undead-
+// knight / boss-skeleton meshes for now; when the Dark Fantasy goblin/skeleton/
+// demon casts are baked, each is a one-line swap to a new SYNTY_DB_* model.
+const M = SYNTY_DEPTHBREAKER_MODELS;
 const ENEMY_MODELS: Record<string, CharacterModel> = {
-  grunt: SYNTY_DEPTHBREAKER_MODELS.skeleton,
-  elite_grunt: SYNTY_DEPTHBREAKER_MODELS.undeadKnight,
-  boss_brute: SYNTY_DEPTHBREAKER_MODELS.bossSkeleton,
-  minion: SYNTY_DEPTHBREAKER_MODELS.skeleton,
+  grunt: M.skeleton,
+  elite_grunt: M.undeadKnight,
+  boss_brute: M.bossSkeleton,
+  minion: M.skeleton,
+  // Area 1 — goblins · Area 2 — skeletons · Area 3 — demons
+  goblin: M.skeleton, goblin_warrior: M.undeadKnight, goblin_warchief: M.bossSkeleton,
+  skeleton_soldier: M.skeleton, skeleton_knight: M.undeadKnight, skeleton_lord: M.bossSkeleton,
+  demon_imp: M.skeleton, demon_brute: M.undeadKnight, demon_lord: M.bossSkeleton,
+  coliseum_champion: M.bossSkeleton,
 };
 
 /** Cosmetic skin id -> the model it renders (SYNTY_DEPTHBREAKER_MODELS key). */

@@ -60,6 +60,19 @@ export interface ResourceNodeDef {
   z: number;
 }
 
+/** A leveled combat area around the town hub (official map). Each has its own
+ *  minion/elite spawns + a boss anchor, and a recommended level band — the
+ *  zone-aware spawner in ZoneRoom uses these to place the per-area roster. */
+export interface DungeonArea {
+  id: number; // 1 | 2 | 3
+  center: Vec2;
+  /** Recommended upper level for the band (Area1≈10, Area2≈20, Area3≈40). */
+  bandLevel: number;
+  normalSpawns: Vec2[];
+  eliteSpawns: Vec2[];
+  bossPoint: Vec2;
+}
+
 export interface DungeonMapDefinition {
   tileSize: number;
   rooms: DungeonRoom[];
@@ -80,6 +93,11 @@ export interface DungeonMapDefinition {
   marketStall: Vec2;
   /** Cooking station location, inside the start ("market") room. */
   cookingStation: Vec2;
+  /** The three leveled areas around town (official map). When present, ZoneRoom
+   *  spawns each area's own roster; absent → the procedural uniform spawn. */
+  areas?: DungeonArea[];
+  /** Coliseum arena centre — the world boss spawns here (official map). */
+  coliseumPortal?: Vec2;
   /** Official-map grid samplers (attached by buildOfficialMap). When present
    *  they OVERRIDE the rect-based walkability so only the real stone blocks are
    *  walkable and the player follows the terrain height. Not sent over the wire

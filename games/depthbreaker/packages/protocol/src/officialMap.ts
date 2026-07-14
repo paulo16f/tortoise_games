@@ -6,7 +6,7 @@
 // reachable land (fishing needs no nodes — the player clicks the water).
 
 import { DeterministicRng } from "@depthbreaker/sim";
-import type { DungeonMapDefinition, DungeonRoom, Rect, ResourceNodeDef, Vec2 } from "./map.js";
+import type { DungeonArea, DungeonMapDefinition, DungeonRoom, Rect, ResourceNodeDef, Vec2 } from "./map.js";
 import { BLOCK_RECTS, BOUND_RECTS, MAP_FEATURES, MAP_MARKERS, WALK_GRID } from "./officialMapData.js";
 
 const NODE_SEED = 0x15_1a_9d;
@@ -166,8 +166,25 @@ export function buildOfficialMap(): DungeonMapDefinition {
   const zones = [marker("Zone_Area1", playerSpawn), marker("Zone_Area2", playerSpawn), marker("Zone_Area3", playerSpawn)];
   const avoid: Vec2[] = [playerSpawn, marketStall, ...zones];
 
-  const normalSpawns = zones.flatMap((z) => scatter(rng, z, 26, 4, avoid, 6, reachable.contains));
-  const eliteSpawns = zones.flatMap((z) => scatter(rng, z, 20, 1, avoid, 8, reachable.contains));
+  // Scatter per-zone so each leveled area keeps its own spawn set (band roster).
+  const perZoneNormal = zones.map((z) => scatter(rng, z, 26, 4, avoid, 6, reachable.contains));
+  const perZoneElite = zones.map((z) => scatter(rng, z, 20, 1, avoid, 8, reachable.contains));
+  const normalSpawns = perZoneNormal.flat();
+  const eliteSpawns = perZoneElite.flat();
+  const BAND = [10, 20, 40];
+  const areas: DungeonArea[] = zones.map((z, i) => {
+    const bp = marker(`Boss_Area${i + 1}`, { x: z.x, z: z.z + 8 });
+    return {
+      id: i + 1,
+      center: z,
+      bandLevel: BAND[i]!,
+      normalSpawns: perZoneNormal[i]!,
+      eliteSpawns: perZoneElite[i]!,
+      bossPoint: reachable.contains(bp.x, bp.z) ? bp : reachable.nearest(bp.x, bp.z),
+    };
+  });
+  const cc = marker("Coliseum_Center", { x: playerSpawn.x, z: playerSpawn.z - 60 });
+  const coliseumPortal = reachable.contains(cc.x, cc.z) ? cc : reachable.nearest(cc.x, cc.z);
 
   const resourceNodes: ResourceNodeDef[] = [];
   let nid = 0;
@@ -212,6 +229,8 @@ export function buildOfficialMap(): DungeonMapDefinition {
     resourceNodes,
     marketStall,
     cookingStation,
+    areas,
+    coliseumPortal,
   };
   return cachedMap;
 }

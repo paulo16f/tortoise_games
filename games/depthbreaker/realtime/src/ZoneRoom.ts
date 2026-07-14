@@ -116,7 +116,7 @@ import {
   scaledXp,
   scaledCurrency,
 } from "@depthbreaker/sim";
-import { EnemyController, GRUNT, SWARMER, ELITE_GRUNT, BOSS_BRUTE, type EnemyDef, type CombatTarget } from "./enemies.js";
+import { EnemyController, GRUNT, SWARMER, ELITE_GRUNT, BOSS_BRUTE, AREA_ROSTERS, COLISEUM_BOSS, type EnemyDef, type CombatTarget } from "./enemies.js";
 import { verifyJoinTicket, type JoinTicketClaims } from "./joinTicket.js";
 import { BackendReporter } from "./backendReporter.js";
 import { loadConfig, type RealtimeConfig } from "./config.js";
@@ -716,6 +716,26 @@ export class ZoneRoom extends Room<ZoneState> {
     if (this.liveEnemyCount() >= cap) return;
 
     this.waveCount++;
+    const areas = this.dungeon.areas;
+    // Official map: repopulate a RANDOM area with ITS OWN roster (keeps each
+    // area's theme + band); procedural map: the flat uniform trickle.
+    if (areas?.length) {
+      const area = areas[Math.floor(Math.random() * areas.length)]!;
+      const roster = AREA_ROSTERS[area.id - 1]!;
+      if (this.waveCount % 4 === 0 && intensity > 0.2) {
+        // A pack of this area's minions.
+        const pt = area.normalSpawns[Math.floor(Math.random() * area.normalSpawns.length)] ?? area.center;
+        const packSize = 3 + Math.floor(intensity * 2);
+        for (let i = 0; i < packSize; i++) this.spawnEnemy(roster.minion, pt.x + (i - 2) * 1.1, pt.z + (i % 2) * 1.1);
+        return;
+      }
+      const isElite = Math.random() < ELITE_CHANCE + 0.15 * intensity;
+      const pts = isElite ? area.eliteSpawns : area.normalSpawns;
+      const pt = pts[Math.floor(Math.random() * pts.length)] ?? area.center;
+      this.spawnEnemy(isElite ? roster.elite : roster.minion, pt.x, pt.z);
+      return;
+    }
+
     // Every 4th wave (once things heat up) is a swarmer pack — a punctuated
     // "oh no, a group" moment instead of the endless one-at-a-time trickle.
     if (this.waveCount % 4 === 0 && intensity > 0.2) {
@@ -2155,17 +2175,43 @@ export class ZoneRoom extends Room<ZoneState> {
     return `a${this.tick}-${this.actionSeq++}`;
   }
 
+  // Official map: each leveled AREA gets its own roster (minion/elite/boss) at
+  // its own spawns; the Coliseum gets the world boss. Procedural map: the flat
+  // uniform spawn (grunts/elite/brute) as before.
   private spawnInitialEnemies(): void {
-    const points = this.dungeon.normalSpawns;
-    points.slice(0, INITIAL_ENEMY_COUNT).forEach((pt) => this.spawnEnemy(GRUNT, pt.x, pt.z));
+    const areas = this.dungeon.areas;
+    if (areas?.length) {
+      for (const area of areas) {
+        const roster = AREA_ROSTERS[area.id - 1];
+        if (roster) for (const pt of area.normalSpawns) this.spawnEnemy(roster.minion, pt.x, pt.z);
+      }
+      return;
+    }
+    this.dungeon.normalSpawns.slice(0, INITIAL_ENEMY_COUNT).forEach((pt) => this.spawnEnemy(GRUNT, pt.x, pt.z));
   }
 
   private spawnInitialElites(): void {
-    const points = this.dungeon.eliteSpawns;
-    points.slice(0, INITIAL_ELITE_COUNT).forEach((pt) => this.spawnEnemy(ELITE_GRUNT, pt.x, pt.z));
+    const areas = this.dungeon.areas;
+    if (areas?.length) {
+      for (const area of areas) {
+        const roster = AREA_ROSTERS[area.id - 1];
+        if (roster) for (const pt of area.eliteSpawns) this.spawnEnemy(roster.elite, pt.x, pt.z);
+      }
+      return;
+    }
+    this.dungeon.eliteSpawns.slice(0, INITIAL_ELITE_COUNT).forEach((pt) => this.spawnEnemy(ELITE_GRUNT, pt.x, pt.z));
   }
 
   private spawnInitialBoss(): void {
+    const areas = this.dungeon.areas;
+    if (areas?.length) {
+      for (const area of areas) {
+        const roster = AREA_ROSTERS[area.id - 1];
+        if (roster) this.spawnEnemy(roster.boss, area.bossPoint.x, area.bossPoint.z);
+      }
+      if (this.dungeon.coliseumPortal) this.spawnEnemy(COLISEUM_BOSS, this.dungeon.coliseumPortal.x, this.dungeon.coliseumPortal.z);
+      return;
+    }
     const point = this.dungeon.bossPortal;
     this.spawnEnemy(BOSS_BRUTE, point.x, point.z);
   }
