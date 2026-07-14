@@ -36,9 +36,14 @@ const boundRects = layout.meshes
 // angled cliff, so WALLS and ROCKS are handled precisely per-cell by the Unity
 // exporter's obstacle raycast instead (needs a re-export). Bridges/stairs are
 // walkable. A small inset avoids nibbling the neighbouring floor. ---
+// Solid columns/buildings (the exporter's per-cell capsule handles walls/rocks
+// precisely) PLUS the rocks the exporter MISCLASSIFIES as floor: `Rock_Platform*`
+// (has "platform") and grass-topped rock outcrops (has "grass") end up walkable
+// with no collision — the huge north rock you walked through. Block their AABB.
 const isObstacle = (name, top) =>
   top > 4 &&
-  /stone_pillar|dwarf_pillar|rubble_pillar|vegetablemarket|bakerymarket|weapon_market|blacksmith|dwarf_forge|smelter|anvil/i.test(name) &&
+  (/stone_pillar|dwarf_pillar|rubble_pillar|vegetablemarket|bakerymarket|weapon_market|blacksmith|dwarf_forge|smelter|anvil/i.test(name) ||
+    /rock_platform|rock.*grassvariant|grassvariant.*rock/i.test(name)) &&
   !/floor|bridge|stair|path|alcove|wall/i.test(name);
 const INSET = 0.35;
 const blockRects = layout.meshes
@@ -188,6 +193,27 @@ for (let pass = 0; pass < 6; pass++) {
   for (const { i, h } of add) { bits[i >> 3] |= 1 << (i & 7); hbytes[i] = h; walkCount++; seams++; }
 }
 if (seams) console.log(`bridged ${seams} floor-seam cells (tile-plaza gaps)`);
+
+// Seal 1-cell gaps in obstacle rows: a walkable cell pinched between blocked
+// cells on BOTH sides (left+right OR up+down) is a slit in a wall you can slip
+// through when running along it. Block it. 2+ cell passages (real doorways) have
+// no opposite-side block, so they stay open.
+let sealed = 0;
+{
+  const close = [];
+  for (let gz = 1; gz < rows - 1; gz++) {
+    for (let gx = 1; gx < cols - 1; gx++) {
+      if (!gbit(gx, gz)) continue;
+      const wx = grid.originX + gx * grid.cell, wz = grid.originZ + gz * grid.cell;
+      if (inFloorSlab(wx, wz) && !inObsFoot(wx, wz)) continue; // never seal open plaza floor
+      const pinchH = !gbit(gx - 1, gz) && !gbit(gx + 1, gz);
+      const pinchV = !gbit(gx, gz - 1) && !gbit(gx, gz + 1);
+      if (pinchH || pinchV) close.push(gz * cols + gx);
+    }
+  }
+  for (const i of close) { bits[i >> 3] &= ~(1 << (i & 7)); walkCount--; sealed++; }
+}
+if (sealed) console.log(`sealed ${sealed} 1-cell wall slits`);
 
 const b64 = (u8) => Buffer.from(u8).toString("base64");
 
