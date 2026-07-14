@@ -80,6 +80,13 @@ export interface DungeonMapDefinition {
   marketStall: Vec2;
   /** Cooking station location, inside the start ("market") room. */
   cookingStation: Vec2;
+  /** Official-map grid samplers (attached by buildOfficialMap). When present
+   *  they OVERRIDE the rect-based walkability so only the real stone blocks are
+   *  walkable and the player follows the terrain height. Not sent over the wire
+   *  — each side builds its own map from the synced seed. */
+  sampleWalkable?: (x: number, z: number) => boolean;
+  sampleHeight?: (x: number, z: number) => number;
+  sampleNearest?: (x: number, z: number) => Vec2;
 }
 
 // The dungeon is generated from the seeded room graph (see mapGen.ts). This
@@ -93,11 +100,20 @@ export function isPointInRect(x: number, z: number, rect: Rect, radius = 0): boo
 }
 
 export function isDungeonWalkable(x: number, z: number, radius = 0.45, map = DEPTHBREAKER_DUNGEON): boolean {
+  // Official map: the raycast grid is authoritative (blocks only, no gaps).
+  if (map.sampleWalkable) return map.sampleWalkable(x, z);
   return map.collision.some((rect) => isPointInRect(x, z, rect, radius));
+}
+
+/** Surface height under (x,z) — the player stands here (ramps/reliefs). 0 on
+ *  procedural maps (flat). */
+export function groundHeightAt(x: number, z: number, map = DEPTHBREAKER_DUNGEON): number {
+  return map.sampleHeight ? map.sampleHeight(x, z) : 0;
 }
 
 export function nearestDungeonWalkablePoint(x: number, z: number, radius = 0.45, map = DEPTHBREAKER_DUNGEON): Vec2 {
   if (isDungeonWalkable(x, z, radius, map)) return { x, z };
+  if (map.sampleNearest) return map.sampleNearest(x, z);
 
   let best: Vec2 = map.playerSpawn;
   let bestDistance = Number.POSITIVE_INFINITY;

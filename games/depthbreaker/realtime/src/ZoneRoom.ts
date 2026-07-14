@@ -52,6 +52,7 @@ import {
   buildDungeon,
   isDungeonWalkable,
   nearestDungeonWalkablePoint,
+  groundHeightAt,
   MARKET_STOCK,
   MARKET_RANGE,
   GATHER_RANGE,
@@ -579,6 +580,7 @@ export class ZoneRoom extends Room<ZoneState> {
     this.tick++;
     this.elapsedSeconds += dt;
     this.movePlayers(dt);
+    this.groundEntities();
     this.updateCooldowns(dt);
     this.updateWaves(dt);
     this.updateBossPortal(dt);
@@ -603,6 +605,14 @@ export class ZoneRoom extends Room<ZoneState> {
    * A safe recovery spot so players don't have to burn potions between runs —
    * heals only, never while a player is out in the dungeon.
    */
+  /** Stand every player and enemy on the terrain surface — the official map
+   *  has ramps/reliefs, so y follows the ground grid (flat maps sample 0). */
+  private groundEntities(): void {
+    if (!this.dungeon.sampleHeight) return;
+    this.state.players.forEach((p) => { p.y = groundHeightAt(p.x, p.z, this.dungeon); });
+    this.state.enemies.forEach((e) => { e.y = groundHeightAt(e.x, e.z, this.dungeon); });
+  }
+
   private updateFountain(dt: number): void {
     const pad = this.dungeon.playerSpawn;
     const heal = FOUNTAIN_HEAL_PER_SECOND * dt;

@@ -42,10 +42,15 @@ export function DungeonClickPlane() {
     setClickDestination(point.x, point.z);
   };
 
+  // On the elevated island the click plane sits at the LOCAL PLAYER's ground
+  // height, so clicks near them land where the cursor is (a y=0 plane under an
+  // angled camera would offset the click by several units per unit of height).
+  const planeY = zoneStore.getSnapshot().self?.y ?? 0.03;
+
   return (
     <mesh
       rotation={[-Math.PI / 2, 0, 0]}
-      position={[bounds.centerX, 0.03, bounds.centerZ]}
+      position={[bounds.centerX, planeY, bounds.centerZ]}
       onPointerDown={handleGroundClick}
     >
       <planeGeometry args={[bounds.width, bounds.depth]} />
