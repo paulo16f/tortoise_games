@@ -35,8 +35,9 @@ export function DebugWalkGrid() {
     if (!on) return [];
     const { minX, maxX, minZ, maxZ } = extent(dungeon);
     const out: [number, number, number][] = [];
-    for (let x = Math.floor(minX); x <= Math.ceil(maxX); x++) {
-      for (let z = Math.floor(minZ); z <= Math.ceil(maxZ); z++) {
+    // 0.5u step to match the collision grid — shows every real walkable cell.
+    for (let x = Math.floor(minX); x <= Math.ceil(maxX); x += 0.5) {
+      for (let z = Math.floor(minZ); z <= Math.ceil(maxZ); z += 0.5) {
         if (isDungeonWalkable(x, z, 0.1, dungeon)) out.push([x, groundHeightAt(x, z, dungeon), z]);
       }
     }
@@ -60,7 +61,7 @@ export function DebugWalkGrid() {
   if (!on || cells.length === 0) return null;
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, cells.length]}>
-      <planeGeometry args={[0.9, 0.9]} />
+      <planeGeometry args={[0.45, 0.45]} />
       <meshBasicMaterial color="#22ff44" transparent opacity={0.5} side={DoubleSide} depthWrite={false} />
     </instancedMesh>
   );
