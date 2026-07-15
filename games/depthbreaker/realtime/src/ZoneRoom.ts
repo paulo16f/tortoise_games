@@ -116,7 +116,7 @@ import {
   scaledXp,
   scaledCurrency,
 } from "@depthbreaker/sim";
-import { EnemyController, GRUNT, SWARMER, ELITE_GRUNT, BOSS_BRUTE, AREA_ROSTERS, COLISEUM_BOSS, type EnemyDef, type CombatTarget } from "./enemies.js";
+import { EnemyController, GRUNT, SWARMER, ELITE_GRUNT, BOSS_BRUTE, AREA_ROSTERS, COLISEUM_BOSS, coliseumBossForTier, type EnemyDef, type CombatTarget } from "./enemies.js";
 import { verifyJoinTicket, type JoinTicketClaims } from "./joinTicket.js";
 import { BackendReporter } from "./backendReporter.js";
 import { loadConfig, type RealtimeConfig } from "./config.js";
@@ -278,6 +278,9 @@ export class ZoneRoom extends Room<ZoneState> {
   private spawnSeq = 0;
   private actionSeq = 0;
   private waveTimer = WAVE_INTERVAL_SECONDS;
+  // Coliseum world boss: each slaying levels it up; it re-forms tougher.
+  private coliseumTier = 0;
+  private coliseumRespawnTimer = 0;
   private waveCount = 0;
   private bossPortalTimer = BOSS_PORTAL_INTERVAL_SECONDS;
   // Independent Loot substream, seeded once from the run seed in ensureSeeded().
@@ -584,6 +587,7 @@ export class ZoneRoom extends Room<ZoneState> {
     this.updateCooldowns(dt);
     this.updateWaves(dt);
     this.updateBossPortal(dt);
+    this.updateColiseum(dt);
 
     const targets = this.buildTargetMap();
     this.updateEnemies(dt, targets);
@@ -751,6 +755,16 @@ export class ZoneRoom extends Room<ZoneState> {
     const def = roll < ELITE_CHANCE + 0.15 * intensity ? ELITE_GRUNT : roll < 0.6 ? SWARMER : GRUNT;
     const point = this.randomSpawnPoint(def);
     this.spawnEnemy(def, point.x, point.z);
+  }
+
+  /** Re-form the Coliseum world boss a bit after it's slain, one tier stronger. */
+  private updateColiseum(dt: number): void {
+    if (this.coliseumRespawnTimer <= 0 || !this.dungeon.coliseumPortal) return;
+    this.coliseumRespawnTimer -= dt;
+    if (this.coliseumRespawnTimer <= 0) {
+      const c = this.dungeon.coliseumPortal;
+      this.spawnEnemy(coliseumBossForTier(this.coliseumTier), c.x, c.z);
+    }
   }
 
   private updateBossPortal(dt: number): void {
@@ -1970,6 +1984,11 @@ export class ZoneRoom extends Room<ZoneState> {
       this.bumpDaily(rt, "kill", enemy.def.id, 1);
       this.rollKillLoot(rt, p, enemy.def.rank as LootRank);
       if (enemy.def.rank === "boss") this.breakDepth();
+      // Coliseum world boss levels up on each slaying and re-forms tougher.
+      if (enemy.def.id === "coliseum_champion") {
+        this.coliseumTier++;
+        this.coliseumRespawnTimer = 25;
+      }
       this.retargetPlayersFromDeadEnemy(enemy.state.id);
       this.scheduleEnemyRemoval(enemy);
     }

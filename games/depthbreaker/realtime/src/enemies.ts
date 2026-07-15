@@ -145,6 +145,12 @@ export const AREA_ROSTERS: AreaRoster[] = [
 /** The Coliseum arena's world boss — the toughest single fight on the map. */
 export const COLISEUM_BOSS: EnemyDef = scaled(BOSS_BRUTE, "coliseum_champion", 3.0, 25);
 
+/** The Coliseum boss LEVELS UP each time it's slain: tier 0 = base, and each tier
+ *  is +60% power/reward and +3 levels. Same id so the client shows the same mesh. */
+export function coliseumBossForTier(tier: number): EnemyDef {
+  return scaled(COLISEUM_BOSS, "coliseum_champion", 1 + tier * 0.6, COLISEUM_BOSS.level + tier * 3);
+}
+
 /** A live combat target the enemy can act on (player or another entity). */
 export interface CombatTarget {
   id: string;
