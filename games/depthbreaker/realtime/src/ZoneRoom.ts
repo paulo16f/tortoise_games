@@ -618,7 +618,9 @@ export class ZoneRoom extends Room<ZoneState> {
   }
 
   private updateFountain(dt: number): void {
-    const pad = this.dungeon.playerSpawn;
+    // Heal on the stone-circle centre (matches the client's visual ring), which
+    // is a couple units off the raw spawn empty. Procedural map → spawn.
+    const pad = this.dungeon.fountainPad ?? this.dungeon.playerSpawn;
     const heal = FOUNTAIN_HEAL_PER_SECOND * dt;
     this.state.players.forEach((p) => {
       if (!p.alive || p.hp >= p.maxHp) return;

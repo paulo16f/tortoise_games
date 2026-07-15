@@ -109,6 +109,15 @@ export function IslandMap() {
       if (!mat || Array.isArray(mat)) return;
       const sm = mat as MeshStandardMaterial;
       sm.side = flipped ? DoubleSide : FrontSide;
+      // The Synty "Environment" atlas (grass/floors/paths/fences) is a very
+      // saturated flat green that reads as neon under bright fill. Multiply it
+      // down to a natural, slightly-desaturated tone and raise roughness so it
+      // sits like ground, not plastic. (It keeps its texture — colour multiplies.)
+      if (sm.name === "Environment") {
+        sm.color?.setRGB(0.72, 0.78, 0.6);
+        sm.roughness = Math.max(sm.roughness ?? 1, 0.95);
+        sm.needsUpdate = true;
+      }
       if (!sm.map) {
         // Re-link the atlas the FBX chain dropped, by material name. The dwarven
         // walls/pillars UV-map into the dungeon atlas, so it reads correctly.
@@ -136,9 +145,11 @@ export function IslandMap() {
       <group scale={a.scale} position={a.position}>
         <primitive object={scene} />
       </group>
-      {/* Outdoor daylight so the island is lit like the Unity scene, not a cave. */}
-      <ambientLight intensity={0.85} color="#dfeaff" />
-      <directionalLight position={[60, 120, 40]} intensity={1.4} color="#fff2d8" />
+      {/* A single soft global fill to complement Scene's player-following SunLight
+          across the large island — deliberately gentle (was a 0.85 ambient + 1.4
+          directional on TOP of Scene's rig, which washed everything flat/neon). */}
+      <ambientLight intensity={0.32} color="#c6d2e0" />
+      <directionalLight position={[60, 120, 40]} intensity={0.7} color="#ffe9c8" />
     </group>
   );
 }

@@ -63,7 +63,7 @@ export function CookingStation() {
       <pointLight position={[0, 1.1, 0]} color="#ff9d5c" intensity={5} distance={7} decay={2} />
       <Billboard position={[0, 2.2, 0]}>
         <Text fontSize={0.42} color="#fb923c" outlineWidth={0.02} outlineColor="#000000">
-          Cooking
+          Bakery
         </Text>
       </Billboard>
       <mesh position={[0, 0.9, 0]} onPointerDown={handleClick} onPointerOver={handleOver} onPointerOut={handleOut}>

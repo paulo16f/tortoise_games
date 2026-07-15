@@ -10,7 +10,6 @@ import { toggleStash, useStashOpen } from "./StashPanel";
 import { toggleDailies, useDailiesOpen } from "./DailyQuestPanel";
 import { toggleTrade, useTradeOpen } from "./TradePanel";
 import { toggleSpinner, useSpinnerOpen } from "./SpinnerPanel";
-import { focusChat, useChatFocused } from "./ChatPanel";
 import { toggleCooking, useCookingOpen } from "./CookingPanel";
 import { tooltipHandlers } from "./Tooltip";
 
@@ -25,7 +24,7 @@ interface DockItem {
 // icon: a Dark Fantasy pack sprite under /ui/synty/icons/ (leading slash);
 // anything else renders as text (emoji fallback while a sprite is unmapped).
 const DOCK_ITEMS: DockItem[] = [
-  { icon: "/ui/synty/icons/dock_bag.png", label: "Bag", hotkey: "B", toggle: toggleInventory, useOpen: useInventoryOpen },
+  { icon: "/ui/synty/icons/dock_bag.png", label: "Inventory", hotkey: "B", toggle: toggleInventory, useOpen: useInventoryOpen },
   { icon: "/ui/synty/icons/dock_skillbook.png", label: "Skill Book", hotkey: "K", toggle: toggleSkillBook, useOpen: useSkillBookOpen },
   { icon: "/ui/synty/icons/dock_market.png", label: "Market", hotkey: "M", toggle: toggleMarket, useOpen: useMarketOpen },
   { icon: "/ui/synty/icons/dock_trade.png", label: "Trading Post", hotkey: "T", toggle: toggleTrade, useOpen: useTradeOpen },
@@ -33,7 +32,6 @@ const DOCK_ITEMS: DockItem[] = [
   { icon: "/ui/synty/icons/dock_cooking.png", label: "Cooking", hotkey: "F", toggle: toggleCooking, useOpen: useCookingOpen },
   { icon: "/ui/synty/icons/dock_dailies.png", label: "Daily Quests", hotkey: "J", toggle: toggleDailies, useOpen: useDailiesOpen },
   { icon: "/ui/synty/icons/dock_spinner.png", label: "Fortune Wheel", hotkey: "G", toggle: toggleSpinner, useOpen: useSpinnerOpen },
-  { icon: "/ui/synty/icons/dock_chat.png", label: "World Chat", hotkey: "C", toggle: focusChat, useOpen: useChatFocused },
 ];
 
 function DockButton({ item }: { item: DockItem }) {

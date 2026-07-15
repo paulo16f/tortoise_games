@@ -147,21 +147,20 @@ export function buildOfficialMap(): DungeonMapDefinition {
 
   // Market/cooking sit on the map's OWN cabins (weapon_market / BakeryMarket
   // meshes → MAP_FEATURES). The cabin centre is inside the solid building, so
-  // walk OUT of it toward the spawn plaza (the door side) to the first walkable
-  // cell — the interaction lands in front of the cabin, not on a random edge.
+  // snap to the CLOSEST walkable cell — that's the building's own doorstep/edge,
+  // where the player naturally approaches. (The old "walk toward spawn until
+  // walkable" drifted the station several units off the cabin.)
   const featureSpot = (key: string, fallback: Vec2): Vec2 => {
     const c = MAP_FEATURES[key] ?? fallback;
     if (reachable.contains(c.x, c.z)) return c;
-    const dx = playerSpawn.x - c.x, dz = playerSpawn.z - c.z;
-    const len = Math.hypot(dx, dz) || 1;
-    for (let step = 1; step <= 30; step += 0.5) {
-      const p = { x: c.x + (dx / len) * step, z: c.z + (dz / len) * step };
-      if (reachable.contains(p.x, p.z)) return p;
-    }
     return reachable.nearest(c.x, c.z);
   };
   const marketStall = featureSpot("market", marker("Stall_Market", { x: playerSpawn.x - 6, z: playerSpawn.z }));
   const cookingStation = featureSpot("cooking", { x: marketStall.x + 3, z: marketStall.z + 1 });
+  // Fountain heal pad = the stone-circle centre (MAP_FEATURES.fountain), not the
+  // Spawn_Town empty — they differ by a couple units, which read as the heal ring
+  // sitting off the visible ring. Both the visual and the server heal use this.
+  const fountainPad = MAP_FEATURES.fountain ?? playerSpawn;
 
   const zones = [marker("Zone_Area1", playerSpawn), marker("Zone_Area2", playerSpawn), marker("Zone_Area3", playerSpawn)];
   const avoid: Vec2[] = [playerSpawn, marketStall, ...zones];
@@ -229,6 +228,7 @@ export function buildOfficialMap(): DungeonMapDefinition {
     resourceNodes,
     marketStall,
     cookingStation,
+    fountainPad,
     areas,
     coliseumPortal,
   };

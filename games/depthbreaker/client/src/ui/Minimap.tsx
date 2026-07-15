@@ -43,12 +43,11 @@ export function Minimap() {
     base.width = base.height = SIZE * 2; // 2x for crispness
     const g = base.getContext("2d")!;
     g.scale(2, 2);
-    // Dim base: the whole floor extent (slab footprints) so non-walkable zones
-    // (lava, blocked interiors) still read as "map, hazard" instead of a hole.
-    g.fillStyle = "rgba(120,110,95,0.30)";
-    for (const r of dungeon.walkable) g.fillRect(px(r.minX), pz(r.maxZ), (r.maxX - r.minX) * scale, (r.maxZ - r.minZ) * scale);
-    // Bright overlay: the actual walkable ground the player can stand on.
-    g.fillStyle = "rgba(170,185,205,0.55)";
+    // ONE coherent land layer: only the real walkable ground is painted, so the
+    // minimap silhouette IS the island the player walks. (We used to also draw a
+    // dim tan slab-extent under this — it read as unexplained hazard rectangles,
+    // so it's gone: anything not walkable simply isn't land.)
+    g.fillStyle = "rgba(196,182,146,0.7)";
     const dot = Math.max(1, scale * 1.7); // overlap adjacent cells → no gaps
     for (let x = Math.floor(minX); x <= Math.ceil(maxX); x++) {
       for (let z = Math.floor(minZ); z <= Math.ceil(maxZ); z++) {

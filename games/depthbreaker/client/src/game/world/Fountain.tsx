@@ -16,7 +16,9 @@ export function Fountain() {
   // isn't sunk into the elevated official-map floor.
   const pad = useMemo(() => {
     const d = buildDungeon(snap.seed, snap.depth);
-    const s = d.playerSpawn;
+    // Centre on the stone-circle (fountainPad) so the heal ring hugs the rocks,
+    // not the Spawn_Town empty a couple units off it. Procedural map → spawn.
+    const s = d.fountainPad ?? d.playerSpawn;
     return { x: s.x, y: groundHeightAt(s.x, s.z, d), z: s.z };
   }, [snap.seed, snap.depth]);
   const ring = useRef<Mesh>(null);
@@ -70,8 +72,8 @@ export function Fountain() {
       )}
 
       <Billboard position={[0, 2.5, 0]}>
-        <Text fontSize={0.36} color="#5eead4" outlineWidth={0.02} outlineColor="#000000">
-          Fountain — rest to heal
+        <Text fontSize={0.4} color="#5eead4" outlineWidth={0.02} outlineColor="#000000">
+          Fountain
         </Text>
       </Billboard>
     </group>

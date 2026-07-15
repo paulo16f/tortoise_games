@@ -104,7 +104,6 @@ export function useControls(): void {
       if (e.code === "KeyG") toggleSpinner();
       if (e.code === "KeyT") toggleTrade();
       if (e.code === "KeyF") toggleCooking();
-      if (e.code === "KeyC") focusChat();
       if (e.code === "Escape") {
         closeInventory();
         closeSkillBook();

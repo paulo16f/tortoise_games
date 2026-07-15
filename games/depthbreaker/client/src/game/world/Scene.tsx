@@ -1,7 +1,7 @@
 ﻿// The 3D scene: lighting, dungeon, entities, FX, and camera.
 
 import { useMemo } from "react";
-import { Environment, Lightformer } from "@react-three/drei";
+import { Environment, Lightformer, Sky } from "@react-three/drei";
 import { zoneStore } from "../../net/room";
 import { useZoneState } from "../../net/useZone";
 import { Player } from "../actors/Player";
@@ -57,9 +57,16 @@ export function Scene() {
       {/* Dungeon fog is tight (room cull); the open island needs a far, sky-
           coloured fade so the terrain doesn't vanish 80u out. */}
       {USE_OFFICIAL_MAP ? (
-        <fog attach="fog" args={["#9fc4e8", 120, 320]} />
+        <fog attach="fog" args={["#bcd4ec", 150, 380]} />
       ) : (
         <fog attach="fog" args={["#08090c", 28, 80]} />
+      )}
+
+      {/* A daytime sky dome for the open island (procedural, no HDRI) so the
+          horizon is sky instead of the near-black clear colour — the biggest
+          single "outdoors, not a school project" cue. Fog is tuned to its haze. */}
+      {USE_OFFICIAL_MAP && (
+        <Sky distance={4500} sunPosition={[60, 45, 40]} turbidity={5} rayleigh={1.6} mieCoefficient={0.02} mieDirectionalG={0.85} />
       )}
 
       {/* Soft cool-over-warm fill instead of flat ambient. */}

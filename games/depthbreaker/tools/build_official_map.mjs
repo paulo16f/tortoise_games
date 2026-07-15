@@ -76,6 +76,16 @@ const market = featureCentre(/weapon_market/i);
 const cooking = featureCentre(/bakerymarket/i);
 if (market) features.market = market;
 if (cooking) features.cooking = cooking;
+// Fountain = the CENTRE of the authored stone-circle at spawn. The `Spawn_Town`
+// empty sits slightly off that circle's centre, so the heal ring looked offset
+// from the stones. The ring is the 4 `stone_fence_03` slabs — average them to
+// get the true circle centre and anchor the fountain (visual + heal) there.
+const fountainRing = layout.meshes.filter((m) => /stone_fence_03/i.test(m.name));
+if (fountainRing.length) {
+  const fx = fountainRing.reduce((s, m) => s + m.cx, 0) / fountainRing.length;
+  const fz = fountainRing.reduce((s, m) => s + m.cz, 0) / fountainRing.length;
+  features.fountain = { x: +fx.toFixed(2), z: +fz.toFixed(2) };
+}
 
 // --- Lava hazard: the raycast hits a lava-BED floor (~1.5) under the plane, so
 // those cells read walkable. Carve them out — but only the LOW cells (< 2.5),

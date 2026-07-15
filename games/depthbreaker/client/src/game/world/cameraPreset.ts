@@ -7,9 +7,9 @@ export const CAMERA_MODE = "perspective_diablo_fixed" as const;
 export const ARPG_CAMERA = {
   yaw: Math.PI,
   pitch: 1.05, // ≈ 60° above horizontal — steep top-down
-  distance: 12,
-  minDistance: 8,
-  maxDistance: 17,
+  distance: 14.5,
+  minDistance: 10,
+  maxDistance: 20,
   fov: 42,
   minPitch: 1.05,
   maxPitch: 1.05,

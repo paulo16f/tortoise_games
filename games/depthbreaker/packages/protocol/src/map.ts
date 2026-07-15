@@ -93,6 +93,9 @@ export interface DungeonMapDefinition {
   marketStall: Vec2;
   /** Cooking station location, inside the start ("market") room. */
   cookingStation: Vec2;
+  /** Fountain heal-pad centre (official map: the stone-circle centre, which is a
+   *  couple units off playerSpawn). Absent on the procedural map → use playerSpawn. */
+  fountainPad?: Vec2;
   /** The three leveled areas around town (official map). When present, ZoneRoom
    *  spawns each area's own roster; absent → the procedural uniform spawn. */
   areas?: DungeonArea[];

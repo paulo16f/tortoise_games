@@ -1,22 +1,27 @@
-// Soft level-band gate: a top banner that names the area the player is in and
-// warns when they're under-levelled for its band. Purely advisory — the server
-// never blocks entry (ARPG style: the monsters simply out-level you). Polls the
-// local position at 2 Hz (not per-frame) and only re-renders when the zone
-// changes, so it's cheap.
+// Soft level-band gate: a brief banner that names the area the player enters and
+// warns only when they're genuinely under-levelled for it. Purely advisory — the
+// server never blocks entry (ARPG style: the monsters simply out-level you).
+// Polls the local position at 2 Hz and AUTO-HIDES a few seconds after you enter,
+// so it never sits on top of enemy nameplates while you fight.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { buildDungeon, type DungeonArea } from "@depthbreaker/protocol";
 import { useZoneState } from "../net/useZone";
 import { zoneStore } from "../net/room";
 import { localPlayerPos } from "../game/entityRefs";
 
 const AREA_NAME: Record<number, string> = { 1: "Goblin Warrens", 2: "The Bonefields", 3: "Infernal Reach" };
+const SHOW_MS = 4500; // fade the banner out this long after entering an area
 
 export function ZoneBanner() {
   const snap = useZoneState();
   const areas = useMemo(() => buildDungeon(snap.seed, snap.depth).areas ?? [], [snap.seed, snap.depth]);
+  // Areas ranked by band → each area's "floor" (the level below which it truly
+  // outmatches you) is the PREVIOUS tier's band. The lowest area (the 1–10
+  // starter) has floor 0, so a fresh character is never warned there.
+  const ranked = useMemo(() => [...areas].sort((a, b) => a.bandLevel - b.bandLevel), [areas]);
   const [area, setArea] = useState<DungeonArea | null>(null);
-  const shownAt = useRef(0);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (!areas.length) return;
@@ -33,19 +38,25 @@ export function ZoneBanner() {
     return () => window.clearInterval(id);
   }, [areas]);
 
+  // Show on entering a new area, then auto-hide so nameplates stay readable.
   useEffect(() => {
-    if (area) shownAt.current = performance.now();
+    if (!area) { setVisible(false); return; }
+    setVisible(true);
+    const t = window.setTimeout(() => setVisible(false), SHOW_MS);
+    return () => window.clearTimeout(t);
   }, [area]);
 
-  if (!area) return null;
+  if (!area || !visible) return null;
   const level = zoneStore.getSnapshot().self?.level ?? 1;
-  const under = level < area.bandLevel - 4;
+  const idx = ranked.findIndex((a) => a.id === area.id);
+  const floor = idx > 0 ? ranked[idx - 1]!.bandLevel : 0;
+  const under = level < floor;
 
   return (
     <div style={wrap}>
       <div style={{ ...title, color: under ? "#fca5a5" : "#e8c874" }}>{AREA_NAME[area.id] ?? `Area ${area.id}`}</div>
       <div style={sub}>
-        Recommended Lv {area.bandLevel}
+        Lv {floor > 0 ? floor : 1}–{area.bandLevel}
         {under && <span style={warn}> · enemies here outmatch you</span>}
       </div>
     </div>
@@ -54,7 +65,7 @@ export function ZoneBanner() {
 
 const wrap: React.CSSProperties = {
   position: "absolute",
-  top: 60,
+  top: 40,
   left: "50%",
   transform: "translateX(-50%)",
   textAlign: "center",

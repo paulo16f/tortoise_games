@@ -7,10 +7,10 @@ import { EffectComposer, N8AO, Bloom, HueSaturation, BrightnessContrast, Vignett
 export function Effects() {
   return (
     <EffectComposer multisampling={0} enableNormalPass>
-      <N8AO aoRadius={1.5} distanceFalloff={3.6} intensity={2.2} quality="low" halfRes />
+      <N8AO aoRadius={1.6} distanceFalloff={3.6} intensity={2.6} quality="low" halfRes />
       <Bloom luminanceThreshold={0.85} intensity={0.35} radius={0.6} mipmapBlur />
-      <HueSaturation saturation={0.12} />
-      <BrightnessContrast brightness={0.0} contrast={0.08} />
+      <HueSaturation saturation={0.04} />
+      <BrightnessContrast brightness={-0.01} contrast={0.12} />
       <Vignette offset={0.28} darkness={0.42} />
       <SMAA />
     </EffectComposer>
