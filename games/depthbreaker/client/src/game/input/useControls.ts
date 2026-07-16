@@ -3,7 +3,7 @@ import { INPUT_SEND_HZ } from "@depthbreaker/protocol";
 import {
   controlState,
   isMoveKey,
-  computeMove,
+  computeMoveIntent,
   MIN_ZOOM,
   MAX_ZOOM,
   clearClickDestination,
@@ -18,6 +18,8 @@ import { closeDailies, toggleDailies } from "../../ui/DailyQuestPanel";
 import { closeSpinner, toggleSpinner } from "../../ui/SpinnerPanel";
 import { closeTrade, toggleTrade } from "../../ui/TradePanel";
 import { closeCooking, toggleCooking } from "../../ui/CookingPanel";
+import { closeGuide, toggleGuide } from "../../ui/GuidePanel";
+import { closeForge, toggleForge } from "../../ui/ForgePanel";
 import { focusChat } from "../../ui/ChatPanel";
 import { localPlayerPos } from "../entityRefs";
 
@@ -36,7 +38,6 @@ const HOTBAR_KEY_SLOTS: Record<string, number> = {
 };
 
 const TARGET_SELECTION_RANGE = 18;
-const CLICK_STOP_DISTANCE = 0.35;
 
 /** True when a text field (e.g. the chat input) is focused, so game keybinds
  *  should stand down and let the field receive the keystroke. */
@@ -104,6 +105,8 @@ export function useControls(): void {
       if (e.code === "KeyG") toggleSpinner();
       if (e.code === "KeyT") toggleTrade();
       if (e.code === "KeyF") toggleCooking();
+      if (e.code === "KeyH") toggleGuide();
+      if (e.code === "KeyO") toggleForge();
       if (e.code === "Escape") {
         closeInventory();
         closeSkillBook();
@@ -113,6 +116,8 @@ export function useControls(): void {
         closeSpinner();
         closeTrade();
         closeCooking();
+        closeGuide();
+        closeForge();
       }
       if (e.code === "KeyR") resetCameraOrbit();
       if (e.code === "Tab") {
@@ -166,7 +171,7 @@ export function useControls(): void {
 
     let seq = 0;
     const interval = window.setInterval(() => {
-      const { moveX, moveZ } = computeMoveWithClickDestination();
+      const { moveX, moveZ } = computeMoveIntent(localPlayerPos.x, localPlayerPos.z);
       zoneStore.sendInput({ seq: seq++, moveX, moveZ, yaw: controlState.orbit.yaw });
     }, 1000 / INPUT_SEND_HZ);
 
@@ -186,21 +191,4 @@ export function useControls(): void {
       controlState.dragPointerId = undefined;
     };
   }, []);
-}
-
-function computeMoveWithClickDestination(): { moveX: number; moveZ: number } {
-  const held = computeMove(controlState);
-  if (Math.hypot(held.moveX, held.moveZ) > 0.01) return held;
-
-  const dest = controlState.clickDestination;
-  if (!dest) return held;
-
-  const dx = dest.x - localPlayerPos.x;
-  const dz = dest.z - localPlayerPos.z;
-  const distance = Math.hypot(dx, dz);
-  if (distance <= CLICK_STOP_DISTANCE) {
-    controlState.clickDestination = undefined;
-    return { moveX: 0, moveZ: 0 };
-  }
-  return { moveX: dx / distance, moveZ: dz / distance };
 }

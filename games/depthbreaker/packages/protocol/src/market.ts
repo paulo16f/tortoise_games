@@ -6,6 +6,8 @@
 export const MARKET_STOCK: readonly string[] = [
   "health_potion",
   "bread",
+  "rusty_pickaxe",
+  "willow_rod",
   "iron_sword",
   "ash_staff",
   "iron_dagger",

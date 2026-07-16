@@ -15,5 +15,6 @@ export const ARPG_CAMERA = {
   maxPitch: 1.05,
   yawSpeed: 0,
   pitchSpeed: 0,
-  targetLerp: 12,
+  // Keeps up with the predicted (instant-start) character without feeling rigid.
+  targetLerp: 17,
 } as const;

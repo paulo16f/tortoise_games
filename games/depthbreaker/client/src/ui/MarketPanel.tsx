@@ -17,6 +17,7 @@ import { useDraggablePanel } from "./useDraggablePanel";
 import { tooltipHandlers } from "./Tooltip";
 import { ItemCard } from "./ItemCard";
 import { PanelClose } from "./PanelClose";
+import { playMarketBuy } from "../game/fx/sfx";
 
 let marketOpen = false;
 const openListeners = new Set<() => void>();
@@ -178,7 +179,7 @@ export function MarketPanel() {
                     {def.attack ? ` · +${def.attack} atk` : ""}
                   </div>
                 </div>
-                <button onClick={() => zoneStore.sendBuy(itemId)} disabled={!enabled} style={tradeBtn(enabled)}>
+                <button onClick={() => { zoneStore.sendBuy(itemId); playMarketBuy(); }} disabled={!enabled} style={tradeBtn(enabled)}>
                   🪙 {def.buyValue}
                 </button>
               </div>

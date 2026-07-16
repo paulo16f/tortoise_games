@@ -1,11 +1,12 @@
 import { LoopOnce, LoopRepeat, type AnimationAction } from "three";
 import type { MotionProfile } from "./motionProfiles";
 
-export const LOCOMOTION_BUILD = "v1-forward-locomotion";
+export const LOCOMOTION_BUILD = "v2-simple-idle-run";
 // eslint-disable-next-line no-console
 console.log(`%c[depthbreaker] locomotion controller: ${LOCOMOTION_BUILD}`, "color:#38bdf8;font-weight:bold");
 
-/** Active V1 clip contract. Extra clips may exist in GLBs, but gameplay ignores them until Unity QA approves them. */
+/** Clip contract baked into every character GLB. `walk` is accepted for API
+ *  compatibility but V2 locomotion is idle↔run only. */
 export interface ClipSet {
   idle: string;
   walk?: string;
@@ -15,6 +16,8 @@ export interface ClipSet {
   death: string;
 }
 
+/** Kept for API compatibility (manifest + AnimatedCharacter still pass it). V2
+ *  no longer foot-locks, so this is unused — remove once callers stop threading it. */
 export interface StrideNorm {
   walk?: number;
   run?: number;
@@ -37,32 +40,29 @@ export interface ControllerConfig {
   profile: MotionProfile;
 }
 
-interface Tier {
-  action: AnimationAction;
-  name: string;
-  duration: number;
-  groundPerCycle: number;
-  natural: number;
-}
-
 const EPS = 0.001;
+// Ground speed (u/s) the run clip is roughly authored for. We nudge the run
+// clip's playback rate toward the real move speed so feet don't skate — clamped
+// so it never looks comically fast/slow. No per-clip stride metadata needed.
+const RUN_REF_SPEED = 5;
+const RUN_RATE_MIN = 0.8;
+const RUN_RATE_MAX = 1.3;
 
 /**
- * V1 animation controller: forward-only idle/walk/run plus server-driven
- * attack/hit/death one-shots. Movement direction is handled by Player/Enemy
- * yaw; this controller never tries strafe, turn-in-place, start/stop, or sprint
- * until those Synty clips are explicitly approved in Unity Preview.
+ * V2 locomotion: dead-simple idle↔run crossfade plus server-driven
+ * attack/hit/death one-shots. No walk tier, no foot-lock/phase, no stride
+ * metadata — the character is idle when still and runs when moving (direction is
+ * handled by Player/Enemy yaw). Strafe / turn-in-place are intentionally omitted.
  */
 export class LocomotionController {
   private readonly profile: MotionProfile;
   private readonly actions: Record<string, AnimationAction | undefined>;
   private readonly clips: ClipSet;
   private readonly idleName: string;
-  private readonly locoTiers: Tier[];
+  private readonly runName: string | null;
+  private readonly runAction: AnimationAction | null;
 
   private readonly weights = new Map<string, number>();
-  private phase = 0;
-  private phaseNames: string[] = [];
   private combatKey = "";
 
   constructor(cfg: ControllerConfig) {
@@ -70,24 +70,12 @@ export class LocomotionController {
     this.actions = cfg.actions;
     this.clips = cfg.clips;
     this.idleName = cfg.clips.idle;
-
-    const tiers: Tier[] = [];
-    const pushTier = (clipName: string | undefined, stride: number | undefined, fallback: number) => {
-      if (!clipName) return;
-      const action = cfg.actions[clipName];
-      if (!action) return;
-      const duration = action.getClip().duration || 1;
-      const groundPerCycle = stride && stride > 0 ? stride * cfg.visualHeight : fallback * (cfg.visualHeight / 1.8) * duration;
-      tiers.push({ action, name: clipName, duration, groundPerCycle, natural: groundPerCycle / duration });
-    };
-    pushTier(cfg.clips.walk, cfg.strideNorm?.walk, cfg.profile.fallbackNatural.walk);
-    pushTier(cfg.clips.run, cfg.strideNorm?.run, cfg.profile.fallbackNatural.run);
-    tiers.sort((a, b) => a.natural - b.natural);
-    this.locoTiers = tiers;
+    this.runAction = cfg.actions[cfg.clips.run] ?? null;
+    this.runName = this.runAction ? cfg.clips.run : null;
 
     const idle = cfg.actions[this.idleName];
     if (idle) this.startLoop(idle);
-    for (const tier of this.locoTiers) this.startLoop(tier.action);
+    if (this.runAction) this.startLoop(this.runAction);
   }
 
   private startLoop(action: AnimationAction): void {
@@ -100,15 +88,15 @@ export class LocomotionController {
   }
 
   update(inputs: LocoInputs, delta: number): void {
-    const targets = this.computeTargets(inputs, delta);
+    const targets = this.computeTargets(inputs);
     this.applyWeights(targets, delta);
-    this.applyLocoPhase();
   }
 
-  private computeTargets(inputs: LocoInputs, delta: number): Map<string, number> {
+  private computeTargets(inputs: LocoInputs): Map<string, number> {
     const targets = new Map<string, number>();
-    this.phaseNames = [];
 
+    // Combat wins outright: fire the one-shot on its rising edge, then hold full
+    // weight while the (server-timed) swing/flinch/death plays.
     if (inputs.combat) {
       const clipName = this.combatClip(inputs.combat.kind, inputs.combat.clip);
       const key = `${inputs.combat.kind}:${inputs.combat.clip ?? ""}:${inputs.combat.actionId ?? inputs.combat.kind}`;
@@ -121,55 +109,30 @@ export class LocomotionController {
     }
     this.combatKey = "";
 
+    // Locomotion: idle when still, run when moving.
     const moving = inputs.moving && inputs.speed > this.profile.moveEnterSpeed;
-    if (!moving || this.locoTiers.length === 0) {
-      targets.set(this.idleName, 1);
-      this.setTimeScale(this.idleName, 1);
-      return targets;
-    }
-
-    this.computeLocoBlend(inputs.speed, inputs.backwards ? -delta : delta, targets);
-    return targets;
-  }
-
-  private computeLocoBlend(speed: number, delta: number, targets: Map<string, number>): void {
-    const tiers = this.locoTiers;
-    let a: Tier;
-    let b: Tier;
-    let t: number;
-    if (tiers.length === 1 || speed <= tiers[0].natural) {
-      a = b = tiers[0];
-      t = 0;
-    } else if (speed >= tiers[tiers.length - 1].natural) {
-      a = b = tiers[tiers.length - 1];
-      t = 0;
+    if (moving && this.runName && this.runAction) {
+      targets.set(this.runName, 1);
+      // Light rate sync so the stride roughly tracks ground speed (kills skating).
+      this.runAction.timeScale = Math.max(RUN_RATE_MIN, Math.min(RUN_RATE_MAX, inputs.speed / RUN_REF_SPEED));
     } else {
-      a = tiers[0];
-      b = tiers[1];
-      const span = b.natural - a.natural;
-      t = span > EPS ? (speed - a.natural) / span : 0;
-      t = Math.max(0, Math.min(1, t));
+      targets.set(this.idleName, 1);
     }
-
-    targets.set(a.name, (targets.get(a.name) ?? 0) + (1 - t));
-    if (b !== a) targets.set(b.name, (targets.get(b.name) ?? 0) + t);
-
-    const groundPerCycle = a.groundPerCycle + (b.groundPerCycle - a.groundPerCycle) * t;
-    if (groundPerCycle > EPS) {
-      this.phase = (this.phase + (speed / groundPerCycle) * delta) % 1;
-      if (this.phase < 0) this.phase += 1;
-    }
-    this.phaseNames = a === b ? [a.name] : [a.name, b.name];
+    return targets;
   }
 
   private isCombatClip(name: string): boolean {
     return name === this.clips.attack || name === this.clips.hit || name === this.clips.death;
   }
 
+  private isLoop(name: string): boolean {
+    return name === this.idleName || name === this.runName;
+  }
+
   private applyWeights(targets: Map<string, number>, delta: number): void {
     const locoRate = Math.min(1, delta * this.profile.blendRate);
-    // Combat one-shots (attack/hit/death) snap in much faster than locomotion so
-    // a swing/flinch reads on the frame it starts instead of ramping ~180ms.
+    // Combat one-shots snap in much faster than locomotion so a swing/flinch
+    // reads on the frame it starts instead of ramping in.
     const combatRate = Math.min(1, delta * 26);
     const names = new Set<string>([...this.weights.keys(), ...targets.keys()]);
     for (const name of names) {
@@ -196,18 +159,6 @@ export class LocomotionController {
     }
   }
 
-  private applyLocoPhase(): void {
-    for (const tier of this.locoTiers) {
-      const active = this.phaseNames.includes(tier.name) && (this.weights.get(tier.name) ?? 0) > EPS;
-      if (active) {
-        tier.action.timeScale = 0;
-        tier.action.time = this.phase * tier.duration;
-      } else {
-        tier.action.timeScale = 1;
-      }
-    }
-  }
-
   private triggerOneShot(name: string, kind: "attack" | "hit" | "death" = "attack"): void {
     const action = this.actions[name];
     if (!action) return;
@@ -216,29 +167,18 @@ export class LocomotionController {
     action.clampWhenFinished = true;
     action.enabled = true;
     // Fit the clip into the server's action window so it always COMPLETES
-    // instead of being chopped when the action ends: source packs author
-    // luxurious clips (heavy combo 2.1s, hit react 0.9s) but the server
-    // windows are snappy (~0.6s swing, 0.3s hit-react, 4s death). Speeding
-    // the clip up (never slowing it down) reads as a full, punchy motion.
+    // instead of being chopped: source packs author luxurious clips but the
+    // server windows are snappy (~0.6s swing, 0.3s hit-react, 4s death).
+    // Speeding up (never slowing) reads as a full, punchy motion.
     const budget = kind === "hit" ? 0.34 : kind === "death" ? 3.5 : 0.62;
     const duration = action.getClip().duration;
     action.timeScale = Math.max(1, duration / budget);
     action.play();
   }
 
-  private setTimeScale(name: string, scale: number): void {
-    const action = this.actions[name];
-    if (action) action.timeScale = scale;
-  }
-
-  private isLoop(name: string): boolean {
-    return name === this.idleName || this.locoTiers.some((tier) => tier.name === name);
-  }
-
   private combatClip(kind: "attack" | "hit" | "death", preferred?: string): string | undefined {
     // A skill can request its own clip (e.g. "cast"); honor it only if the GLB
-    // actually bakes that action, otherwise fall back to the generic swing —
-    // so setting a skill's `clip` ahead of the art never breaks animation.
+    // actually bakes that action, else fall back to the generic swing.
     if (preferred && this.actions[preferred]) return preferred;
     const name = kind === "attack" ? this.clips.attack : kind === "hit" ? this.clips.hit : this.clips.death;
     return this.actions[name] ? name : undefined;

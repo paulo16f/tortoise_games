@@ -7,6 +7,8 @@ export interface ItemSlotView {
   itemId: string;
   count: number;
   rarity: string;
+  /** Remaining uses/durability for tools + weapons; -1 = not applicable. */
+  uses: number;
 }
 
 export interface SkillSlotView {

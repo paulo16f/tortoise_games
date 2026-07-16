@@ -127,8 +127,26 @@ async function main() {
     oreAfter = bagCount(self, "iron_ore") + bagCount(self, "crystal_shard");
   }
   check("gather yielded resources into the bag", oreAfter > 0, `resources=${oreAfter}`);
+  // Capture NOW — the affordability top-up below can outlast the 35s respawn.
+  const nearestDepleted = room.state.nodes.get(nearest.id)?.depleted === true;
+  // Bread costs 10g and ore floors 4g / crystal 10g — keep gathering nearby
+  // nodes until the bag's floor value covers it (the buy check below needs
+  // deterministic affordability). Closest spare nodes first.
+  const bagFloorValue = () => bagCount(self, "iron_ore") * 4 + bagCount(self, "crystal_shard") * 10;
+  // Same safety heuristic as the primary node pick: prefer nodes FAR from
+  // enemies (aggro mid-trek kills the smoke player), not near ones.
+  const spare = nodes
+    .filter((n) => n.id !== nearest.id)
+    .sort((a, b) => enemyDistTo(b.x, b.z) - enemyDistTo(a.x, a.z));
+  for (let i = 0; i < 4 && oreAfter > 0 && bagFloorValue() < 10 && i < spare.length; i++) {
+    const node = spare[i];
+    await walkTo(room, self, node.x, node.z, 2.0);
+    room.send("gatherNode", { nodeId: node.id });
+    await wait(2300);
+    oreAfter = bagCount(self, "iron_ore") + bagCount(self, "crystal_shard");
+  }
   check("loot toast fired for the yield", lootSeen.some((i) => i === "iron_ore" || i === "crystal_shard"));
-  check("node depleted after gather", room.state.nodes.get(nearest.id)?.depleted === true);
+  check("node depleted after gather", nearestDepleted);
 
   // Out-of-range market guard while standing at the node.
   const goldBeforeFarSell = self.gold;

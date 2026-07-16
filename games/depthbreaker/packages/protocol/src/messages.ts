@@ -210,7 +210,7 @@ export interface SpinResultMessage {
 /** One daily quest with the player's progress. */
 export interface DailyQuestView {
   id: string;
-  kind: "gather" | "kill" | "depth" | "cook";
+  kind: "gather" | "kill" | "coliseum" | "cook";
   label: string;
   target: number;
   subject: string;

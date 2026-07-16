@@ -74,8 +74,10 @@ const featureCentre = (re) => {
 const features = {};
 const market = featureCentre(/weapon_market/i);
 const cooking = featureCentre(/bakerymarket/i);
+const forge = featureCentre(/blacksmith|dwarf_forge|smelter|anvil/i);
 if (market) features.market = market;
 if (cooking) features.cooking = cooking;
+if (forge) features.forge = forge;
 // Fountain = the CENTRE of the authored stone-circle at spawn. The `Spawn_Town`
 // empty sits slightly off that circle's centre, so the heal ring looked offset
 // from the stones. The ring is the 4 `stone_fence_03` slabs — average them to

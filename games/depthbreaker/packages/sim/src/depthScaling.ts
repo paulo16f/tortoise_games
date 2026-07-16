@@ -1,3 +1,5 @@
+// DEPRECATED (Economy v2): depth system removed — coliseum tier ladder replaces it.
+// Runtime no longer imports this module; kept only for old tests until the rebrand cleanup.
 // Depth scaling — the "go deeper = harder fights, better pay" contract.
 // Depth increments when the floor boss dies (the party "breaks depth"); every
 // enemy spawned AFTER that is scaled by these multipliers, and the backend's

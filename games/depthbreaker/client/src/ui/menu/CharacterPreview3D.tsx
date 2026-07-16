@@ -8,8 +8,9 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { SkeletonUtils } from "three-stdlib";
-import { Box3, Vector3, type Group } from "three";
+import { Box3, Vector3, Mesh, MeshStandardMaterial, type Group } from "three";
 import { resolvePlayerModel } from "../../game/actors/useModel";
+import { useCharacterAtlas, attachAtlas } from "../../game/actors/characterAtlas";
 
 /** Same normalization contract as the in-game AnimatedCharacter: scale the GLB
  *  to a known height and plant its feet on y=0, so the fixed camera always
@@ -18,10 +19,16 @@ const PREVIEW_HEIGHT = 1.7;
 
 function Hero({ url, naturalHeight, restMinY }: { url: string; naturalHeight?: number; restMinY?: number }) {
   const gltf = useGLTF(url);
+  const atlas = useCharacterAtlas();
   const clone = useMemo(() => {
     const c = SkeletonUtils.clone(gltf.scene) as Group;
     c.traverse((o) => {
       o.castShadow = true;
+      const mesh = o as Mesh;
+      if (mesh.isMesh) {
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of mats) if (m instanceof MeshStandardMaterial) attachAtlas(m, atlas);
+      }
     });
     // Normalize with the MANIFEST's measured rest-pose metrics (same contract
     // as AnimatedCharacter). Box3 on a skinned mesh reads the raw bind-pose
@@ -40,12 +47,15 @@ function Hero({ url, naturalHeight, restMinY }: { url: string; naturalHeight?: n
     c.scale.setScalar(scale);
     c.position.y = -minY * scale;
     return c;
-  }, [gltf.scene, naturalHeight, restMinY]);
+  }, [gltf.scene, naturalHeight, restMinY, atlas]);
   const { actions, names } = useAnimations(gltf.animations, clone);
   const spin = useRef<Group>(null);
 
   useEffect(() => {
-    const idle = actions["idle"] ?? (names[0] ? actions[names[0]] : undefined);
+    // Always the calm "idle" loop (case-insensitive), so every bust idles the
+    // same way — never fall through to names[0], which can be a combat clip.
+    const idleName = names.find((n) => n.toLowerCase() === "idle") ?? names[0];
+    const idle = idleName ? actions[idleName] : undefined;
     idle?.reset().fadeIn(0.3).play();
     return () => void idle?.fadeOut(0.2);
   }, [actions, names]);
@@ -84,7 +94,7 @@ export function CharacterPreview3D({ classId, skinId }: { classId: string; skinI
     <div style={{ width: "100%", height: "100%" }}>
       <Canvas
         shadows
-        dpr={[1, 1.75]}
+        dpr={[1, 1.25]}
         // Aim at mid-torso (not the feet at the origin) so the whole
         // normalized 1.7u body — head included — fits the frame.
         camera={{ position: [0, 1.35, 3.9], fov: 34 }}

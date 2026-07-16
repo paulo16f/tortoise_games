@@ -197,6 +197,56 @@ export function playGather(): void {
   noise({ dur: 0.05, vol: 0.14, freq: 3000, q: 0.7 });
 }
 
+// --- Event cues (new for the friends-test pass) --------------------------------
+// Each tries its sample first, then a distinct synth so the event is audible
+// TODAY and upgrades automatically when a real file lands in the manifest.
+
+/** Triumphant three-note rise on gaining a character level. */
+export function playLevelUp(): void {
+  if (playSample("levelup", 0.9)) return;
+  tone({ freq: 523, dur: 0.14, type: "triangle", vol: 0.3 });
+  tone({ freq: 659, dur: 0.14, type: "triangle", vol: 0.3, delay: 0.11 });
+  tone({ freq: 784, dur: 0.3, type: "triangle", vol: 0.34, sweepTo: 1046, delay: 0.22 });
+  noise({ dur: 0.25, vol: 0.12, freq: 2400, q: 0.5, delay: 0.22 });
+}
+
+/** Gulp + fizz on drinking a potion / eating food. */
+export function playPotion(): void {
+  if (playSample("potion", 0.8)) return;
+  tone({ freq: 300, dur: 0.1, type: "sine", vol: 0.22, sweepTo: 180 });
+  tone({ freq: 220, dur: 0.1, type: "sine", vol: 0.2, sweepTo: 340, delay: 0.1 });
+  noise({ dur: 0.12, vol: 0.1, freq: 3600, q: 0.5, delay: 0.16 });
+}
+
+/** Tiny tick for UI button presses. */
+export function playUiClick(): void {
+  if (playSample("ui_click", 0.6)) return;
+  tone({ freq: 1500, dur: 0.03, type: "square", vol: 0.08, sweepTo: 1100 });
+}
+
+/** Soft whoosh for a panel opening. */
+export function playUiOpen(): void {
+  if (playSample("ui_open", 0.7)) return;
+  noise({ dur: 0.09, vol: 0.08, freq: 1800, q: 0.9 });
+  tone({ freq: 480, dur: 0.08, type: "sine", vol: 0.08, sweepTo: 700 });
+}
+
+/** Purchase confirm: coin ring + click. */
+export function playMarketBuy(): void {
+  if (playSample("market_buy", 0.85)) return;
+  tone({ freq: 988, dur: 0.08, type: "square", vol: 0.2 });
+  tone({ freq: 1319, dur: 0.12, type: "square", vol: 0.18, delay: 0.07 });
+  noise({ dur: 0.04, vol: 0.1, freq: 4200, q: 0.8 });
+}
+
+/** Ominous horn + rumble when a boss spawns. */
+export function playBossSpawn(): void {
+  if (playSample("boss_spawn", 0.95)) return;
+  tone({ freq: 98, dur: 0.7, type: "sawtooth", vol: 0.3, sweepTo: 65 });
+  tone({ freq: 147, dur: 0.55, type: "sawtooth", vol: 0.2, sweepTo: 98, delay: 0.05 });
+  noise({ dur: 0.6, vol: 0.16, freq: 240, q: 0.4 });
+}
+
 /** Skill → sonic family, for flavored procedural casts when no sample exists. */
 const SKILL_FAMILY: Record<string, "fire" | "frost" | "holy" | "shadow" | "steel"> = {
   fireball: "fire",

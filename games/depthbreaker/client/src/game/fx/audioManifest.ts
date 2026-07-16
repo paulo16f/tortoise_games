@@ -9,7 +9,9 @@
 //   Combat by event kind:  "hit" | "crit" | "death" | "heal"
 //   Generic skill cast:     "skill"
 //   Per-skill cast:         "cast:<skillId>"  e.g. "cast:fireball", "cast:smite"
-//   Economy/world:          "gold" | "loot" | "gather"
+//   Economy/world:          "gold" | "loot" | "gather" | "market_buy"
+//   Events:                 "levelup" | "potion" | "boss_spawn"
+//   UI:                     "ui_click" | "ui_open"
 //   Looping ambience:       "ambient:dungeon"
 //
 // Example once files are added:

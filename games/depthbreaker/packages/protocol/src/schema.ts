@@ -10,12 +10,15 @@ export class ItemSlotState extends Schema {
   declare count: number;
   /** Rarity string for UI tinting ("" for base/unknown items). */
   declare rarity: string;
+  /** Remaining uses/durability for tools + weapons; -1 = not applicable. */
+  declare uses: number;
 
   constructor() {
     super();
     this.itemId = "";
     this.count = 0;
     this.rarity = "";
+    this.uses = -1;
   }
 }
 
@@ -23,6 +26,7 @@ defineTypes(ItemSlotState, {
   itemId: "string",
   count: "number",
   rarity: "string",
+  uses: "number",
 });
 
 /** One hotbar slot. skillId "" marks an empty slot. */
@@ -290,7 +294,10 @@ defineTypes(BossPortalState, {
 export class ZoneState extends Schema {
   declare zoneId: string;
   declare seed: number;
+  /** Legacy — frozen at 0 (depth system removed; wire compat until the rebrand). */
   declare depth: number;
+  /** Coliseum champion tier — the endgame ladder (rises on every champion kill). */
+  declare coliseumTier: number;
   declare players: MapSchema<PlayerState>;
   declare enemies: MapSchema<EnemyState>;
   declare nodes: MapSchema<ResourceNodeState>;
@@ -301,6 +308,7 @@ export class ZoneState extends Schema {
     this.zoneId = "hub";
     this.seed = 0;
     this.depth = 0;
+    this.coliseumTier = 0;
     this.players = new MapSchema<PlayerState>();
     this.enemies = new MapSchema<EnemyState>();
     this.nodes = new MapSchema<ResourceNodeState>();
@@ -312,6 +320,7 @@ defineTypes(ZoneState, {
   zoneId: "string",
   seed: "number",
   depth: "number",
+  coliseumTier: "number",
   players: { map: PlayerState },
   enemies: { map: EnemyState },
   nodes: { map: ResourceNodeState },

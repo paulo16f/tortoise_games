@@ -36,7 +36,7 @@ New Railway project → **Deploy from GitHub repo** `tortoise_games` → add a
   - `ZONE_SHARED_SECRET=<secret 2>`
   - `CORS_ORIGIN=` *(fill after step 4)*
   - `ZONE_WS_URL=` *(fill after step 3)*
-- **Settings → Networking → Generate Domain.** Health check path: `/health`.
+- **Settings → Networking → Generate Domain.** Health check path: `/api/health`.
 
 ### 3. realtime service
 - **+ New → GitHub repo** (same repo). Root Directory = `/`, Dockerfile Path =
@@ -68,7 +68,7 @@ Client endpoints are baked at build → changing a domain/URL requires a client
 **redeploy**, not just a restart.
 
 ## Verify (smoke test)
-1. `https://<backend-domain>/health` → ready (secrets non-default, DB reachable).
+1. `https://<backend-domain>/api/health` → ready (secrets non-default, DB reachable).
 2. Open the client URL in **two browsers** → pick name/class → Play → both see
    each other move (WASD/click) and fight. That exercises backend (session),
    realtime (WS sync), and Postgres.

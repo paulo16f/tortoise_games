@@ -13,6 +13,9 @@ import { combatBus } from "../../net/combatBus";
 import { resolveEnemyModel, resolvePlayerModel } from "../actors/useModel";
 import { vfxFor } from "./skillVfx";
 import { spawnFlipbook } from "./FlipbookFx";
+import { onLevelUp } from "./worldEvents";
+import { addShake } from "./cameraImpulse";
+import { localPlayerPos } from "../entityRefs";
 
 const POOL = 72;
 const GRAVITY = 6;
@@ -124,10 +127,31 @@ export function ImpactFx() {
           if (f.kind === "crit") spawnImpactBurst(a.x, a.y, a.z, { count: 12, color: "#fbbf24", speed: 4.2, size: 0.16, life: 0.4 });
           else if (f.kind === "hit") spawnImpactBurst(a.x, a.y, a.z, { count: 6, color: "#fef3c7", speed: 3.2, size: 0.11 });
           else if (f.kind === "skill" && f.amount > 0) spawnImpactBurst(a.x, a.y, a.z, { count: 8, color: "#93c5fd", speed: 3.6, size: 0.13 });
-          else if (f.kind === "death") spawnImpactBurst(a.x, a.y, a.z, { count: 16, color: "#f97316", speed: 4.6, size: 0.17, life: 0.55, up: 2.6 });
+          else if (f.kind === "death") {
+            // Bosses go out with spectacle: double golden burst + camera shake.
+            const defId = zoneStore.state?.enemies.get(f.targetId)?.defId ?? "";
+            if (/boss|coliseum_champion/i.test(defId)) {
+              spawnImpactBurst(a.x, a.y, a.z, { count: 26, color: "#fbbf24", speed: 6.4, size: 0.24, life: 0.8, up: 3.6 });
+              spawnImpactBurst(a.x, a.y + 0.5, a.z, { count: 18, color: "#f97316", speed: 4.2, size: 0.18, life: 0.6, up: 2.2 });
+              addShake(0.5);
+            } else {
+              spawnImpactBurst(a.x, a.y, a.z, { count: 16, color: "#f97316", speed: 4.6, size: 0.17, life: 0.55, up: 2.6 });
+            }
+          }
         };
         if (f.delayMs > 0) window.setTimeout(spawn, f.delayMs);
         else spawn();
+      }),
+    [],
+  );
+
+  // Level-up: a golden fountain around the local player (sound plays in room.ts).
+  useEffect(
+    () =>
+      onLevelUp(() => {
+        const { x, y, z } = localPlayerPos;
+        spawnImpactBurst(x, y + 0.9, z, { count: 24, color: "#fde047", speed: 3.2, size: 0.16, life: 0.85, up: 4.2 });
+        spawnImpactBurst(x, y + 0.3, z, { count: 14, color: "#fef3c7", speed: 2.0, size: 0.12, life: 0.7, up: 3.0 });
       }),
     [],
   );

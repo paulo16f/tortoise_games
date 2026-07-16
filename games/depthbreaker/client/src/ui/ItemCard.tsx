@@ -4,9 +4,10 @@
 import { itemDef } from "@depthbreaker/sim";
 import { rarityColor } from "./itemDisplay";
 
-export function ItemCard({ itemId, count, action }: { itemId: string; count?: number; action?: string }) {
+export function ItemCard({ itemId, count, action, uses }: { itemId: string; count?: number; action?: string; uses?: number }) {
   const def = itemDef(itemId);
   if (!def) return <span>{itemId}</span>;
+  const showUses = uses !== undefined && uses >= 0 && def.maxUses !== undefined;
   return (
     <div>
       <div style={{ fontWeight: 700, fontSize: 13, color: rarityColor(def.rarity), marginBottom: 2 }}>
@@ -31,6 +32,11 @@ export function ItemCard({ itemId, count, action }: { itemId: string; count?: nu
         </div>
       )}
       {(def.healFraction ?? 0) > 0 && <div style={{ color: "#4ade80" }}>Restores {Math.round(def.healFraction! * 100)}% health</div>}
+      {showUses && (
+        <div style={{ color: uses! <= 10 ? "#f87171" : uses! <= 25 ? "#facc15" : "#a3e635" }}>
+          {def.kind === "tool" ? "Uses" : "Durability"} {uses}/{def.maxUses}
+        </div>
+      )}
       {(def.buyValue !== undefined || def.sellValue !== undefined) && (
         <div style={{ opacity: 0.7, marginTop: 4 }}>
           {def.buyValue !== undefined && <span>buy 🪙 {def.buyValue} </span>}

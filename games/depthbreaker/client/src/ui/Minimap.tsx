@@ -116,7 +116,7 @@ export function Minimap() {
   return (
     <div style={wrap}>
       <canvas ref={canvasRef} width={SIZE} height={SIZE} style={{ width: SIZE, height: SIZE, display: "block" }} />
-      <div style={depthChip}>Depth {snap.depth}</div>
+      <div style={depthChip}>⚔ Tier {snap.coliseumTier}</div>
     </div>
   );
 }

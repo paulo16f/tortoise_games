@@ -1,5 +1,5 @@
-// Daily quests — the game's main GOLD faucet (Kintara model: gather/kill/depth
-// objectives that pay gold + XP and reset daily). Pure and deterministic: the
+// Daily quests — the game's main GOLD faucet (gather/kill/coliseum objectives
+// that pay gold + XP and reset daily). Pure and deterministic: the
 // three active quests for a given UTC date are picked from the catalog by a
 // DeterministicRng seeded from the date string, so every server agrees on
 // "today's quests" without coordination and a client can preview them.
@@ -9,7 +9,7 @@
 
 import { DeterministicRng } from "./rng.js";
 
-export type DailyQuestKind = "gather" | "kill" | "depth" | "cook";
+export type DailyQuestKind = "gather" | "kill" | "coliseum" | "cook";
 
 export interface DailyQuestDef {
   id: string;
@@ -31,7 +31,7 @@ export const DAILY_QUEST_CATALOG: readonly DailyQuestDef[] = [
   { id: "slay_grunts", kind: "kill", label: "Slay 8 grunts", target: 8, subject: "grunt", goldReward: 50, xpReward: 200 },
   { id: "slay_any", kind: "kill", label: "Defeat 12 enemies", target: 12, subject: "", goldReward: 55, xpReward: 220 },
   { id: "slay_elites", kind: "kill", label: "Slay 3 elite grunts", target: 3, subject: "elite_grunt", goldReward: 70, xpReward: 260 },
-  { id: "reach_depth", kind: "depth", label: "Reach depth 2", target: 2, subject: "", goldReward: 60, xpReward: 150 },
+  { id: "slay_champion", kind: "coliseum", label: "Slay the Coliseum champion", target: 1, subject: "", goldReward: 60, xpReward: 150 },
   { id: "catch_minnows", kind: "gather", label: "Catch 5 minnows", target: 5, subject: "raw_minnow", goldReward: 40, xpReward: 120 },
   { id: "cook_meals", kind: "cook", label: "Cook 3 meals", target: 3, subject: "", goldReward: 55, xpReward: 200 },
 ] as const;

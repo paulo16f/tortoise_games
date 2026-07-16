@@ -1,7 +1,7 @@
 ﻿import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Billboard, Text } from "@react-three/drei";
-import type { Group, MeshStandardMaterial } from "three";
+import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from "three";
 import { MathUtils } from "three";
 import { zoneStore } from "../../net/room";
 import { combatBus } from "../../net/combatBus";
@@ -10,6 +10,7 @@ import { resolvePlayerModel, resolveWeaponModel } from "./useModel";
 import { AnimatedCharacter } from "./AnimatedCharacter";
 import { DEFAULT_MOTION_PROFILE } from "./motionProfiles";
 import { FLINCH_MS } from "../fx/fxConstants";
+import { predictLocalMovement } from "./prediction";
 
 interface PlayerProps {
   id: string;
@@ -25,6 +26,8 @@ export function Player({ id, isLocal }: PlayerProps) {
   const bodyMat = useRef<MeshStandardMaterial>(null);
   const modelMats = useRef<MeshStandardMaterial[]>([]);
   const skillFx = useRef<Group>(null);
+  const shieldMesh = useRef<Mesh>(null);
+  const ampRing = useRef<Mesh>(null);
   const flinchStart = useRef(Number.NEGATIVE_INFINITY);
   const initialized = useRef(false);
 
@@ -50,20 +53,49 @@ export function Player({ id, isLocal }: PlayerProps) {
     // any FPS. Snap on a big gap (dash/respawn teleport) instead of sliding.
     const posT = 1 - Math.exp(-profile.positionLerp * delta);
     const turnT = 1 - Math.exp(-profile.turnLerp * delta);
-    const gap = Math.hypot(p.x - g.position.x, p.z - g.position.z);
-    if (!initialized.current || gap > profile.positionSnapDistance) {
-      g.position.x = p.x;
-      g.position.z = p.z;
-      initialized.current = true;
+
+    // Local player with move intent → client-side prediction (instant response;
+    // server-reconciled inside predictLocalMovement). Everything else — remote
+    // players and all server-driven movement — uses the plain server lerp.
+    const snap = zoneStore.getSnapshot();
+    const predicted = isLocal && initialized.current
+      ? predictLocalMovement(p.x, p.z, g.position.x, g.position.z, snap.seed, snap.depth, p.alive, delta)
+      : null;
+    if (predicted) {
+      g.position.x = predicted.x;
+      g.position.z = predicted.z;
+      // Face the move direction immediately (the server's yaw arrives late).
+      g.rotation.y = lerpAngle(g.rotation.y, predicted.yaw, 1 - Math.exp(-14 * delta));
     } else {
-      g.position.x = MathUtils.lerp(g.position.x, p.x, posT);
-      g.position.z = MathUtils.lerp(g.position.z, p.z, posT);
+      const gap = Math.hypot(p.x - g.position.x, p.z - g.position.z);
+      if (!initialized.current || gap > profile.positionSnapDistance) {
+        g.position.x = p.x;
+        g.position.z = p.z;
+        initialized.current = true;
+      } else {
+        g.position.x = MathUtils.lerp(g.position.x, p.x, posT);
+        g.position.z = MathUtils.lerp(g.position.z, p.z, posT);
+      }
+      g.rotation.y = lerpAngle(g.rotation.y, p.yaw, turnT);
     }
     g.position.y = p.y;
-    g.rotation.y = lerpAngle(g.rotation.y, p.yaw, turnT);
     g.visible = p.alive;
 
     if (skillFx.current) skillFx.current.rotation.y += delta * 2.2;
+    // Living buff visuals: the shield bubble breathes (urgent flicker in its
+    // last second), the amp aura slowly spins + pulses.
+    const now = performance.now();
+    if (shieldMesh.current) {
+      const shieldLeft = p.shieldSeconds ?? 0;
+      const breathe = 1 + 0.05 * Math.sin(now / 190);
+      shieldMesh.current.scale.setScalar(breathe);
+      const m = shieldMesh.current.material as MeshStandardMaterial;
+      m.opacity = shieldLeft < 1 ? 0.1 + 0.16 * Math.abs(Math.sin(now / 90)) : 0.18 + 0.07 * Math.sin(now / 300);
+    }
+    if (ampRing.current) {
+      ampRing.current.rotation.z += delta * 1.6;
+      (ampRing.current.material as MeshBasicMaterial).opacity = 0.45 + 0.2 * Math.sin(now / 250);
+    }
     if (isLocal) localPlayerPos.set(g.position.x, g.position.y, g.position.z);
 
     const flinchAge = performance.now() - flinchStart.current;
@@ -132,7 +164,7 @@ export function Player({ id, isLocal }: PlayerProps) {
       )}
 
       {alive && (p?.shieldSeconds ?? 0) > 0 && (
-        <mesh position={[0, visualHeight * 0.48, 0]}>
+        <mesh ref={shieldMesh} position={[0, visualHeight * 0.48, 0]}>
           <sphereGeometry args={[radius * 1.85, 24, 16]} />
           <meshStandardMaterial color="#facc15" emissive="#f59e0b" emissiveIntensity={0.55} transparent opacity={0.22} depthWrite={false} />
         </mesh>
@@ -153,7 +185,7 @@ export function Player({ id, isLocal }: PlayerProps) {
       )}
 
       {alive && (p?.ampSeconds ?? 0) > 0 && (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+        <mesh ref={ampRing} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
           <ringGeometry args={[radius * 1.5, radius * 1.9, 32]} />
           <meshBasicMaterial color="#fde68a" transparent opacity={0.6} depthWrite={false} />
         </mesh>

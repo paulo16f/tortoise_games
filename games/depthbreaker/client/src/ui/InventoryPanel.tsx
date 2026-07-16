@@ -15,7 +15,15 @@ import { useDraggablePanel } from "./useDraggablePanel";
 import { tooltipHandlers } from "./Tooltip";
 import { PanelClose } from "./PanelClose";
 import { ItemCard } from "./ItemCard";
-import { CharacterPreview3D } from "./menu/CharacterPreview3D";
+import { playPotion } from "../game/fx/sfx";
+
+// Lightweight static class crest (no 3D canvas — the live bust was tanking FPS).
+const CLASS_CREST: Record<string, { icon: string; color: string }> = {
+  knight: { icon: "🛡️", color: "#7f9cc0" },
+  reaper: { icon: "⚔️", color: "#c07fd0" },
+  cleric: { icon: "✨", color: "#e8c874" },
+  necromancer: { icon: "💀", color: "#9b8be0" },
+};
 
 // Minimal external store for the open/closed flag so the input layer (window
 // keydown in useControls) and this component agree without prop drilling.
@@ -53,7 +61,10 @@ function BagSlot({ slot, index }: { slot: ItemSlotView; index: number }) {
   const onClick = () => {
     if (empty) return;
     if (isWeapon) zoneStore.sendEquipWeapon(slot.itemId);
-    else if (isConsumable) zoneStore.sendUseItem(index);
+    else if (isConsumable) {
+      zoneStore.sendUseItem(index);
+      playPotion(); // optimistic gulp; the server's heal event plays on top
+    }
   };
 
   const clickable = !empty && (isWeapon || isConsumable);
@@ -62,7 +73,7 @@ function BagSlot({ slot, index }: { slot: ItemSlotView; index: number }) {
   return (
     <div
       onClick={onClick}
-      {...(empty ? {} : tooltipHandlers(() => <ItemCard itemId={slot.itemId} count={slot.count} action={action} />))}
+      {...(empty ? {} : tooltipHandlers(() => <ItemCard itemId={slot.itemId} count={slot.count} action={action} uses={slot.uses} />))}
       style={{
         position: "relative",
         width: 52,
@@ -80,6 +91,21 @@ function BagSlot({ slot, index }: { slot: ItemSlotView; index: number }) {
       }}
     >
       {!empty && <ItemGlyph itemId={slot.itemId} />}
+      {!empty && slot.uses >= 0 && (
+        <span
+          style={{
+            position: "absolute",
+            left: 3,
+            top: 1,
+            fontSize: 10,
+            fontWeight: 700,
+            color: slot.uses <= 10 ? "#f87171" : slot.uses <= 25 ? "#facc15" : "#a3e635",
+            textShadow: "0 1px 2px #000",
+          }}
+        >
+          {slot.uses}
+        </span>
+      )}
       {!empty && slot.count > 1 && (
         <span
           style={{
@@ -161,18 +187,26 @@ export function InventoryPanel() {
 
       {/* Character bust (left) + equipped weapon (right). */}
       <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-        <div
-          style={{
-            width: 118,
-            height: 150,
-            borderRadius: 8,
-            border: "1px solid rgba(201,165,74,0.3)",
-            background: "radial-gradient(circle at 50% 35%, rgba(30,34,44,0.9), rgba(6,7,10,0.95))",
-            overflow: "hidden",
-          }}
-        >
-          <CharacterPreview3D classId={snap.self?.classId ?? "knight"} skinId={snap.self?.skinId} />
-        </div>
+        {(() => {
+          const crest = CLASS_CREST[snap.self?.classId ?? "knight"] ?? CLASS_CREST.knight!;
+          return (
+            <div
+              style={{
+                width: 118,
+                height: 150,
+                borderRadius: 8,
+                border: `1px solid ${crest.color}66`,
+                background: `radial-gradient(circle at 50% 38%, ${crest.color}33, rgba(6,7,10,0.95))`,
+                display: "grid",
+                placeItems: "center",
+                fontSize: 54,
+                textShadow: "0 2px 8px rgba(0,0,0,0.7)",
+              }}
+            >
+              <span aria-hidden>{crest.icon}</span>
+            </div>
+          );
+        })()}
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.4, color: "#c9a54a", textTransform: "uppercase" }}>Weapon</span>
           <WeaponSlot weaponId={snap.self?.weaponId ?? ""} />

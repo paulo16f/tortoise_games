@@ -8,8 +8,7 @@ import type { Rarity } from "./lootRoller.js";
 /** Mirrors ClassId in @depthbreaker/protocol (sim must not depend on protocol). */
 export type ItemClassId = "knight" | "reaper" | "cleric" | "necromancer";
 
-/** "tool" is reserved for the future mining-pick tier system (not used yet). */
-export type ItemKind = "weapon" | "potion" | "food" | "junk" | "resource" | "tool";
+export type ItemKind = "weapon" | "potion" | "food" | "junk" | "resource" | "tool" | "key";
 
 /**
  * Weapon archetypes (POLYGON Dungeon Realms categories). Each type has its own
@@ -53,6 +52,22 @@ export interface ItemDef {
   buyValue?: number;
   /** Gold the market pays the player. Absent = unsellable. Always < buyValue. */
   sellValue?: number;
+  /**
+   * Economy v2 durability. Tools: gathering actions before breaking. Weapons:
+   * durability points — each DEATH costs DEATH_DURABILITY_COST, at 0 the item
+   * breaks. Items with maxUses NEVER stack (stackSize must be 1).
+   */
+  maxUses?: number;
+  /** Tools: which gathering family this tool enables. */
+  toolKind?: "mining" | "fishing";
+}
+
+/** Durability a weapon loses when its wielder dies (see maxUses). */
+export const DEATH_DURABILITY_COST = 10;
+
+/** Max uses/durability for an item id (undefined = not a durability item). */
+export function itemMaxUses(itemId: string): number | undefined {
+  return ITEMS[itemId]?.maxUses;
 }
 
 /** Which weapon archetypes each class may wield. */
@@ -237,6 +252,128 @@ export const ITEMS: Record<string, ItemDef> = {
     stackSize: 20,
     sellValue: 2,
   },
+  // Tools (Economy v2) — gathering REQUIRES the matching tool in the bag; each
+  // gather consumes 1 use and the tool breaks at 0. Starter tier sold by the
+  // NPC market; better tiers come from the Forge.
+  rusty_pickaxe: {
+    id: "rusty_pickaxe",
+    name: "Rusty Pickaxe",
+    kind: "tool",
+    rarity: "common",
+    stackSize: 1,
+    toolKind: "mining",
+    maxUses: 60,
+    buyValue: 15,
+    sellValue: 3,
+  },
+  willow_rod: {
+    id: "willow_rod",
+    name: "Willow Rod",
+    kind: "tool",
+    rarity: "common",
+    stackSize: 1,
+    toolKind: "fishing",
+    maxUses: 60,
+    buyValue: 15,
+    sellValue: 3,
+  },
+  // Forge-crafted tool tier — 200 uses, from combat materials + ore.
+  iron_pickaxe: {
+    id: "iron_pickaxe",
+    name: "Iron Pickaxe",
+    kind: "tool",
+    rarity: "uncommon",
+    stackSize: 1,
+    toolKind: "mining",
+    maxUses: 200,
+    sellValue: 10,
+  },
+  sturdy_rod: {
+    id: "sturdy_rod",
+    name: "Sturdy Rod",
+    kind: "tool",
+    rarity: "uncommon",
+    stackSize: 1,
+    toolKind: "fishing",
+    maxUses: 200,
+    sellValue: 10,
+  },
+  // Coliseum trial key — consumed to summon the champion at high tiers.
+  trial_key: {
+    id: "trial_key",
+    name: "Trial Key",
+    kind: "key",
+    rarity: "rare",
+    stackSize: 5,
+    sellValue: 60,
+  },
+  // Combat materials (Economy v2) — kills pay in MATERIALS, not gold. Each zone
+  // family drops its own pair (common + uncommon); bosses drop the rare tier.
+  // sellValue is the NPC FLOOR price; the real market is player-to-player.
+  goblin_hide: {
+    id: "goblin_hide",
+    name: "Goblin Hide",
+    kind: "resource",
+    rarity: "common",
+    stackSize: 20,
+    sellValue: 2,
+  },
+  warband_totem: {
+    id: "warband_totem",
+    name: "Warband Totem",
+    kind: "resource",
+    rarity: "uncommon",
+    stackSize: 20,
+    sellValue: 8,
+  },
+  bone_shard: {
+    id: "bone_shard",
+    name: "Bone Shard",
+    kind: "resource",
+    rarity: "common",
+    stackSize: 20,
+    sellValue: 3,
+  },
+  grave_iron: {
+    id: "grave_iron",
+    name: "Grave Iron",
+    kind: "resource",
+    rarity: "uncommon",
+    stackSize: 20,
+    sellValue: 10,
+  },
+  demon_essence: {
+    id: "demon_essence",
+    name: "Demon Essence",
+    kind: "resource",
+    rarity: "common",
+    stackSize: 20,
+    sellValue: 5,
+  },
+  infernal_core: {
+    id: "infernal_core",
+    name: "Infernal Core",
+    kind: "resource",
+    rarity: "uncommon",
+    stackSize: 20,
+    sellValue: 18,
+  },
+  beast_horn: {
+    id: "beast_horn",
+    name: "Beast Horn",
+    kind: "resource",
+    rarity: "rare",
+    stackSize: 20,
+    sellValue: 25,
+  },
+  champion_sigil: {
+    id: "champion_sigil",
+    name: "Champion's Sigil",
+    kind: "resource",
+    rarity: "rare",
+    stackSize: 20,
+    sellValue: 50,
+  },
   // Gathered resources (mining) — sold at the market for gold.
   iron_ore: {
     id: "iron_ore",
@@ -244,7 +381,7 @@ export const ITEMS: Record<string, ItemDef> = {
     kind: "resource",
     rarity: "common",
     stackSize: 20,
-    sellValue: 6,
+    sellValue: 4,
   },
   crystal_shard: {
     id: "crystal_shard",
@@ -252,7 +389,7 @@ export const ITEMS: Record<string, ItemDef> = {
     kind: "resource",
     rarity: "uncommon",
     stackSize: 20,
-    sellValue: 18,
+    sellValue: 10,
   },
   // Raw fish (fishing) — a resource; carries a sellValue so cooking has a real
   // opportunity cost vs. selling, and it auto-appears in the Market Sell tab.
@@ -262,7 +399,7 @@ export const ITEMS: Record<string, ItemDef> = {
     kind: "resource",
     rarity: "common",
     stackSize: 20,
-    sellValue: 3,
+    sellValue: 2,
   },
   raw_cavefish: {
     id: "raw_cavefish",
@@ -270,7 +407,7 @@ export const ITEMS: Record<string, ItemDef> = {
     kind: "resource",
     rarity: "uncommon",
     stackSize: 20,
-    sellValue: 9,
+    sellValue: 5,
   },
   raw_gilded_bass: {
     id: "raw_gilded_bass",
@@ -278,7 +415,7 @@ export const ITEMS: Record<string, ItemDef> = {
     kind: "resource",
     rarity: "rare",
     stackSize: 20,
-    sellValue: 22,
+    sellValue: 12,
   },
   // Cooked food (cooking) — heals more than bread (0.2); no buyValue, so the
   // only way to get it is to cook it. Shares the potion cooldown when eaten.
@@ -310,6 +447,14 @@ export const ITEMS: Record<string, ItemDef> = {
     sellValue: 34,
   },
 };
+
+// Economy v2: every weapon has durability (dying costs DEATH_DURABILITY_COST;
+// at 0 the weapon breaks). Assigned by rarity so new weapons get it for free;
+// an explicit per-item maxUses in the entry above still wins.
+const WEAPON_DURABILITY: Record<Rarity, number> = { common: 60, uncommon: 80, rare: 100, epic: 120, legendary: 150 };
+for (const def of Object.values(ITEMS)) {
+  if (def.kind === "weapon" && def.maxUses === undefined) def.maxUses = WEAPON_DURABILITY[def.rarity];
+}
 
 export function itemDef(id: string): ItemDef | undefined {
   return ITEMS[id];

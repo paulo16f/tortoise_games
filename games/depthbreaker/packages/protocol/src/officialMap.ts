@@ -161,6 +161,10 @@ export function buildOfficialMap(): DungeonMapDefinition {
   // Spawn_Town empty — they differ by a couple units, which read as the heal ring
   // sitting off the visible ring. Both the visual and the server heal use this.
   const fountainPad = MAP_FEATURES.fountain ?? playerSpawn;
+  // Forge = the blacksmith cabin when the map has one, else beside the market.
+  const forge = MAP_FEATURES.forge
+    ? featureSpot("forge", MAP_FEATURES.forge)
+    : { x: marketStall.x + 3, z: marketStall.z - 2 };
 
   const zones = [marker("Zone_Area1", playerSpawn), marker("Zone_Area2", playerSpawn), marker("Zone_Area3", playerSpawn)];
   const avoid: Vec2[] = [playerSpawn, marketStall, ...zones];
@@ -229,6 +233,7 @@ export function buildOfficialMap(): DungeonMapDefinition {
     marketStall,
     cookingStation,
     fountainPad,
+    forge,
     areas,
     coliseumPortal,
   };

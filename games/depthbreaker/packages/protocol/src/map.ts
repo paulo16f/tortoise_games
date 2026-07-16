@@ -96,6 +96,8 @@ export interface DungeonMapDefinition {
   /** Fountain heal-pad centre (official map: the stone-circle centre, which is a
    *  couple units off playerSpawn). Absent on the procedural map → use playerSpawn. */
   fountainPad?: Vec2;
+  /** Forge (smithing) station — crafting/repair happens in range of this spot. */
+  forge?: Vec2;
   /** The three leveled areas around town (official map). When present, ZoneRoom
    *  spawns each area's own roster; absent → the procedural uniform spawn. */
   areas?: DungeonArea[];

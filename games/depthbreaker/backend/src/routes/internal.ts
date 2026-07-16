@@ -7,9 +7,9 @@ import { withTransaction } from "../db/pool.js";
 import { makeRequireZoneSecret } from "../plugins/guards.js";
 import {
   DAILY_EARN_CAP,
-  MAX_PLAUSIBLE_DEPTH,
-  maxCurrencyForDepth,
-  maxXpForDepth,
+  MAX_PLAUSIBLE_TIER,
+  maxCurrencyForRun,
+  maxXpForRun,
   dailyQuestsFor,
   dailyQuestDef,
   dateKeyUTC,
@@ -81,11 +81,12 @@ export function registerInternalRoutes(app: FastifyInstance, ctx: AppContext): v
       };
 
       // Plausibility bounds (GAME_MATH_SPEC §7): the backend never re-simulates,
-      // but it caps what a report may claim.
+      // but it caps what a report may claim. Economy v2: `depthReached` carries
+      // the COLISEUM TIER the run reached (legacy field name until the rebrand).
       if (
-        body.depthReached > MAX_PLAUSIBLE_DEPTH ||
-        body.xpEarned > maxXpForDepth(body.depthReached) ||
-        body.currencyEarned > maxCurrencyForDepth(body.depthReached)
+        body.depthReached > MAX_PLAUSIBLE_TIER ||
+        body.xpEarned > maxXpForRun(body.depthReached) ||
+        body.currencyEarned > maxCurrencyForRun(body.depthReached)
       ) {
         request.log.warn({ runId: id, body }, "implausible run-finish report rejected");
         return reply.code(422).send({ error: "implausible_report" });
@@ -428,7 +429,7 @@ export function registerInternalRoutes(app: FastifyInstance, ctx: AppContext): v
     async (request, reply) => {
       const { id } = request.params as { id: string };
       const { depthReached } = request.body as { depthReached: number };
-      if (depthReached > MAX_PLAUSIBLE_DEPTH) {
+      if (depthReached > MAX_PLAUSIBLE_TIER) {
         return reply.code(422).send({ error: "implausible_report" });
       }
       const res = await pool.query(

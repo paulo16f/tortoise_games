@@ -17,6 +17,8 @@ import { SpinnerPanel } from "./ui/SpinnerPanel";
 import { ChatPanel } from "./ui/ChatPanel";
 import { CookingPanel } from "./ui/CookingPanel";
 import { PanelDock } from "./ui/PanelDock";
+import { GuidePanel } from "./ui/GuidePanel";
+import { ForgePanel } from "./ui/ForgePanel";
 import { Minimap } from "./ui/Minimap";
 import { ZoneBanner } from "./ui/ZoneBanner";
 import { LootToasts } from "./ui/LootToasts";
@@ -36,7 +38,10 @@ function GameCanvas({ onLeave }: { onLeave: () => void }) {
   }, []);
   return (
     <>
-      <Canvas shadows camera={{ position: [0, 8, 10], fov: 42 }} gl={{ antialias: true }}>
+      {/* dpr cap: uncapped native DPR (2-3x on laptops) was the single biggest
+          GPU cost. antialias off: the post chain ends in SMAA, so default-
+          framebuffer MSAA was pure waste under the EffectComposer. */}
+      <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 8, 10], fov: 42 }} gl={{ antialias: false }}>
         <Suspense fallback={null}>
           <Scene />
         </Suspense>
@@ -52,6 +57,8 @@ function GameCanvas({ onLeave }: { onLeave: () => void }) {
       <ChatPanel />
       <CookingPanel />
       <PanelDock />
+      <GuidePanel />
+      <ForgePanel />
       <Minimap />
       <ZoneBanner />
       <LootToasts />

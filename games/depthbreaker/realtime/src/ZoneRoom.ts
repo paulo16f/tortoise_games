@@ -18,6 +18,7 @@ import {
   ServerMessage,
   ClientMessage as CM,
   PLAYER_SPEED,
+  PLAYER_COLLISION_RADIUS,
   TICK_MS,
   type ClassId,
   type InputMessage,
@@ -70,8 +71,8 @@ import {
   isOnGlobalCooldown,
   beginGlobalCooldown,
   levelForTotalXp,
-  maxCurrencyForDepth,
-  maxXpForDepth,
+  maxCurrencyForRun,
+  maxXpForRun,
   dailyQuestsFor,
   dateKeyUTC,
   type DailyQuestKind,
@@ -87,6 +88,13 @@ import {
   addStacked,
   removeAt,
   removeStacked,
+  spendUse,
+  findToolIndex,
+  itemMaxUses,
+  DEATH_DURABILITY_COST,
+  forgeRecipe,
+  REPAIR_WEAPON_ID,
+  repairCost,
   countItem,
   cookingRecipe,
   itemDef,
@@ -111,17 +119,14 @@ import {
   projectileTiming,
   type PendingProjectile,
   type ProjectileEntity,
-  depthHpMult,
-  depthDamageMult,
-  scaledXp,
-  scaledCurrency,
 } from "@depthbreaker/sim";
 import { EnemyController, GRUNT, SWARMER, ELITE_GRUNT, BOSS_BRUTE, AREA_ROSTERS, COLISEUM_BOSS, coliseumBossForTier, type EnemyDef, type CombatTarget } from "./enemies.js";
 import { verifyJoinTicket, type JoinTicketClaims } from "./joinTicket.js";
 import { BackendReporter } from "./backendReporter.js";
 import { loadConfig, type RealtimeConfig } from "./config.js";
 
-const COLLISION_RADIUS = 0.45;
+// Shared with the client's movement prediction (identical wall clamps).
+const COLLISION_RADIUS = PLAYER_COLLISION_RADIUS;
 const BAG_CAPACITY = 16;
 const PLAYER_CRIT_CHANCE = 0.15;
 const INITIAL_ENEMY_COUNT = 3;
@@ -224,6 +229,8 @@ interface PlayerRuntime {
   ampSeconds: number;
   ampValue: number;
   respawnTimer: number;
+  /** Durability left on the EQUIPPED weapon (moves with the item on equip/unequip). -1 = n/a. */
+  weaponUses: number;
   profile: ClassProfile;
   runId: string | null;
   characterId: string;
@@ -341,8 +348,13 @@ export class ZoneRoom extends Room<ZoneState> {
 
     this.onMessage(CM.ToggleWeapon, (client, message: ToggleWeaponMessage) => {
       const player = this.state.players.get(client.sessionId);
-      if (!player || !player.alive) return;
-      player.weaponId = message.equipped ? defaultWeaponForClass(player.classId as ClassId) : "";
+      const rt = this.runtimes.get(client.sessionId);
+      if (!player || !rt || !player.alive) return;
+      // Legacy show/hide toggle summons the class DEFAULT weapon (atk 0) — its
+      // durability tracks too, though breaking a starter stick costs nothing.
+      const weaponId = message.equipped ? defaultWeaponForClass(player.classId as ClassId) : "";
+      player.weaponId = weaponId;
+      rt.weaponUses = weaponId ? itemMaxUses(weaponId) ?? -1 : -1;
     });
 
     this.onMessage(CM.EquipWeapon, (client, message: EquipWeaponMessage) => {
@@ -474,6 +486,7 @@ export class ZoneRoom extends Room<ZoneState> {
       ampSeconds: 0,
       ampValue: 0,
       respawnTimer: 0,
+      weaponUses: itemMaxUses(defaultWeaponForClass(auth.classId)) ?? -1,
       profile,
       runId: auth.claims?.runId ?? null,
       characterId: auth.claims?.characterId ?? "",
@@ -488,7 +501,13 @@ export class ZoneRoom extends Room<ZoneState> {
       earnedXp: 0,
       earnedCurrency: 0,
       ticketed: auth.claims !== null,
-      bag: [{ itemId: "health_potion", count: 3 }],
+      // Starter kit: potions + free starter tools (Kintara pattern — tools wear
+      // out, so the gift doesn't undermine the crafting treadmill).
+      bag: [
+        { itemId: "health_potion", count: 3 },
+        { itemId: "rusty_pickaxe", count: 1, uses: itemMaxUses("rusty_pickaxe") },
+        { itemId: "willow_rod", count: 1, uses: itemMaxUses("willow_rod") },
+      ],
     };
     // Full auto-attack period is fixed per class; the swing timer itself
     // (swingCooldown) is mirrored each frame in updateCooldowns.
@@ -568,12 +587,14 @@ export class ZoneRoom extends Room<ZoneState> {
     this.runtimes.delete(client.sessionId);
 
     if (rt?.ticketed && rt.runId) {
-      const depth = this.state.depth;
+      // Economy v2: the coliseum tier is the run's progression axis (the wire
+      // field keeps its legacy name until the rebrand rename).
+      const tier = this.coliseumTier;
       await this.reporter.reportRunFinish(rt.runId, {
         outcome: "abandoned",
-        depthReached: depth,
-        xpEarned: Math.min(rt.earnedXp, maxXpForDepth(depth)),
-        currencyEarned: Math.min(rt.earnedCurrency, maxCurrencyForDepth(depth)),
+        depthReached: tier,
+        xpEarned: Math.min(rt.earnedXp, maxXpForRun(tier)),
+        currencyEarned: Math.min(rt.earnedCurrency, maxCurrencyForRun(tier)),
         loot: [],
       });
     }
@@ -760,12 +781,47 @@ export class ZoneRoom extends Room<ZoneState> {
   }
 
   /** Re-form the Coliseum world boss a bit after it's slain, one tier stronger. */
+  /** Tiers up to this respawn free; beyond it the champion demands a Trial Key
+   *  (Economy v2 content-as-consumable — forged from champion materials). */
+  private static readonly COLISEUM_FREE_TIERS = 5;
+  private coliseumAwaitingKey = false;
+
   private updateColiseum(dt: number): void {
-    if (this.coliseumRespawnTimer <= 0 || !this.dungeon.coliseumPortal) return;
-    this.coliseumRespawnTimer -= dt;
-    if (this.coliseumRespawnTimer <= 0) {
-      const c = this.dungeon.coliseumPortal;
+    const c = this.dungeon.coliseumPortal;
+    if (!c) return;
+
+    if (this.coliseumRespawnTimer > 0) {
+      this.coliseumRespawnTimer -= dt;
+      if (this.coliseumRespawnTimer <= 0) {
+        if (this.coliseumTier <= ZoneRoom.COLISEUM_FREE_TIERS) {
+          this.spawnEnemy(coliseumBossForTier(this.coliseumTier), c.x, c.z);
+        } else if (!this.coliseumAwaitingKey) {
+          this.coliseumAwaitingKey = true;
+          this.broadcast(ServerMessage.Chat, {
+            text: `Tier ${this.coliseumTier} champion awaits a TRIAL KEY — forge one and bring it to the arena.`,
+            from: "⚔ Coliseum",
+          } as ChatMessage);
+        }
+      }
+      return;
+    }
+
+    // Key gate: any living player standing in the arena with a trial_key
+    // consumes one and summons the champion for everyone.
+    if (!this.coliseumAwaitingKey) return;
+    for (const [playerId, rt] of this.runtimes) {
+      const p = this.state.players.get(playerId);
+      if (!p || !p.alive) continue;
+      if (Math.hypot(p.x - c.x, p.z - c.z) > 8) continue;
+      if (!removeStacked(rt.bag, "trial_key", 1)) continue;
+      this.syncBag(p, rt);
+      this.coliseumAwaitingKey = false;
       this.spawnEnemy(coliseumBossForTier(this.coliseumTier), c.x, c.z);
+      this.broadcast(ServerMessage.Chat, {
+        text: `${p.name} spent a Trial Key — the Tier ${this.coliseumTier} champion rises!`,
+        from: "⚔ Coliseum",
+      } as ChatMessage);
+      break;
     }
   }
 
@@ -791,23 +847,6 @@ export class ZoneRoom extends Room<ZoneState> {
       portal.z = point.z;
       portal.countdown = BOSS_PORTAL_COUNTDOWN_SECONDS;
     }
-  }
-
-  /**
-   * The party broke through to the next depth (floor boss died). Depth drives
-   * everything downstream: enemy hp/damage scaling at spawn, kill xp/gold
-   * multipliers, the backend's per-run plausibility caps, and the reach-depth
-   * daily quest (which was unwinnable before this hook existed — nothing ever
-   * bumped the "depth" kind).
-   */
-  private breakDepth(): void {
-    this.state.depth += 1;
-    this.runtimes.forEach((rt, playerId) => {
-      const player = this.state.players.get(playerId);
-      if (player) this.bumpDaily(rt, "depth", "", 1);
-    });
-    const payload: ChatMessage = { text: `The floor gives way… Depth ${this.state.depth}. Enemies grow stronger — and richer.`, from: "⚒ Depthbreaker" };
-    this.broadcast(ServerMessage.Chat, payload);
   }
 
   private buildTargetMap(): Map<string, CombatTarget> {
@@ -942,21 +981,29 @@ export class ZoneRoom extends Room<ZoneState> {
       slot.itemId = src?.itemId ?? "";
       slot.count = src?.count ?? 0;
       slot.rarity = src ? itemDef(src.itemId)?.rarity ?? "" : "";
+      slot.uses = src?.uses ?? -1;
     }
     while (inv.length > BAG_CAPACITY) inv.pop();
   }
 
-  /** Equip a weapon from the bag; the previously equipped weapon returns to the bag. */
+  /** Equip a weapon from the bag; the previously equipped weapon returns to the
+   *  bag. Durability travels with the item: the slot's remaining uses move to
+   *  rt.weaponUses on equip and back onto the bag slot on unequip. */
   private equipWeaponFromBag(playerId: string, itemId: string): void {
     const rt = this.runtimes.get(playerId);
     const p = this.state.players.get(playerId);
     if (!rt || !p || !p.alive) return;
     if (!canEquipWeapon(p.classId as ItemClassId, itemId)) return;
-    if (!removeStacked(rt.bag, itemId, 1)) return;
+    const slotIndex = rt.bag.findIndex((s) => s.itemId === itemId);
+    if (slotIndex === -1) return;
+    const incomingUses = rt.bag[slotIndex]!.uses ?? itemMaxUses(itemId) ?? -1;
+    if (!removeAt(rt.bag, slotIndex, 1)) return;
     const previous = p.weaponId;
+    const previousUses = rt.weaponUses;
     p.weaponId = itemId;
+    rt.weaponUses = incomingUses;
     if (previous && itemDef(previous)?.kind === "weapon") {
-      addStacked(rt.bag, BAG_CAPACITY, previous, 1);
+      addStacked(rt.bag, BAG_CAPACITY, previous, 1, previousUses > 0 ? previousUses : undefined);
     }
     this.syncBag(p, rt);
   }
@@ -994,6 +1041,34 @@ export class ZoneRoom extends Room<ZoneState> {
    * once at click, again at impact — so a node sniped by another player (or a
    * mid-cast death) yields nothing.
    */
+  /** Economy v2: gathering requires a working tool in the bag. Returns its bag
+   *  index, or -1 (after telling the player what they're missing). */
+  private requireTool(playerId: string, toolKind: "mining" | "fishing"): number {
+    const rt = this.runtimes.get(playerId);
+    if (!rt) return -1;
+    const idx = findToolIndex(rt.bag, toolKind, (id) => itemDef(id)?.toolKind);
+    if (idx === -1) {
+      const label = toolKind === "mining" ? "pickaxe" : "fishing rod";
+      this.clients
+        .find((c) => c.sessionId === playerId)
+        ?.send(ServerMessage.Chat, { text: `You need a ${label} — the Market sells starter tools.`, from: "⚒" } as ChatMessage);
+    }
+    return idx;
+  }
+
+  /** Spend one tool use at gather impact; announce a break. */
+  private spendToolUse(playerId: string, rt: PlayerRuntime, toolKind: "mining" | "fishing"): void {
+    const idx = findToolIndex(rt.bag, toolKind, (id) => itemDef(id)?.toolKind);
+    if (idx === -1) return;
+    const itemId = rt.bag[idx]!.itemId;
+    if (spendUse(rt.bag, idx) === "broke") {
+      const def = itemDef(itemId);
+      this.clients
+        .find((c) => c.sessionId === playerId)
+        ?.send(ServerMessage.Chat, { text: `Your ${def?.name ?? "tool"} broke!`, from: "⚒" } as ChatMessage);
+    }
+  }
+
   private gatherNode(playerId: string, nodeId: string): void {
     const rt = this.runtimes.get(playerId);
     const p = this.state.players.get(playerId);
@@ -1002,6 +1077,7 @@ export class ZoneRoom extends Room<ZoneState> {
     if (Math.hypot(node.x - p.x, node.z - p.z) > GATHER_RANGE) return;
 
     const isFishing = node.kind === "fishing_spot" || node.kind === "deep_fishing_spot";
+    if (this.requireTool(playerId, isFishing ? "fishing" : "mining") === -1) return;
     const castSeconds = isFishing ? FISH_CAST_SECONDS : GATHER_CAST_SECONDS;
     const actionId = this.nextActionId();
     // Action window outlives the impact tick — an impact scheduled exactly at
@@ -1044,6 +1120,7 @@ export class ZoneRoom extends Room<ZoneState> {
           this.bumpDaily(liveRt, "gather", grant.itemId, deposited);
         }
       }
+      this.spendToolUse(playerId, liveRt, isFishing ? "fishing" : "mining");
       this.syncBag(source, liveRt);
       liveNode.depleted = true;
       this.nodeRespawns.set(nodeId, NODE_RESPAWN_SECONDS);
@@ -1066,6 +1143,7 @@ export class ZoneRoom extends Room<ZoneState> {
     const shore = nearestDungeonWalkablePoint(x, z, 0.3, this.dungeon);
     const distToShore = Math.hypot(shore.x - x, shore.z - z);
     if (distToShore > 6) return;
+    if (this.requireTool(playerId, "fishing") === -1) return;
 
     const actionId = this.nextActionId();
     this.facePlayerToPoint(p, x, z);
@@ -1089,6 +1167,7 @@ export class ZoneRoom extends Room<ZoneState> {
           this.bumpDaily(liveRt, "gather", grant.itemId, deposited);
         }
       }
+      this.spendToolUse(playerId, liveRt, "fishing");
       this.syncBag(source, liveRt);
     });
   }
@@ -1116,6 +1195,12 @@ export class ZoneRoom extends Room<ZoneState> {
    * useBagItem guard ladder + gatherNode's grant path, range-gated like buyItem.
    */
   private craftRecipe(playerId: string, recipeId: string): void {
+    // Forge recipes (and the repair sentinel) route to the async forge path;
+    // everything else is a cooking recipe at the bakery.
+    if (recipeId === REPAIR_WEAPON_ID || forgeRecipe(recipeId)) {
+      void this.craftForge(playerId, recipeId);
+      return;
+    }
     const rt = this.runtimes.get(playerId);
     const p = this.state.players.get(playerId);
     if (!rt || !p || !p.alive) return;
@@ -1137,6 +1222,64 @@ export class ZoneRoom extends Room<ZoneState> {
     const loot: LootEventMessage = { playerId: p.id, itemId: recipe.output, rarity: def?.rarity ?? "" };
     this.broadcast(ServerMessage.LootEvent, loot);
     this.bumpDaily(rt, "cook", recipe.output, recipe.outputCount);
+  }
+
+  /** True when the player stands at the forge. */
+  private nearForge(p: PlayerState): boolean {
+    const f = this.dungeon.forge ?? this.dungeon.marketStall;
+    return Math.hypot(f.x - p.x, f.z - p.z) <= COOK_RANGE;
+  }
+
+  /**
+   * Forge execution: craft recipes (materials + a GOLD FEE) and the
+   * repair-equipped-weapon sentinel. Gold moves through the same wallet path
+   * as market buys, so the fee is a real sink; materials burn from the bag.
+   */
+  private async craftForge(playerId: string, recipeId: string): Promise<void> {
+    const rt = this.runtimes.get(playerId);
+    const p = this.state.players.get(playerId);
+    if (!rt || !p || !p.alive || rt.marketBusy) return;
+    if (!this.nearForge(p)) return;
+
+    if (recipeId === REPAIR_WEAPON_ID) {
+      const weaponId = p.weaponId;
+      const max = weaponId ? itemMaxUses(weaponId) : undefined;
+      if (!weaponId || max === undefined || rt.weaponUses >= max) return;
+      const cost = repairCost(weaponId) ?? 5;
+      rt.marketBusy = true;
+      try {
+        const balance = await this.moveGold(rt, -cost, "forge_repair");
+        if (balance === null) return;
+        rt.weaponUses = max;
+        p.gold = balance;
+        this.clients.find((c) => c.sessionId === playerId)?.send(ServerMessage.Chat, { text: `Repaired your ${itemDef(weaponId)?.name ?? "weapon"} (−${cost}g).`, from: "⚒" } as ChatMessage);
+      } finally {
+        rt.marketBusy = false;
+      }
+      return;
+    }
+
+    const recipe = forgeRecipe(recipeId);
+    if (!recipe) return;
+    for (const input of recipe.inputs) {
+      if (countItem(rt.bag, input.itemId) < input.count) return;
+    }
+    if (!this.bagHasRoomFor(rt.bag, recipe.output)) return;
+    rt.marketBusy = true;
+    try {
+      const balance = await this.moveGold(rt, -recipe.goldCost, "forge_craft");
+      if (balance === null) return; // can't afford the fee
+      for (const input of recipe.inputs) {
+        if (!removeStacked(rt.bag, input.itemId, input.count)) return;
+      }
+      addStacked(rt.bag, BAG_CAPACITY, recipe.output, recipe.outputCount);
+      p.gold = balance;
+      this.syncBag(p, rt);
+      const def = itemDef(recipe.output);
+      this.broadcast(ServerMessage.LootEvent, { playerId: p.id, itemId: recipe.output, rarity: def?.rarity ?? "" } as LootEventMessage);
+    } finally {
+      rt.marketBusy = false;
+    }
   }
 
   /**
@@ -1391,6 +1534,14 @@ export class ZoneRoom extends Room<ZoneState> {
     if (!this.nearMarket(p)) return;
     const slot = rt.bag[index];
     if (!slot || slot.count <= 0 || !itemDef(slot.itemId)) return;
+    // Economy v2: the stash (and therefore the P2P market, which lists FROM the
+    // stash) only carries PRISTINE durability items — worn tools/weapons must
+    // be repaired first. Keeps stash/market rows free of per-instance state.
+    const pristineMax = itemMaxUses(slot.itemId);
+    if (pristineMax !== undefined && (slot.uses ?? pristineMax) < pristineMax) {
+      client.send(ServerMessage.Chat, { text: "Worn gear can't be banked — repair it first.", from: "⚒" } as ChatMessage);
+      return;
+    }
 
     rt.marketBusy = true;
     try {
@@ -1957,6 +2108,19 @@ export class ZoneRoom extends Room<ZoneState> {
       this.setAction(p, "dead", rt.respawnTimer, enemy.state.id, actionId);
       for (const e of this.enemies) e.removeThreat(playerId);
       this.emitCombat({ sourceId: enemy.state.id, targetId: p.id, amount: 0, kind: "death", actionId });
+      // Economy v2 durability tax: dying chips the equipped weapon; at 0 it
+      // BREAKS (repair at the forge before that, or lose it) — combat destroys
+      // value, so crafters always have customers.
+      if (p.weaponId && rt.weaponUses > 0) {
+        rt.weaponUses = Math.max(0, rt.weaponUses - DEATH_DURABILITY_COST);
+        if (rt.weaponUses === 0) {
+          const broken = itemDef(p.weaponId)?.name ?? "weapon";
+          p.weaponId = "";
+          this.clients
+            .find((c) => c.sessionId === playerId)
+            ?.send(ServerMessage.Chat, { text: `Your ${broken} shattered on death!`, from: "⚒" } as ChatMessage);
+        }
+      }
     }
   }
 
@@ -1980,16 +2144,23 @@ export class ZoneRoom extends Room<ZoneState> {
     if (killed) {
       this.setAction(enemy.state, "dying", ENEMY_DYING_SECONDS, playerId, actionId);
       this.emitCombat({ sourceId: playerId, targetId: enemy.state.id, amount: 0, kind: "death", actionId }, skillId);
-      // Kill rewards scale with the CURRENT depth — deeper floors pay better
-      // (the backend's per-run plausibility caps rise with the same depth).
-      this.awardKill(rt, p, scaledXp(enemy.def.xpValue, this.state.depth), scaledCurrency(enemy.def.currencyValue, this.state.depth));
+      // Economy v2: no depth multipliers — the def itself carries the zone/tier
+      // scaling (area rosters + coliseumBossForTier).
+      this.awardKill(rt, p, enemy.def.xpValue, enemy.def.currencyValue);
       this.bumpDaily(rt, "kill", enemy.def.id, 1);
+      this.rollMaterialDrops(rt, p, enemy.def);
       this.rollKillLoot(rt, p, enemy.def.rank as LootRank);
-      if (enemy.def.rank === "boss") this.breakDepth();
-      // Coliseum world boss levels up on each slaying and re-forms tougher.
+      // Coliseum world boss levels up on each slaying and re-forms tougher —
+      // the tier ladder is the endgame progression (replaces the old depth).
       if (enemy.def.id === "coliseum_champion") {
         this.coliseumTier++;
+        this.state.coliseumTier = this.coliseumTier;
         this.coliseumRespawnTimer = 25;
+        this.runtimes.forEach((prt, playerId) => {
+          if (this.state.players.get(playerId)) this.bumpDaily(prt, "coliseum", "", 1);
+        });
+        const payload: ChatMessage = { text: `The Coliseum champion falls… Tier ${this.coliseumTier} re-forms, stronger.`, from: "⚔ Coliseum" };
+        this.broadcast(ServerMessage.Chat, payload);
       }
       this.retargetPlayersFromDeadEnemy(enemy.state.id);
       this.scheduleEnemyRemoval(enemy);
@@ -2063,6 +2234,23 @@ export class ZoneRoom extends Room<ZoneState> {
 
   /** Roll a drop for the killer off the rank's loot table, deposit it in the bag,
    *  and announce it for a pickup toast. Overflow is silently dropped for the MVP. */
+  /** Economy v2: kills pay MATERIALS — roll each entry of the def's drop table
+   *  into the killer's bag (bag-full drops are simply lost, same as gear loot). */
+  private rollMaterialDrops(rt: PlayerRuntime, p: PlayerState, def: EnemyDef): void {
+    if (!def.drops?.length) return;
+    let granted = false;
+    for (const drop of def.drops) {
+      if (this.lootRng.nextFloat01() > drop.chance) continue;
+      const count = drop.count ?? 1;
+      const leftover = addStacked(rt.bag, BAG_CAPACITY, drop.itemId, count);
+      if (leftover >= count) continue; // bag full
+      granted = true;
+      const item = itemDef(drop.itemId);
+      this.broadcast(ServerMessage.LootEvent, { playerId: p.id, itemId: drop.itemId, rarity: item?.rarity ?? "" } as LootEventMessage);
+    }
+    if (granted) this.syncBag(p, rt);
+  }
+
   private rollKillLoot(rt: PlayerRuntime, p: PlayerState, rank: LootRank): void {
     const table = LOOT_TABLES[rank];
     if (!table) return;
@@ -2238,21 +2426,9 @@ export class ZoneRoom extends Room<ZoneState> {
   }
 
   private spawnEnemy(baseDef: EnemyDef, x: number, z: number): EnemyController {
-    // Depth scaling: enemies spawned after the party breaks depth are tougher
-    // (hp/damage) and pay better (xp/currency — applied in awardKill via the
-    // live depth). The def is cloned so the shared base defs stay pristine.
-    const depth = this.state.depth;
-    const def: EnemyDef =
-      depth > 0
-        ? {
-            ...baseDef,
-            maxHp: Math.round(baseDef.maxHp * depthHpMult(depth)),
-            attackDamage: Math.round(baseDef.attackDamage * depthDamageMult(depth)),
-            special: baseDef.special
-              ? { ...baseDef.special, damage: Math.round(baseDef.special.damage * depthDamageMult(depth)) }
-              : undefined,
-          }
-        : baseDef;
+    // Economy v2: no depth multipliers — zone rosters and coliseumBossForTier
+    // already bake difficulty/reward scaling into the def itself.
+    const def: EnemyDef = baseDef;
     const state = new EnemyState();
     state.id = `${def.id}-${this.spawnSeq++}`;
     state.defId = def.id;

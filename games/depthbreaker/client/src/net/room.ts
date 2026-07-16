@@ -40,6 +40,8 @@ import {
 } from "@depthbreaker/protocol";
 import { combatBus } from "./combatBus";
 import { telegraphBus } from "./telegraphBus";
+import { playLevelUp, playBossSpawn } from "../game/fx/sfx";
+import { emitLevelUp } from "../game/fx/worldEvents";
 
 export interface MapLike<V> {
   forEach(cb: (value: V, key: string) => void): void;
@@ -52,7 +54,10 @@ export interface ZoneStateLike {
   enemies: MapLike<EnemyView>;
   nodes: MapLike<ResourceNodeView>;
   seed: number;
+  /** Legacy — always 0 (depth system removed). */
   depth: number;
+  /** Coliseum champion tier — the endgame ladder. */
+  coliseumTier?: number;
   bossPortal: BossPortalView;
 }
 
@@ -107,7 +112,10 @@ export interface ZoneSnapshot {
   playerCount: number;
   enemyCount: number;
   nodeCount: number;
+  /** Legacy — always 0 (depth system removed). */
   depth: number;
+  /** Coliseum champion tier — the endgame ladder shown in the HUD. */
+  coliseumTier: number;
   seed: number;
   self: PlayerView | null;
   target: PlayerView | EnemyView | null;
@@ -156,6 +164,7 @@ class ZoneStore {
       enemyCount: 0,
       nodeCount: 0,
       depth: 0,
+      coliseumTier: 0,
       seed: 0,
       self: null,
       target: null,
@@ -295,6 +304,7 @@ class ZoneStore {
       enemyCount: st.enemies.size,
       nodeCount: st.nodes?.size ?? 0,
       depth: st.depth ?? 0,
+      coliseumTier: st.coliseumTier ?? 0,
       bossPortal: st.bossPortal ?? { active: false, x: 0, z: 0, countdown: 0 },
       seed: st.seed ?? 0,
       self,
@@ -309,12 +319,44 @@ class ZoneStore {
       spinner: this.spinner,
       spinResult: this.spinResult,
     };
+    this.watchWorldEvents(self);
     this.emit();
+  }
+
+  // --- World-event cues (level-up jingle/burst, boss-spawn horn) -------------
+  private lastLevel = -1; // -1 = not initialized (skip the join-time "gain")
+  private knownEnemyIds = new Set<string>();
+  private enemiesSeeded = false;
+
+  private watchWorldEvents(self: PlayerView | null): void {
+    // Level-up: fires only on an observed INCREASE after the first snapshot,
+    // so joining at level 12 doesn't celebrate 12 times.
+    if (self) {
+      if (this.lastLevel >= 0 && self.level > this.lastLevel) {
+        playLevelUp();
+        emitLevelUp(self.level);
+      }
+      this.lastLevel = self.level;
+    }
+    // Boss spawn: a NEW enemy id with a boss defId after the initial seeding
+    // (the join-time roster doesn't blare 4 horns).
+    const st = this.state;
+    if (st?.enemies) {
+      st.enemies.forEach((e, id) => {
+        if (this.knownEnemyIds.has(id)) return;
+        this.knownEnemyIds.add(id);
+        if (this.enemiesSeeded && /boss|coliseum_champion/i.test(e.defId)) playBossSpawn();
+      });
+      this.enemiesSeeded = true;
+    }
   }
 
   detach(): void {
     this.room = null;
     this.selfId = "";
+    this.lastLevel = -1;
+    this.knownEnemyIds.clear();
+    this.enemiesSeeded = false;
     this.combat = [];
     this.lootToasts = [];
     this.stash = { items: [], slotCap: 24 };

@@ -4,7 +4,8 @@ import type { Ray } from "three";
 import { buildDungeon, groundHeightAt, isDungeonWalkable, nearestDungeonWalkablePoint, type DungeonMapDefinition } from "@depthbreaker/protocol";
 import { zoneStore } from "../../net/room";
 import { useZoneState } from "../../net/useZone";
-import { setClickDestination } from "../input/controls";
+import { setClickDestination, controlState } from "../input/controls";
+import { localPlayerPos } from "../entityRefs";
 
 // Extra margin so the click plane covers the water RING around the island —
 // clicking there fishes (the server validates shore + reach).
@@ -75,6 +76,12 @@ export function DungeonClickPlane() {
     }
     const point = nearestDungeonWalkablePoint(hit.x, hit.z, 0.45, dungeon);
     setClickDestination(point.x, point.z);
+    // Don't wait for the next 20 Hz tick — tell the server NOW (up to 50ms
+    // sooner) while the local prediction starts moving this same frame.
+    const dx = point.x - localPlayerPos.x;
+    const dz = point.z - localPlayerPos.z;
+    const len = Math.hypot(dx, dz);
+    if (len > 0.35) zoneStore.sendInput({ seq: -1, moveX: dx / len, moveZ: dz / len, yaw: controlState.orbit.yaw });
   };
 
   // The plane only CATCHES pointer events (the terrain point comes from the

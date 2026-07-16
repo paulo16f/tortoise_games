@@ -15,7 +15,7 @@ export const MAP_MARKERS: Readonly<Record<string, Vec2>> = {"Spawn_Town":{"x":3.
 
 /** Feature anchors keyed off the map's own building meshes — the functional
  *  market/cooking objects sit on these (client hides its procedural model). */
-export const MAP_FEATURES: Readonly<Record<string, Vec2>> = {"market":{"x":-24.7,"z":10.41},"cooking":{"x":-31.82,"z":-1.88},"fountain":{"x":5.65,"z":-1.54}};
+export const MAP_FEATURES: Readonly<Record<string, Vec2>> = {"market":{"x":-24.7,"z":10.41},"cooking":{"x":-31.82,"z":-1.88},"forge":{"x":-23.39,"z":7.8},"fountain":{"x":5.65,"z":-1.54}};
 
 /** Raycast walkability + surface height. `bits` is a 1-bit-per-cell walkable
  *  mask; `height` is uint8 = surfaceY * 4 (0.25u steps) per walkable

@@ -315,7 +315,7 @@ export function Hud() {
       {/* Status chip + collapsible controls (top-left). */}
       <div style={{ position: "absolute", top: 14, left: 14, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start", fontFamily: "system-ui, sans-serif" }}>
         <div style={{ ...panelStyle, display: "flex", gap: 12, alignItems: "center", fontSize: 12.5, padding: "7px 13px" }}>
-          <span style={{ color: "#c9a54a", fontWeight: 700 }}>Depth {snap.depth}</span>
+          <span style={{ color: "#c9a54a", fontWeight: 700 }}>⚔ Tier {snap.coliseumTier}</span>
           <span style={{ opacity: 0.8 }}>👤 {snap.playerCount}</span>
           <span style={{ color: "#e88b8b" }}>☠ {snap.enemyCount}</span>
           {snap.bossPortal.active && <span style={{ color: "#fbbf24", fontWeight: 700 }}>⚑ boss {Math.ceil(snap.bossPortal.countdown)}s</span>}

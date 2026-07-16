@@ -16,6 +16,10 @@ export const INPUT_SEND_HZ = 20;
  */
 export const PLAYER_SPEED = 3.4;
 
+/** Player collision capsule radius (world units). Shared so the client's
+ *  movement prediction clamps against walls EXACTLY like the server does. */
+export const PLAYER_COLLISION_RADIUS = 0.45;
+
 /** Seconds a dead player waits before respawning at the zone spawn point. */
 export const RESPAWN_SECONDS = 4;
 

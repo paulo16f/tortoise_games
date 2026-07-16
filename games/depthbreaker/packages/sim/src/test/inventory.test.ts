@@ -19,9 +19,10 @@ describe("addStacked", () => {
     const bag: InvSlot[] = [];
     addStacked(bag, CAP, "ember_blade", 1);
     addStacked(bag, CAP, "ember_blade", 1);
+    // Weapons carry a fresh durability counter since Economy v2 (rare = 100).
     expect(bag).toEqual([
-      { itemId: "ember_blade", count: 1 },
-      { itemId: "ember_blade", count: 1 },
+      { itemId: "ember_blade", count: 1, uses: 100 },
+      { itemId: "ember_blade", count: 1, uses: 100 },
     ]);
   });
 
@@ -69,5 +70,68 @@ describe("removeStacked / removeAt / countItem", () => {
   it("removeAt is a no-op on an empty index", () => {
     const bag: InvSlot[] = [];
     expect(removeAt(bag, 3, 1)).toBe(false);
+  });
+});
+
+// --- Economy v2: per-slot uses (tools + weapon durability) --------------------
+import { spendUse, findToolIndex } from "../inventory.js";
+import { itemDef, itemMaxUses, DEATH_DURABILITY_COST } from "../items.js";
+
+describe("durability slots", () => {
+  it("addStacked initializes uses to maxUses for durability items", () => {
+    const bag: InvSlot[] = [];
+    expect(addStacked(bag, CAP, "rusty_pickaxe", 1)).toBe(0);
+    expect(bag[0]!.uses).toBe(itemMaxUses("rusty_pickaxe"));
+  });
+
+  it("addStacked honors an explicit surviving uses value", () => {
+    const bag: InvSlot[] = [];
+    addStacked(bag, CAP, "iron_sword", 1, 33);
+    expect(bag[0]!.uses).toBe(33);
+  });
+
+  it("durability items never merge into stacks (stackSize 1)", () => {
+    const bag: InvSlot[] = [];
+    addStacked(bag, CAP, "rusty_pickaxe", 1);
+    addStacked(bag, CAP, "rusty_pickaxe", 1);
+    expect(bag).toHaveLength(2);
+  });
+
+  it("non-durability items get no uses field", () => {
+    const bag: InvSlot[] = [];
+    addStacked(bag, CAP, "bread", 1);
+    expect(bag[0]!.uses).toBeUndefined();
+  });
+
+  it("spendUse decrements and breaks at zero (slot removed)", () => {
+    const bag: InvSlot[] = [{ itemId: "rusty_pickaxe", count: 1, uses: 2 }];
+    expect(spendUse(bag, 0)).toBe("spent");
+    expect(bag[0]!.uses).toBe(1);
+    expect(spendUse(bag, 0)).toBe("broke");
+    expect(bag).toHaveLength(0);
+  });
+
+  it("spendUse is n/a for non-durability slots", () => {
+    const bag: InvSlot[] = [{ itemId: "bread", count: 3 }];
+    expect(spendUse(bag, 0)).toBe("na");
+  });
+
+  it("findToolIndex finds a working tool of the right kind only", () => {
+    const kindOf = (id: string) => itemDef(id)?.toolKind;
+    const bag: InvSlot[] = [
+      { itemId: "bread", count: 1 },
+      { itemId: "willow_rod", count: 1, uses: 5 },
+      { itemId: "rusty_pickaxe", count: 1, uses: 5 },
+    ];
+    expect(findToolIndex(bag, "mining", kindOf)).toBe(2);
+    expect(findToolIndex(bag, "fishing", kindOf)).toBe(1);
+    expect(findToolIndex([], "mining", kindOf)).toBe(-1);
+  });
+
+  it("every weapon carries durability > death cost (dying never one-shots gear)", () => {
+    for (const id of ["iron_sword", "oathbreaker", "starcaller", "war_hammer"]) {
+      const max = itemMaxUses(id)!;
+      expect(max).toBeGreaterThan(DEATH_DURABILITY_COST);
+    }
   });
 });

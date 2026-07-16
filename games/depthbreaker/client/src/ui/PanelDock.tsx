@@ -11,7 +11,10 @@ import { toggleDailies, useDailiesOpen } from "./DailyQuestPanel";
 import { toggleTrade, useTradeOpen } from "./TradePanel";
 import { toggleSpinner, useSpinnerOpen } from "./SpinnerPanel";
 import { toggleCooking, useCookingOpen } from "./CookingPanel";
+import { toggleGuide, useGuideOpen } from "./GuidePanel";
+import { toggleForge, useForgeOpen } from "./ForgePanel";
 import { tooltipHandlers } from "./Tooltip";
+import { playUiClick, playUiOpen } from "../game/fx/sfx";
 
 interface DockItem {
   icon: string;
@@ -32,13 +35,20 @@ const DOCK_ITEMS: DockItem[] = [
   { icon: "/ui/synty/icons/dock_cooking.png", label: "Cooking", hotkey: "F", toggle: toggleCooking, useOpen: useCookingOpen },
   { icon: "/ui/synty/icons/dock_dailies.png", label: "Daily Quests", hotkey: "J", toggle: toggleDailies, useOpen: useDailiesOpen },
   { icon: "/ui/synty/icons/dock_spinner.png", label: "Fortune Wheel", hotkey: "G", toggle: toggleSpinner, useOpen: useSpinnerOpen },
+  { icon: "⚒️", label: "Forge", hotkey: "O", toggle: toggleForge, useOpen: useForgeOpen },
+  { icon: "❓", label: "Guide", hotkey: "H", toggle: toggleGuide, useOpen: useGuideOpen },
 ];
 
 function DockButton({ item }: { item: DockItem }) {
   const open = item.useOpen();
   return (
     <button
-      onClick={item.toggle}
+      onClick={() => {
+        // Opening gets the whoosh, closing the plain tick.
+        if (open) playUiClick();
+        else playUiOpen();
+        item.toggle();
+      }}
       aria-label={`${item.label} (${item.hotkey})`}
       {...tooltipHandlers(() => (
         <span>

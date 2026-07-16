@@ -34,6 +34,16 @@ export interface EnemyDef {
   special?: { interval: number; windup: number; recovery: number; radius: number; damage: number };
   /** Idle enemies drift within a small radius of their spawn so the world reads as alive. */
   wander?: boolean;
+  /** Economy v2: kills pay MATERIALS, not gold — each entry rolls independently. */
+  drops?: MaterialDrop[];
+}
+
+export interface MaterialDrop {
+  itemId: string;
+  /** 0..1 roll chance per kill. */
+  chance: number;
+  /** Stack granted on success (default 1). */
+  count?: number;
 }
 
 export const GRUNT: EnemyDef = {
@@ -48,12 +58,14 @@ export const GRUNT: EnemyDef = {
   moveSpeed: 2.4,
   armor: 8,
   xpValue: 50,
-  currencyValue: 5,
+  // Economy v2: trash pays ~no gold — kills pay materials (see drops).
+  currencyValue: 0,
   level: 1,
   respawnDelay: 0,
   // Trash: a snappy, light swing; drifts around its post when idle.
   attackTiming: { windup: 0.28, recovery: 0.34 },
   wander: true,
+  drops: [{ itemId: "goblin_hide", chance: 0.4 }],
 };
 
 /** Fast, fragile pack hunter — spawns in groups; punishes standing still. */
@@ -68,7 +80,7 @@ export const SWARMER: EnemyDef = {
   moveSpeed: 3.6,
   armor: 4,
   xpValue: 40,
-  currencyValue: 4,
+  currencyValue: 0,
   level: 2,
   attackTiming: { windup: 0.22, recovery: 0.3 },
   wander: true,
@@ -84,11 +96,12 @@ export const ELITE_GRUNT: EnemyDef = {
   moveSpeed: 2.6,
   armor: 16,
   xpValue: 140,
-  currencyValue: 18,
+  currencyValue: 2,
   level: 3,
   // Elite slammer: a heavy readable swing, plus a periodic telegraphed stomp.
   attackTiming: { windup: 0.5, recovery: 0.4 },
   special: { interval: 8, windup: 0.7, recovery: 0.5, radius: 3.2, damage: 22 },
+  drops: [{ itemId: "goblin_hide", chance: 0.8 }, { itemId: "warband_totem", chance: 0.15 }],
 };
 
 export const BOSS_BRUTE: EnemyDef = {
@@ -102,12 +115,13 @@ export const BOSS_BRUTE: EnemyDef = {
   moveSpeed: 1.8,
   armor: 28,
   xpValue: 600,
-  currencyValue: 80,
+  currencyValue: 10,
   level: 6,
   // Boss: a slow, telegraphed haymaker + a big, frequent ground-slam AoE — the
   // fight is now about reading and dodging the slam, not just trading blows.
   attackTiming: { windup: 0.75, recovery: 0.5 },
   special: { interval: 6, windup: 0.85, recovery: 0.6, radius: 4.6, damage: 34 },
+  drops: [{ itemId: "beast_horn", chance: 0.6 }],
 };
 
 // --- Per-area rosters (Milestone 2) ------------------------------------------
@@ -129,21 +143,43 @@ function scaled(base: EnemyDef, id: string, mult: number, level: number): EnemyD
   };
 }
 
+function withDrops(def: EnemyDef, drops: MaterialDrop[]): EnemyDef {
+  return { ...def, drops };
+}
+
 export interface AreaRoster {
   minion: EnemyDef;
   elite: EnemyDef;
   boss: EnemyDef;
 }
 
-/** Indexed by area (0 = Area 1 … 2 = Area 3). Bands ≈ Lv 1-10 / 10-20 / 30-40. */
+/** Indexed by area (0 = Area 1 … 2 = Area 3). Bands ≈ Lv 1-10 / 10-20 / 30-40.
+ *  Economy v2: each zone family drops its own material pair (common ~60% on
+ *  minions, guaranteed + uncommon on elites, uncommon ×2 + rare on bosses) —
+ *  materials are the volume economy; gold stays scarce. */
 export const AREA_ROSTERS: AreaRoster[] = [
-  { minion: scaled(GRUNT, "goblin", 1.0, 4), elite: scaled(ELITE_GRUNT, "goblin_warrior", 1.0, 7), boss: scaled(BOSS_BRUTE, "goblin_warchief", 1.0, 10) },
-  { minion: scaled(GRUNT, "skeleton_soldier", 2.2, 14), elite: scaled(ELITE_GRUNT, "skeleton_knight", 2.3, 17), boss: scaled(BOSS_BRUTE, "skeleton_lord", 2.6, 20) },
-  { minion: scaled(GRUNT, "demon_imp", 5.0, 32), elite: scaled(ELITE_GRUNT, "demon_brute", 5.4, 36), boss: scaled(BOSS_BRUTE, "demon_lord", 6.0, 40) },
+  {
+    minion: withDrops(scaled(GRUNT, "goblin", 1.0, 4), [{ itemId: "goblin_hide", chance: 0.6 }, { itemId: "warband_totem", chance: 0.08 }]),
+    elite: withDrops(scaled(ELITE_GRUNT, "goblin_warrior", 1.0, 7), [{ itemId: "goblin_hide", chance: 1, count: 2 }, { itemId: "warband_totem", chance: 0.25 }]),
+    boss: withDrops(scaled(BOSS_BRUTE, "goblin_warchief", 1.0, 10), [{ itemId: "warband_totem", chance: 1, count: 2 }, { itemId: "beast_horn", chance: 0.4 }]),
+  },
+  {
+    minion: withDrops(scaled(GRUNT, "skeleton_soldier", 2.2, 14), [{ itemId: "bone_shard", chance: 0.6 }, { itemId: "grave_iron", chance: 0.08 }]),
+    elite: withDrops(scaled(ELITE_GRUNT, "skeleton_knight", 2.3, 17), [{ itemId: "bone_shard", chance: 1, count: 2 }, { itemId: "grave_iron", chance: 0.25 }]),
+    boss: withDrops(scaled(BOSS_BRUTE, "skeleton_lord", 2.6, 20), [{ itemId: "grave_iron", chance: 1, count: 2 }, { itemId: "beast_horn", chance: 0.4 }]),
+  },
+  {
+    minion: withDrops(scaled(GRUNT, "demon_imp", 5.0, 32), [{ itemId: "demon_essence", chance: 0.6 }, { itemId: "infernal_core", chance: 0.08 }]),
+    elite: withDrops(scaled(ELITE_GRUNT, "demon_brute", 5.4, 36), [{ itemId: "demon_essence", chance: 1, count: 2 }, { itemId: "infernal_core", chance: 0.25 }]),
+    boss: withDrops(scaled(BOSS_BRUTE, "demon_lord", 6.0, 40), [{ itemId: "infernal_core", chance: 1, count: 2 }, { itemId: "beast_horn", chance: 0.4 }]),
+  },
 ];
 
 /** The Coliseum arena's world boss — the toughest single fight on the map. */
-export const COLISEUM_BOSS: EnemyDef = scaled(BOSS_BRUTE, "coliseum_champion", 3.0, 25);
+export const COLISEUM_BOSS: EnemyDef = withDrops(scaled(BOSS_BRUTE, "coliseum_champion", 3.0, 25), [
+  { itemId: "champion_sigil", chance: 1 },
+  { itemId: "infernal_core", chance: 0.5 },
+]);
 
 /** The Coliseum boss LEVELS UP each time it's slain: tier 0 = base, and each tier
  *  is +60% power/reward and +3 levels. Same id so the client shows the same mesh. */

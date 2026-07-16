@@ -21,6 +21,7 @@ import { localPlayerPos } from "../entityRefs";
 import { zoneStore } from "../../net/room";
 import { useCombatAnimState } from "./useCombatAnimState";
 import { useLocomotion } from "./useLocomotion";
+import { useCharacterAtlas, attachAtlas } from "./characterAtlas";
 
 // Distance-tiered mixer throttling: far characters advance their skeleton less
 // often (the state machine above still latches every frame). Squared distances
@@ -144,6 +145,7 @@ export function AnimatedCharacter({
   onMaterials,
 }: AnimatedCharacterProps) {
   const { scene, animations } = useGLTF(url);
+  const atlas = useCharacterAtlas();
 
   const { root, mixer, controller, handBone, offsetY } = useMemo(() => {
     const root = SkeletonUtils.clone(scene) as Group;
@@ -162,6 +164,7 @@ export function AnimatedCharacter({
         const cloneMat = (m: Material) => {
           const c = m.clone();
           if (c instanceof MeshStandardMaterial) {
+            attachAtlas(c, atlas); // re-link the dropped base-colour atlas (gray "Lit" → textured)
             applyRimGlow(c);
             materials.push(c);
           }
@@ -308,7 +311,5 @@ function applyRimGlow(material: MeshStandardMaterial): void {
 function keepRuntimeTrack(track: KeyframeTrack, _clipName: string): boolean {
   if (!track.name.endsWith(".position")) return true;
   // Runtime movement is server-authoritative, so strip only root motion.
-  // Hips/pelvis translation is authored pose data in the Dungeon Realms rig;
-  // removing it makes locomotion and combat look broken.
   return !["root.position", "Root.position"].includes(track.name);
 }

@@ -10,6 +10,7 @@ import { CameraRig } from "./CameraRig";
 import { CombatFloaters } from "../fx/CombatFloaters";
 import { Projectiles } from "../fx/Projectiles";
 import { ImpactFx } from "../fx/ImpactFx";
+import { BeamFx } from "../fx/BeamFx";
 import { SkillGroundFx } from "../fx/SkillGroundFx";
 import { FlipbookLayer } from "../fx/FlipbookFx";
 import { Telegraphs } from "../fx/Telegraphs";
@@ -110,6 +111,7 @@ export function Scene() {
 
       <CombatFloaters />
       <Projectiles />
+      <BeamFx />
       <ImpactFx />
       <SkillGroundFx />
       <FlipbookLayer />

@@ -70,10 +70,12 @@ export function resolveWeaponModel(weaponId: string): string | undefined {
   return type ? WEAPON_MODELS[type] : undefined;
 }
 
+// Movement is a single gait: the character SPRINTS whenever it moves (no walk,
+// no run tier). We point the controller's one "run" slot at the `sprint` clip
+// and leave `walk`/`run` unmapped so they're never played.
 const SYNTY_DEPTHBREAKER_CLIPS: ClipSet = {
   idle: "idle",
-  walk: "walk",
-  run: "run",
+  run: "sprint",
   attack: "attack",
   hit: "hit",
   death: "death",

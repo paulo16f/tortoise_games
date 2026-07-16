@@ -84,6 +84,32 @@ export function setClickDestination(x: number, z: number): void {
   controlState.clickDestination = { x, z };
 }
 
+/** Stop chasing a click target once we're standing on it. */
+export const CLICK_STOP_DISTANCE = 0.35;
+
+/**
+ * The player's CURRENT movement intent as a normalized direction: held keys win,
+ * else steer toward the click destination (cleared on arrival). Shared by the
+ * 20 Hz input sender AND the per-frame local prediction so both always agree.
+ * `px/pz` is the position to steer from (the locally-rendered player position).
+ */
+export function computeMoveIntent(px: number, pz: number): { moveX: number; moveZ: number } {
+  const held = computeMove(controlState);
+  if (Math.hypot(held.moveX, held.moveZ) > 0.01) return held;
+
+  const dest = controlState.clickDestination;
+  if (!dest) return held;
+
+  const dx = dest.x - px;
+  const dz = dest.z - pz;
+  const distance = Math.hypot(dx, dz);
+  if (distance <= CLICK_STOP_DISTANCE) {
+    controlState.clickDestination = undefined;
+    return { moveX: 0, moveZ: 0 };
+  }
+  return { moveX: dx / distance, moveZ: dz / distance };
+}
+
 export function clearClickDestination(): void {
   controlState.clickDestination = undefined;
 }

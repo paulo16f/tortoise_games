@@ -12,6 +12,9 @@ import { resolveEnemyModel } from "./useModel";
 import { AnimatedCharacter } from "./AnimatedCharacter";
 import { DEFAULT_MOTION_PROFILE } from "./motionProfiles";
 import { HIT_FLASH_MS } from "../fx/fxConstants";
+import { afflictionColor, initDotOverlay } from "../fx/dotOverlay";
+
+initDotOverlay(); // idempotent module-level wire (same pattern as initCombatSfx)
 
 interface EnemyProps {
   id: string;
@@ -77,26 +80,36 @@ export function Enemy({ id, isTarget }: EnemyProps) {
     if (alert.current) alert.current.visible = e.alive && e.fsm === "aggro";
 
     // Health bar: smooth the red fill, and trail a yellow "chip" that drains
-    // toward it so a burst of damage reads as a satisfying chunk.
+    // toward it so a burst of damage reads as a satisfying chunk. Skip the mesh
+    // writes entirely once the lerps have converged — with 15-20 enemies alive,
+    // idle bars were burning per-frame transform updates for nothing.
     const hpTarget = e.maxHp > 0 ? Math.max(0, e.hp / e.maxHp) : 1;
-    hpDisplay.current = MathUtils.lerp(hpDisplay.current, hpTarget, 1 - Math.exp(-16 * delta));
-    if (hpDisplay.current >= hpChipVal.current) hpChipVal.current = hpDisplay.current; // healed: snap up
-    else hpChipVal.current = MathUtils.lerp(hpChipVal.current, hpDisplay.current, 1 - Math.exp(-4 * delta));
-    if (hpFill.current) {
-      hpFill.current.scale.x = Math.max(0.0001, hpDisplay.current);
-      hpFill.current.position.x = -(1 - hpDisplay.current) / 2;
-    }
-    if (hpChip.current) {
-      hpChip.current.scale.x = Math.max(0.0001, hpChipVal.current);
-      hpChip.current.position.x = -(1 - hpChipVal.current) / 2;
+    if (Math.abs(hpDisplay.current - hpTarget) > 0.001 || Math.abs(hpChipVal.current - hpDisplay.current) > 0.001) {
+      hpDisplay.current = MathUtils.lerp(hpDisplay.current, hpTarget, 1 - Math.exp(-16 * delta));
+      if (hpDisplay.current >= hpChipVal.current) hpChipVal.current = hpDisplay.current; // healed: snap up
+      else hpChipVal.current = MathUtils.lerp(hpChipVal.current, hpDisplay.current, 1 - Math.exp(-4 * delta));
+      if (hpFill.current) {
+        hpFill.current.scale.x = Math.max(0.0001, hpDisplay.current);
+        hpFill.current.position.x = -(1 - hpDisplay.current) / 2;
+      }
+      if (hpChip.current) {
+        hpChip.current.scale.x = Math.max(0.0001, hpChipVal.current);
+        hpChip.current.position.x = -(1 - hpChipVal.current) / 2;
+      }
     }
 
     const sinceFlash = performance.now() - flashAt.current;
     const flashing = sinceFlash >= 0 && sinceFlash < HIT_FLASH_MS;
+    // DoT overlay: a sickly pulse while poison/curse ticks cling to this enemy.
+    const dotColor = afflictionColor(id);
+    const dotPulse = 0.3 + 0.2 * Math.sin(performance.now() / 160);
     const applyEmissive = (m: MeshStandardMaterial) => {
       if (flashing) {
         m.emissive.set("#ffffff");
         m.emissiveIntensity = 0.9;
+      } else if (dotColor && !isTarget && !hovered.current) {
+        m.emissive.set(dotColor);
+        m.emissiveIntensity = dotPulse;
       } else if (isTarget) {
         m.emissive.set(TARGET_EMISSIVE);
         m.emissiveIntensity = 0.5;
