@@ -7,8 +7,11 @@
 //      Phantom, and return the signature for server-side verification.
 // The game never sees a private key and never decides an amount.
 
-import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import { createAssociatedTokenAccountIdempotentInstruction, createTransferInstruction, getAssociatedTokenAddressSync } from "@solana/spl-token";
+// The Solana libs are LAZY-LOADED inside buyGoldListing: they reference Node's
+// Buffer at module scope, so a static import would run before main.tsx's
+// polyfill (imports are hoisted) and blank the whole app. Dynamic import also
+// keeps ~400KB of web3 code off the critical path for non-traders.
+import type { Transaction } from "@solana/web3.js";
 import { withAuth } from "./session";
 import { siwsNonce, siwsLink, siwsStatus, goldMarketQuote, goldMarketBuy, type GoldQuote } from "./backend";
 
@@ -68,6 +71,11 @@ export async function buyGoldListing(listingId: string): Promise<{ goldReceived:
   const p = provider();
   if (!p) throw new Error("Phantom wallet not found — install it from phantom.app");
   await p.connect();
+
+  const [{ Connection, PublicKey, Transaction }, { createAssociatedTokenAccountIdempotentInstruction, createTransferInstruction, getAssociatedTokenAddressSync }] = await Promise.all([
+    import("@solana/web3.js"),
+    import("@solana/spl-token"),
+  ]);
 
   const quote: GoldQuote = await withAuth((token) => goldMarketQuote(token, listingId));
   const connection = new Connection(SOLANA_RPC_URL, "confirmed");
