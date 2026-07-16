@@ -16,6 +16,8 @@
     "@react-three/drei": "^10.0.0",
     "@react-three/fiber": "^9.0.0",
     "@react-three/postprocessing": "^3.0.4",
+    "@solana/spl-token": "^0.4.15",
+    "@solana/web3.js": "^1.98.4",
     "colyseus.js": "^0.16.0",
     "postprocessing": "^6.39.2",
     "react": "^19.0.0",

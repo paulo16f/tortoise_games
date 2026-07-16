@@ -64,6 +64,7 @@ const CONTENT: Record<Section, { title: string; lines: string[] }[]> = {
         "Kills grant XP → levels unlock skills. The banner when entering an area shows its level range — red warning means the monsters out-level you.",
         "Endgame: the Coliseum champion. Every time it's slain its TIER rises and it re-forms stronger — how high your party pushes the tier is the real bragging metric.",
         "Beyond Tier 5 the champion demands a TRIAL KEY: forge one from champion materials and carry it into the arena.",
+        "Duels: type /duel <player> <stake> in chat — they /accept, both stakes lock, winner takes 90% (10% burns). /forfeit to concede.",
       ],
     },
     {

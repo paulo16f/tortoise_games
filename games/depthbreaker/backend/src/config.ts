@@ -27,6 +27,15 @@ export interface AppConfig {
   refreshTtlEmailSeconds: number;
   joinTicketTtlSeconds: number;
   refreshCookieName: string;
+  /** Solana leg (gold-exchange buy). ALL FOUR must be set + the flag true or
+   *  the buy route stays 503 phase2_locked (fail closed, AGENTS.md). Devnet
+   *  values come from tools/setup_devnet.mjs; mainnet at launch prep only. */
+  solanaRpcUrl: string;
+  tokenMint: string;
+  treasuryWallet: string;
+  /** Fixed USD per token for quotes (devnet). Mainnet swaps this for an oracle. */
+  tokenUsdPrice: number;
+  goldMarketBuyEnabled: boolean;
 }
 
 export function loadConfig(): AppConfig {
@@ -50,7 +59,23 @@ export function loadConfig(): AppConfig {
     refreshTtlEmailSeconds: envNumber(7 * 24 * 3600, "REFRESH_TTL_EMAIL_SECONDS"),
     joinTicketTtlSeconds: envNumber(60, "JOIN_TICKET_TTL_SECONDS"),
     refreshCookieName: "db_refresh",
+    solanaRpcUrl: env("SOLANA_RPC_URL") || "",
+    tokenMint: env("TOKEN_MINT") || "",
+    treasuryWallet: env("TREASURY_WALLET") || "",
+    tokenUsdPrice: envNumber(0, "TOKEN_USD_PRICE"),
+    goldMarketBuyEnabled: env("GOLD_MARKET_BUY_ENABLED") === "true",
   };
+}
+
+/** True only when every Solana env value exists AND the flag is on. */
+export function goldMarketBuyReady(config: AppConfig): boolean {
+  return (
+    config.goldMarketBuyEnabled &&
+    config.solanaRpcUrl.length > 0 &&
+    config.tokenMint.length > 0 &&
+    config.treasuryWallet.length > 0 &&
+    config.tokenUsdPrice > 0
+  );
 }
 
 function parseLaunchPhase(value: string): LaunchPhase {

@@ -167,3 +167,47 @@ export function goldMarketList(token: string, goldAmount: number, usdPrice: numb
 export function goldMarketCancel(token: string, listingId: string): Promise<void> {
   return request<void>("/api/goldmarket/cancel", { method: "POST", body: JSON.stringify({ listingId }) }, token);
 }
+
+/** Server-dictated payment quote: destinations + exact token amounts. */
+export interface GoldQuote {
+  listingId: string;
+  mint: string;
+  decimals: number;
+  buyerWallet: string;
+  sellerWallet: string;
+  treasuryWallet: string;
+  sellerAmountBase: string;
+  treasuryAmountBase: string;
+  goldAmount: number;
+  usdPrice: number;
+}
+
+export function goldMarketQuote(token: string, listingId: string): Promise<GoldQuote> {
+  return request<GoldQuote>("/api/goldmarket/quote", { method: "POST", body: JSON.stringify({ listingId }) }, token);
+}
+
+export function goldMarketBuy(token: string, listingId: string, txSignature: string): Promise<{ goldReceived: number; balance: number }> {
+  return request<{ goldReceived: number; balance: number }>(
+    "/api/goldmarket/buy",
+    { method: "POST", body: JSON.stringify({ listingId, txSignature }) },
+    token,
+  );
+}
+
+// --- SIWS wallet linking (signed message; never a token transfer) ---
+
+export function siwsNonce(token: string): Promise<{ nonce: string; message: string }> {
+  return request<{ nonce: string; message: string }>("/api/auth/siws/nonce", { method: "POST", body: JSON.stringify({}) }, token);
+}
+
+export function siwsLink(token: string, wallet: string, nonce: string, signature: string): Promise<{ wallet: string }> {
+  return request<{ wallet: string }>(
+    "/api/auth/siws/link",
+    { method: "POST", body: JSON.stringify({ wallet, nonce, signature }) },
+    token,
+  );
+}
+
+export function siwsStatus(token: string): Promise<{ wallet: string | null }> {
+  return request<{ wallet: string | null }>("/api/auth/siws/status", { method: "GET" }, token);
+}

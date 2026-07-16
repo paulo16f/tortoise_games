@@ -27,6 +27,7 @@
     "smoke:fishing": "tsx tools/smoke_fishing.mjs",
     "smoke:weapons": "tsx tools/smoke_weapons.mjs",
     "smoke:classes": "tsx tools/smoke_classes.mjs",
+    "smoke:duel": "tsx tools/smoke_duel.mjs",
     "sync:map": "node tools/build_official_map.mjs"
   }
 }

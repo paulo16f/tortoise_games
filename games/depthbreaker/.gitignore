@@ -30,3 +30,5 @@ My project*/
 # OS / editor
 .DS_Store
 Thumbs.db
+.devnet-treasury.json
+.devnet-state.json

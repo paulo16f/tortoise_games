@@ -13,6 +13,7 @@ import { useZoneState } from "../net/useZone";
 import { zoneStore } from "../net/room";
 import { withAuth } from "../net/session";
 import { marketListings, marketMine, marketList, marketBuy, marketCancel, goldMarketBrowse, goldMarketList, goldMarketCancel, type MarketListing, type GoldListing } from "../net/backend";
+import { hasPhantom, linkWallet, linkedWallet, buyGoldListing } from "../net/solana";
 import { useDraggablePanel } from "./useDraggablePanel";
 import { itemName, itemInitials, rarityColor } from "./itemDisplay";
 import { PanelClose } from "./PanelClose";
@@ -447,9 +448,9 @@ const numInput: React.CSSProperties = {
 };
 
 /** Gold exchange — the Kintara loop: sell your gold to other players for the
- *  token. Off-chain today: listing escrows gold instantly; BUYING unlocks
- *  with wallet linking (Phase 2), so browse rows show a lock instead of a
- *  buy button. */
+ *  token. Listing escrows gold instantly; BUYING is live on devnet: link a
+ *  Phantom wallet (SIWS), then pay the server-quoted token amounts — the
+ *  backend verifies the transaction on-chain before releasing the gold. */
 function GoldTab({
   listings,
   mine,
@@ -467,11 +468,55 @@ function GoldTab({
 }) {
   const [amount, setAmount] = useState(500);
   const [usd, setUsd] = useState(1.0);
+  const [wallet, setWallet] = useState<string | null>(null);
+  const [walletBusy, setWalletBusy] = useState(false);
+  const [buyState, setBuyState] = useState<string>("");
   const openMine = mine.filter((l) => l.status === "open");
+
+  useEffect(() => {
+    void linkedWallet().then(setWallet).catch(() => setWallet(null));
+  }, []);
+
+  const doLink = async () => {
+    setWalletBusy(true);
+    setBuyState("");
+    try {
+      setWallet(await linkWallet());
+    } catch (err) {
+      setBuyState((err as Error).message);
+    } finally {
+      setWalletBusy(false);
+    }
+  };
+
+  const doBuy = async (id: string) => {
+    setWalletBusy(true);
+    setBuyState("Confirm the payment in Phantom…");
+    try {
+      const res = await buyGoldListing(id);
+      setBuyState(`✅ Bought ${res.goldReceived} gold!`);
+    } catch (err) {
+      setBuyState(`Purchase failed: ${(err as Error).message}`);
+    } finally {
+      setWalletBusy(false);
+    }
+  };
+
   return (
     <div>
       <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 8 }}>
-        Sell your gold to other players. Gold is escrowed while listed. Purchases unlock with wallet linking (Phase 2).
+        Sell your gold to other players for the token. Gold is escrowed while listed.
+      </div>
+      {/* Wallet link status (SIWS — a signature, never a transaction). */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+        {wallet ? (
+          <span style={{ fontSize: 11, color: "#a3e635" }}>◉ wallet {wallet.slice(0, 4)}…{wallet.slice(-4)}</span>
+        ) : (
+          <button onClick={() => void doLink()} disabled={walletBusy} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid rgba(163,230,53,0.4)", background: "rgba(163,230,53,0.12)", color: "#d9f99d", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+            {hasPhantom() ? "Link Phantom wallet" : "Install Phantom to trade"}
+          </button>
+        )}
+        {buyState && <span style={{ fontSize: 11, opacity: 0.85 }}>{buyState}</span>}
       </div>
       {/* Create listing */}
       <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 10 }}>
@@ -523,7 +568,17 @@ function GoldTab({
             <div style={{ fontWeight: 700, fontSize: 13 }}>🪙 {l.goldAmount} — ${l.usdPrice.toFixed(2)}</div>
             <div style={{ fontSize: 11, opacity: 0.6 }}>{l.seller}</div>
           </div>
-          <span title="Purchases unlock with wallet linking (Phase 2)" style={{ fontSize: 12, opacity: 0.6 }}>🔒 Phase 2</span>
+          {wallet ? (
+            <button
+              onClick={() => void doBuy(l.id)}
+              disabled={walletBusy}
+              style={{ padding: "5px 12px", borderRadius: 7, border: "1px solid rgba(201,165,74,0.5)", background: "rgba(201,165,74,0.18)", color: "#f6e7bd", cursor: "pointer", fontSize: 12, fontWeight: 700 }}
+            >
+              Buy
+            </button>
+          ) : (
+            <span title="Link a wallet to buy" style={{ fontSize: 12, opacity: 0.6 }}>🔒 link wallet</span>
+          )}
         </Row>
       ))}
       {listings.length === 0 && openMine.length === 0 && (

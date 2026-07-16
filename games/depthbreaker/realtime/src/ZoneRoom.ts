@@ -582,6 +582,11 @@ export class ZoneRoom extends Room<ZoneState> {
   override async onLeave(client: Client, _consented: boolean): Promise<void> {
     const rt = this.runtimes.get(client.sessionId);
     if (rt) this.flushDaily(rt); // persist any un-flushed quest progress
+    // Leaving mid-duel is a draw: both stakes refund (no rage-quit scam,
+    // no disconnect punishment). Must run BEFORE the runtime is deleted.
+    const duel = this.duels.get(client.sessionId);
+    if (duel) await this.resolveDuel(duel, null, "player left");
+    this.pendingDuels.delete(client.sessionId);
     for (const enemy of this.enemies) enemy.removeThreat(client.sessionId);
     this.state.players.delete(client.sessionId);
     this.runtimes.delete(client.sessionId);
@@ -623,6 +628,7 @@ export class ZoneRoom extends Room<ZoneState> {
     this.updateNodeRespawns(dt);
     this.updateDailyFlush(dt);
     this.updateFountain(dt);
+    this.updateDuels(dt);
   }
 
   /**
@@ -786,6 +792,19 @@ export class ZoneRoom extends Room<ZoneState> {
   private static readonly COLISEUM_FREE_TIERS = 5;
   private coliseumAwaitingKey = false;
 
+  // --- PvP wagered duels (Phase B): /duel <stake> while targeting a player,
+  // /accept, /forfeit. Both stakes escrow on accept; winner takes 90%, 10% is
+  // BURNED (debited at escrow, never re-credited — a pure combat gold sink).
+  // Timeout or either player leaving refunds both stakes.
+  private static readonly DUEL_MIN_STAKE = 10;
+  private static readonly DUEL_MAX_STAKE = 2000;
+  private static readonly DUEL_SECONDS = 120;
+  private static readonly DUEL_WINNER_SHARE = 0.9;
+  /** Active duels, one entry per PARTICIPANT id (both point at the same object). */
+  private duels = new Map<string, { a: string; b: string; stake: number; timeLeft: number }>();
+  /** Pending challenges keyed by the CHALLENGED player's id. */
+  private pendingDuels = new Map<string, { from: string; stake: number; expiresAt: number }>();
+
   private updateColiseum(dt: number): void {
     const c = this.dungeon.coliseumPortal;
     if (!c) return;
@@ -906,6 +925,14 @@ export class ZoneRoom extends Room<ZoneState> {
       if (!p || !p.alive) return;
       rt.attackCooldown = Math.max(0, rt.attackCooldown - dt);
       if (!p.autoAttack || !p.targetId || rt.attackCooldown > 0) return;
+
+      // PvP: swinging at your DUEL OPPONENT uses the pvp path; any other player
+      // target is ignored (players are never attackable outside a duel).
+      const duel = this.duels.get(id);
+      if (duel && p.targetId === (duel.a === id ? duel.b : duel.a)) {
+        this.duelSwing(id, rt, p, p.targetId);
+        return;
+      }
 
       const enemy = this.enemies.find((e) => e.state.id === p.targetId);
       if (!enemy || !enemy.state.alive) {
@@ -1601,8 +1628,157 @@ export class ZoneRoom extends Room<ZoneState> {
     if (!text) return;
     if (this.elapsedSeconds - rt.lastChatAt < ZoneRoom.CHAT_MIN_INTERVAL) return;
     rt.lastChatAt = this.elapsedSeconds;
+    // Slash commands are intercepted, never broadcast.
+    if (text.startsWith("/")) {
+      this.handleChatCommand(client, rt, p, text);
+      return;
+    }
     const payload: ChatMessage = { text, from: p.name };
     this.broadcast(ServerMessage.Chat, payload);
+  }
+
+  private tell(playerId: string, text: string): void {
+    this.clients.find((c) => c.sessionId === playerId)?.send(ServerMessage.Chat, { text, from: "⚔ Duel" } as ChatMessage);
+  }
+
+  /** /duel <stake> (targeting a player) · /accept · /forfeit */
+  private handleChatCommand(client: Client, rt: PlayerRuntime, p: PlayerState, text: string): void {
+    const parts = text.split(" ");
+    const cmd = parts[0];
+    if (cmd === "/duel") {
+      // /duel <playerName> <stake>
+      const name = (parts[1] ?? "").toLowerCase();
+      const stake = Math.floor(Number(parts[2]));
+      if (!name || !Number.isFinite(stake) || stake < ZoneRoom.DUEL_MIN_STAKE || stake > ZoneRoom.DUEL_MAX_STAKE) {
+        this.tell(p.id, `Usage: /duel <player> <stake ${ZoneRoom.DUEL_MIN_STAKE}-${ZoneRoom.DUEL_MAX_STAKE}>`);
+        return;
+      }
+      let target: PlayerState | undefined;
+      this.state.players.forEach((cand) => {
+        if (cand.name.toLowerCase() === name) target = cand;
+      });
+      if (!target || target.id === p.id || !target.alive) {
+        this.tell(p.id, `No living player named "${parts[1]}" here.`);
+        return;
+      }
+      if (this.duels.has(p.id) || this.duels.has(target.id)) {
+        this.tell(p.id, "One of you is already dueling.");
+        return;
+      }
+      this.pendingDuels.set(target.id, { from: p.id, stake, expiresAt: this.elapsedSeconds + 60 });
+      this.broadcast(ServerMessage.Chat, {
+        text: `${p.name} challenges ${target.name} to a DUEL for 🪙${stake} each — winner takes 90%, 10% burns. ${target.name}: type /accept`,
+        from: "⚔ Duel",
+      } as ChatMessage);
+      return;
+    }
+    if (cmd === "/accept") {
+      void this.acceptDuel(p.id);
+      return;
+    }
+    if (cmd === "/forfeit") {
+      const duel = this.duels.get(p.id);
+      if (!duel) {
+        this.tell(p.id, "You're not in a duel.");
+        return;
+      }
+      void this.resolveDuel(duel, duel.a === p.id ? duel.b : duel.a, "forfeit");
+      return;
+    }
+    this.tell(p.id, "Commands: /duel <stake> · /accept · /forfeit");
+  }
+
+  /** Escrow both stakes and start the duel (async: wallet debits). */
+  private async acceptDuel(accepterId: string): Promise<void> {
+    const pending = this.pendingDuels.get(accepterId);
+    if (!pending || this.elapsedSeconds > pending.expiresAt) {
+      this.tell(accepterId, "No open challenge (it may have expired).");
+      return;
+    }
+    this.pendingDuels.delete(accepterId);
+    const a = this.state.players.get(pending.from);
+    const b = this.state.players.get(accepterId);
+    const rtA = this.runtimes.get(pending.from);
+    const rtB = this.runtimes.get(accepterId);
+    if (!a || !b || !rtA || !rtB || !a.alive || !b.alive) return;
+    if (this.duels.has(a.id) || this.duels.has(b.id)) return;
+
+    // Escrow: debit both. If B fails after A was debited, refund A — money can
+    // never be created or lost here except the intentional win-burn.
+    const balA = await this.moveGold(rtA, -pending.stake, "duel_stake");
+    if (balA === null) {
+      this.tell(a.id, "Duel cancelled — challenger can't cover the stake.");
+      this.tell(b.id, "Duel cancelled — challenger can't cover the stake.");
+      return;
+    }
+    a.gold = balA;
+    const balB = await this.moveGold(rtB, -pending.stake, "duel_stake");
+    if (balB === null) {
+      const refund = await this.moveGold(rtA, pending.stake, "duel_refund");
+      if (refund !== null) a.gold = refund;
+      this.tell(a.id, "Duel cancelled — opponent can't cover the stake.");
+      this.tell(b.id, "Duel cancelled — you can't cover the stake.");
+      return;
+    }
+    b.gold = balB;
+
+    const duel = { a: a.id, b: b.id, stake: pending.stake, timeLeft: ZoneRoom.DUEL_SECONDS };
+    this.duels.set(a.id, duel);
+    this.duels.set(b.id, duel);
+    // Auto-engage both (player models aren't click-targetable): each targets
+    // the other with auto-attack on — the fight starts the moment they close.
+    a.targetId = b.id;
+    b.targetId = a.id;
+    a.autoAttack = true;
+    b.autoAttack = true;
+    this.broadcast(ServerMessage.Chat, {
+      text: `⚔ DUEL: ${a.name} vs ${b.name} for 🪙${pending.stake} each — ${ZoneRoom.DUEL_SECONDS}s. Fight!`,
+      from: "⚔ Duel",
+    } as ChatMessage);
+  }
+
+  /** Pay the winner (90% of the pot; 10% burned) — or refund both on a draw. */
+  private async resolveDuel(duel: { a: string; b: string; stake: number; timeLeft: number }, winnerId: string | null, why: string): Promise<void> {
+    this.duels.delete(duel.a);
+    this.duels.delete(duel.b);
+    const nameOf = (id: string) => this.state.players.get(id)?.name ?? "??";
+    if (!winnerId) {
+      for (const id of [duel.a, duel.b]) {
+        const rt = this.runtimes.get(id);
+        const p = this.state.players.get(id);
+        if (!rt) continue;
+        const bal = await this.moveGold(rt, duel.stake, "duel_refund");
+        if (bal !== null && p) p.gold = bal;
+      }
+      this.broadcast(ServerMessage.Chat, { text: `Duel ends in a draw (${why}) — stakes refunded.`, from: "⚔ Duel" } as ChatMessage);
+      return;
+    }
+    const rtW = this.runtimes.get(winnerId);
+    const pW = this.state.players.get(winnerId);
+    const payout = Math.floor(duel.stake * 2 * ZoneRoom.DUEL_WINNER_SHARE);
+    if (rtW) {
+      const bal = await this.moveGold(rtW, payout, "duel_win");
+      if (bal !== null && pW) pW.gold = bal;
+    }
+    const burned = duel.stake * 2 - payout;
+    this.broadcast(ServerMessage.Chat, {
+      text: `⚔ ${nameOf(winnerId)} wins the duel (${why}) — takes 🪙${payout}, 🪙${burned} burned.`,
+      from: "⚔ Duel",
+    } as ChatMessage);
+  }
+
+  /** Countdown + expiry sweep for duels and pending challenges. */
+  private updateDuels(dt: number): void {
+    const seen = new Set<object>();
+    for (const duel of this.duels.values()) {
+      if (seen.has(duel)) continue;
+      seen.add(duel);
+      duel.timeLeft -= dt;
+      if (duel.timeLeft <= 0) void this.resolveDuel(duel, null, "time");
+    }
+    for (const [target, pending] of this.pendingDuels) {
+      if (this.elapsedSeconds > pending.expiresAt) this.pendingDuels.delete(target);
+    }
   }
 
   /** Send the player their own free-spin availability (targeted). */
@@ -2075,6 +2251,73 @@ export class ZoneRoom extends Room<ZoneState> {
       // Impact flash at the slam center (drives ImpactFx).
       this.emitCombat({ sourceId: enemy.state.id, targetId: enemy.state.id, amount: 0, kind: "skill", actionId });
     });
+  }
+
+  /** One duel basic-attack swing: same cadence/range/crit as PvE, resolved
+   *  against the opponent PLAYER instead of an enemy controller. */
+  private duelSwing(id: string, rt: PlayerRuntime, p: PlayerState, opponentId: string): void {
+    const foe = this.state.players.get(opponentId);
+    if (!foe || !foe.alive) return;
+    const d = Math.hypot(foe.x - p.x, foe.z - p.z);
+    const range = attackRangeFor(rt.profile, p.weaponId);
+    if (d > range) return; // players steer themselves in duels — no auto-chase
+    this.facePlayerToPoint(p, foe.x, foe.z);
+    rt.attackCooldown = swingIntervalFor(rt.profile, p.weaponId);
+    const actionId = this.nextActionId();
+    this.setAction(p, "attack", actionDuration(DEFAULT_MELEE_ATTACK_TIMING), foe.id, actionId);
+    this.scheduleImpact(actionId, DEFAULT_MELEE_ATTACK_TIMING.windup, () => {
+      const source = this.state.players.get(id);
+      const target = this.state.players.get(opponentId);
+      const liveRt = this.runtimes.get(id);
+      if (!source || !liveRt || !source.alive || !target?.alive || !this.isCurrentAction(source, actionId)) return;
+      if (!this.duels.has(id)) return; // duel ended mid-swing
+      if (Math.hypot(target.x - source.x, target.z - source.z) > range + 0.9) return;
+      const isCrit = Math.random() < critChanceFor(source.weaponId);
+      const raw = basicAttackRaw(source, liveRt);
+      this.dealPvpDamageToPlayer(id, opponentId, raw, isCrit, actionId);
+    });
+  }
+
+  /** Apply one duel hit (shield/armor/bulwark respected). A kill resolves the
+   *  duel; death costs durability exactly like a PvE death. */
+  private dealPvpDamageToPlayer(sourceId: string, targetId: string, rawDamage: number, isCrit: boolean, actionId: string): void {
+    const source = this.state.players.get(sourceId);
+    const p = this.state.players.get(targetId);
+    const rt = this.runtimes.get(targetId);
+    if (!source || !p || !rt || !p.alive) return;
+    if (rt.shieldSeconds > 0) {
+      this.emitCombat({ sourceId, targetId: p.id, amount: 0, kind: "skill", actionId });
+      return;
+    }
+    const playerArmor = p.level * 5;
+    let dmg = resolveDamage(rawDamage, playerArmor, source.level, isCrit);
+    if (rt.bulwarkSeconds > 0 && rt.bulwarkValue > 0) {
+      dmg = Math.max(1, Math.round(dmg * (1 - rt.bulwarkValue)));
+    }
+    p.hp = Math.max(0, p.hp - dmg);
+    const midAction = (p.actionState === "skill" || p.actionState === "attack") && this.elapsedSeconds < p.actionEndsAt;
+    if (!midAction) this.setAction(p, "hit", 0.3, sourceId, actionId);
+    this.emitCombat({ sourceId, targetId: p.id, amount: dmg, kind: isCrit ? "crit" : "hit", actionId });
+    if (p.hp <= 0) {
+      p.alive = false;
+      p.targetId = "";
+      p.autoAttack = false;
+      rt.respawnTimer = 4;
+      this.setAction(p, "dead", rt.respawnTimer, sourceId, actionId);
+      for (const e of this.enemies) e.removeThreat(targetId);
+      this.emitCombat({ sourceId, targetId: p.id, amount: 0, kind: "death", actionId });
+      // Same durability tax as a PvE death — dying is dying.
+      if (p.weaponId && rt.weaponUses > 0) {
+        rt.weaponUses = Math.max(0, rt.weaponUses - DEATH_DURABILITY_COST);
+        if (rt.weaponUses === 0) {
+          const broken = itemDef(p.weaponId)?.name ?? "weapon";
+          p.weaponId = "";
+          this.tell(targetId, `Your ${broken} shattered on death!`);
+        }
+      }
+      const duel = this.duels.get(targetId);
+      if (duel) void this.resolveDuel(duel, sourceId, "knockout");
+    }
   }
 
   /** Apply one enemy hit to a player (shield/armor/bulwark/death), shared by the
