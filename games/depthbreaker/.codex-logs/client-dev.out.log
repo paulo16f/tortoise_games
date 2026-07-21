@@ -1,0 +1,146 @@
+
+> depthbreaker-client@0.1.0 dev
+> vite --host 127.0.0.1 --port 5173
+
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m567[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
+[2m11:21:36 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/game/world/Scene.tsx, /src/ui/Hud.tsx, /src/game/world/BossPortal.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/Dungeon.tsx, /src/game/world/CameraRig.tsx, /src/game/fx/Projectiles.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx, /src/game/actors/ProceduralCharacter.tsx, /src/game/world/SimpleArena.tsx[22m
+[2m11:21:36 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/game/world/Scene.tsx, /src/ui/Hud.tsx, /src/game/world/BossPortal.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/Dungeon.tsx, /src/game/world/CameraRig.tsx, /src/game/fx/Projectiles.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx, /src/game/actors/ProceduralCharacter.tsx, /src/game/world/SimpleArena.tsx[22m
+[2m12:04:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/Scene.tsx[22m
+[2m12:04:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/Dungeon.tsx[22m
+[2m12:04:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/SimpleArena.tsx[22m
+[2m1:09:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/game/world/Scene.tsx, /src/ui/Hud.tsx, /src/game/world/BossPortal.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/fx/Projectiles.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx, /src/game/actors/ProceduralCharacter.tsx, /src/game/world/DungeonClickPlane.tsx, /src/game/world/RuntimeDungeon.tsx[22m
+[2m1:10:30 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/game/world/Scene.tsx, /src/ui/Hud.tsx, /src/game/world/BossPortal.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/fx/Projectiles.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx, /src/game/actors/ProceduralCharacter.tsx, /src/game/world/DungeonClickPlane.tsx, /src/game/world/RuntimeDungeon.tsx[22m
+[2m1:11:20 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/game/world/Scene.tsx, /src/ui/Hud.tsx, /src/game/world/BossPortal.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/fx/Projectiles.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx, /src/game/actors/ProceduralCharacter.tsx, /src/game/world/DungeonClickPlane.tsx, /src/game/world/RuntimeDungeon.tsx[22m
+[2m1:18:28 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/RuntimeDungeon.tsx[22m
+[2m1:18:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/RuntimeDungeon.tsx[22m
+[2m1:19:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/DungeonClickPlane.tsx[22m
+[2m4:22:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m4:22:43 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m4:27:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/Scene.tsx[22m
+[2m4:27:36 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/Scene.tsx[22m
+[2m4:27:51 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/Scene.tsx[22m
+[2m4:27:52 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33m@react-three/postprocessing[32m[39m
+[2m4:27:52 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m4:28:36 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/RuntimeDungeon.tsx[22m
+[2m4:29:05 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m4:29:06 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m Could not Fast Refresh ("CASTER_CLIPS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m4:29:06 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m4:30:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m4:30:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m Could not Fast Refresh ("CASTER_CLIPS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m4:30:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m6:41:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/ui/Hud.tsx, /src/App.tsx, /src/game/world/Scene.tsx, /src/game/world/BossPortal.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/DungeonClickPlane.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/world/DungeonGround.tsx, /src/game/world/CameraRig.tsx, /src/game/fx/Projectiles.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx, /src/game/actors/ProceduralCharacter.tsx[22m
+[2m6:41:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m Could not Fast Refresh ("CASTER_CLIPS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m6:41:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m6:47:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m6:47:14 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33mphaser[32m[39m
+[2m6:47:14 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m6:47:36 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/packages/sim/src/arpgMvp.ts[22m
+[2m7:06:40 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/packages/sim/src/index.ts[22m
+[2m7:06:40 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/packages/sim/src/index.ts[22m
+[2m7:07:04 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/packages/sim/src/arpgCombat.ts[22m
+[2m7:17:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgHud.tsx, /src/arpg2d/ArpgGameHost.tsx[22m
+[2m7:17:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgGameHost.tsx[22m
+[2m7:17:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgHud.tsx[22m
+[2m7:17:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/arpg.css[22m
+[2m7:18:11 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgGameHost.tsx[22m
+[2m7:31:16 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/packages/sim/src/arpgCombat.ts[22m
+[2m7:32:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgGameHost.tsx[22m
+[2m7:32:09 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgGameHost.tsx[22m
+[2m7:32:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgHud.tsx[22m
+[2m7:32:58 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/packages/sim/src/arpgCombat.ts[22m
+[2m7:39:27 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgHud.tsx, /src/arpg2d/ArpgGameHost.tsx[22m
+[2m7:39:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgGameHost.tsx[22m
+[2m7:40:05 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgHud.tsx[22m
+[2m7:40:10 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/arpg.css[22m
+[2m8:01:36 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/packages/protocol/src/messages.ts[22m
+[2m8:01:42 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/packages/protocol/src/schema.ts[22m
+[2m8:01:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mC:/Users/vlgp6/Projects/Tortoise-Games/games/depthbreaker/packages/protocol/src/views.ts[22m
+[2m8:02:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/net/room.ts[22m
+[2m8:02:30 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/game/input/useControls.ts[22m
+[2m8:02:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/Enemy.tsx[22m
+[2m8:03:04 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/ui/Hud.tsx[22m
+[2m8:03:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/ui/Hud.tsx[22m
+[2m8:03:20 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m8:03:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m8:04:51 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/game/world/Scene.tsx, /src/ui/Hud.tsx, /src/game/world/BossPortal.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/DungeonClickPlane.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/world/DungeonGround.tsx, /src/game/world/CameraRig.tsx, /src/game/fx/Projectiles.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx, /src/game/actors/ProceduralCharacter.tsx[22m
+[2m8:04:51 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m Could not Fast Refresh ("CASTER_CLIPS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m8:04:51 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m8:11:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m8:11:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m Could not Fast Refresh ("CASTER_CLIPS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m8:11:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m8:11:35 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m8:11:35 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m Could not Fast Refresh ("CASTER_CLIPS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m8:11:35 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m8:20:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m8:20:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m Could not Fast Refresh ("CASTER_CLIPS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m8:20:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m8:20:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/Player.tsx[22m
+[2m8:20:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/Enemy.tsx[22m
+[2m8:21:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m8:22:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/world/RuntimeDungeon.tsx[22m
+[2m8:22:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m8:22:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m Could not Fast Refresh ("CASTER_CLIPS" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m8:22:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m8:23:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/world/RuntimeDungeon.tsx[22m
+[2m8:52:23 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m8:52:28 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m8:52:33 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/Player.tsx[22m
+[2m8:52:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/Enemy.tsx[22m
+[2m8:52:54 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx, /src/game/actors/ProceduralCharacter.tsx[22m
+[2m8:53:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/arpg.css[22m
+[2m8:53:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgGameHost.tsx[22m
+[2m8:53:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/arpg2d/ArpgHud.tsx[22m
+[2m8:53:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/arpg2d/ArpgScene.ts[22m
+[2m8:53:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/arpg2d/gameEvents.ts[22m
+[2m8:53:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/CharacterMotionValidation.tsx[22m
+[2m8:53:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/game/actors/characterRenderMode.ts[22m
+[2m8:53:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/ProceduralCharacter.tsx[22m
+[2m8:53:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/game/actors/proceduralCharacters.ts[22m
+[2m8:54:12 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m8:54:18 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m8:54:40 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m4:26:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m4:26:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m5:12:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m5:12:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m5:14:26 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m5:15:05 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m5:15:17 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m5:15:43 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/actors/AnimationDebugView.tsx[22m
+[2m5:16:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m7:23:43 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/game/world/Scene.tsx, /src/ui/Hud.tsx, /src/game/world/BossPortal.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/DungeonClickPlane.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/world/DungeonGround.tsx, /src/game/world/CameraRig.tsx, /src/game/fx/Projectiles.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx[22m
+[2m7:23:52 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/game/world/CameraRig.tsx[22m
+[2m7:24:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m7:24:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/DungeonClickPlane.tsx[22m
+[2m7:24:19 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/game/world/CameraRig.tsx, /src/game/world/DungeonClickPlane.tsx[22m
+[2m7:24:27 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m7:24:33 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/Enemy.tsx[22m
+[2m7:24:43 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m7:24:46 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/game/world/Scene.tsx, /src/ui/Hud.tsx, /src/game/world/BossPortal.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/DungeonClickPlane.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/world/DungeonGround.tsx, /src/game/world/CameraRig.tsx, /src/game/fx/Projectiles.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx[22m
+[2m7:31:07 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/actors/AnimationDebugView.tsx[22m
+[2m7:43:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/game/world/Scene.tsx, /src/ui/Hud.tsx, /src/game/world/BossPortal.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/DungeonClickPlane.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/world/DungeonGround.tsx, /src/game/world/CameraRig.tsx, /src/game/fx/Projectiles.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx[22m
+[2m7:43:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/world/Scene.tsx, /src/App.tsx, /src/ui/Hud.tsx, /src/game/world/BossPortal.tsx, /src/game/fx/CombatFloaters.tsx, /src/game/world/DungeonClickPlane.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/world/DungeonGround.tsx, /src/game/world/CameraRig.tsx, /src/game/fx/Projectiles.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx[22m
+[2m7:43:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m7:44:10 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/Player.tsx[22m
+[2m7:44:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/ui/Hud.tsx[22m
+[2m7:46:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/actors/AnimationDebugView.tsx[22m
+[2m9:03:16 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m9:03:51 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/actors/AnimationDebugView.tsx[22m
+[2m9:45:08 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/actors/AnimationDebugView.tsx[22m
+[2m9:45:13 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/actors/AnimationDebugView.tsx[22m
+[2m9:47:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx[22m
+[2m9:48:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m9:50:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m9:50:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m9:50:51 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m9:50:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m9:51:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx[22m
+[2m9:51:27 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/Player.tsx[22m
+[2m9:51:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/Enemy.tsx[22m
+[2m9:52:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimationDebugView.tsx[22m
+[2m11:18:41 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/world/RuntimeDungeon.tsx, /src/game/actors/AnimationDebugView.tsx[22m
+[2m1:11:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/actors/AnimatedCharacter.tsx[22m
+[2m1:11:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/game/fx/CombatFloaters.tsx, /src/game/world/CameraRig.tsx, /src/game/actors/Player.tsx, /src/game/actors/Enemy.tsx, /src/game/actors/AnimatedCharacter.tsx, /src/game/actors/AnimationDebugView.tsx[22m

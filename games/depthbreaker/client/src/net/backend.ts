@@ -1,0 +1,213 @@
+// REST client for the Fastify backend (http://localhost:3100 by default).
+// All calls use credentials:"include" so the HttpOnly db_refresh cookie flows.
+// These are dumb HTTP wrappers; session/token orchestration lives in session.ts.
+
+import type { ClassId } from "@depthbreaker/protocol";
+import { BACKEND_URL } from "../config";
+
+/** Thrown on any non-2xx response; carries the HTTP status for 401 refresh logic. */
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+/** Auth endpoints all return the same session shape (+ set the refresh cookie). */
+export interface AuthResult {
+  accountId: string;
+  accessToken: string;
+  expiresIn: number;
+}
+
+export interface CharacterSummary {
+  id: string;
+  name: string;
+  class_id: string;
+  /** Equipped skin (starter body variant or cosmetic); "" = class default. */
+  skin_id?: string;
+  /** Persistent cross-run XP; drives the displayed level via levelForTotalXp. */
+  total_xp: number;
+}
+
+export interface StartRunResult {
+  runId: string;
+  seed: number;
+  wsUrl: string;
+  joinTicket: string;
+}
+
+async function request<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
+  const headers: Record<string, string> = { ...(init.headers as Record<string, string>) };
+  if (init.body !== undefined) headers["Content-Type"] = "application/json";
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${BACKEND_URL}${path}`, { ...init, credentials: "include", headers });
+  if (res.status === 204) return undefined as T;
+  if (!res.ok) {
+    let detail = "";
+    try {
+      detail = JSON.stringify(await res.json());
+    } catch {
+      /* ignore body parse errors */
+    }
+    throw new ApiError(res.status, `${res.status} ${res.statusText} ${detail}`.trim());
+  }
+  return (await res.json()) as T;
+}
+
+// --- Auth ---
+
+/** POST /api/auth/guest — a fresh anonymous account (progress persists via cookie). */
+export function guestLogin(): Promise<AuthResult> {
+  return request<AuthResult>("/api/auth/guest", { method: "POST", body: "{}" });
+}
+
+/** POST /api/auth/register — new email account, or upgrades the current guest in place. */
+export function register(email: string, password: string, token?: string): Promise<AuthResult> {
+  return request<AuthResult>("/api/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }, token);
+}
+
+/** POST /api/auth/login — email + password. */
+export function login(email: string, password: string): Promise<AuthResult> {
+  return request<AuthResult>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+}
+
+/** POST /api/auth/refresh — mint a fresh access token from the refresh cookie. */
+export function refresh(): Promise<AuthResult> {
+  return request<AuthResult>("/api/auth/refresh", { method: "POST" });
+}
+
+/** POST /api/auth/logout — revoke the refresh-token family + clear the cookie. */
+export function logout(): Promise<void> {
+  return request<void>("/api/auth/logout", { method: "POST" });
+}
+
+// --- Characters ---
+
+export async function createCharacter(token: string, name: string, classId: ClassId, variant: "a" | "b" = "a"): Promise<CharacterSummary> {
+  const body = await request<{ character: CharacterSummary }>(
+    "/api/characters",
+    { method: "POST", body: JSON.stringify({ name, classId, variant }) },
+    token,
+  );
+  return body.character;
+}
+
+export async function listCharacters(token: string): Promise<CharacterSummary[]> {
+  const body = await request<{ characters: CharacterSummary[] }>("/api/characters", { method: "GET" }, token);
+  return body.characters;
+}
+
+export function deleteCharacter(token: string, id: string): Promise<void> {
+  return request<void>(`/api/characters/${id}`, { method: "DELETE" }, token);
+}
+
+// --- Runs ---
+
+export function startRun(token: string, characterId: string): Promise<StartRunResult> {
+  return request<StartRunResult>("/api/runs/start", { method: "POST", body: JSON.stringify({ characterId }) }, token);
+}
+
+// --- P2P marketplace (authed REST; items escrow from the persistent stash) ---
+
+export interface MarketListing {
+  id: string;
+  itemId: string;
+  count: number;
+  price: number;
+  status: string;
+  mine: boolean;
+  seller: string;
+  createdAt: string;
+}
+
+export async function marketListings(token: string): Promise<MarketListing[]> {
+  return (await request<{ listings: MarketListing[] }>("/api/market/listings", { method: "GET" }, token)).listings;
+}
+
+export async function marketMine(token: string): Promise<MarketListing[]> {
+  return (await request<{ listings: MarketListing[] }>("/api/market/mine", { method: "GET" }, token)).listings;
+}
+
+export function marketList(token: string, itemId: string, count: number, price: number): Promise<{ id: string }> {
+  return request<{ id: string }>("/api/market/list", { method: "POST", body: JSON.stringify({ itemId, count, price }) }, token);
+}
+
+export function marketBuy(token: string, listingId: string): Promise<{ balance: number }> {
+  return request<{ balance: number }>("/api/market/buy", { method: "POST", body: JSON.stringify({ listingId }) }, token);
+}
+
+export function marketCancel(token: string, listingId: string): Promise<void> {
+  return request<void>("/api/market/cancel", { method: "POST", body: JSON.stringify({ listingId }) }, token);
+}
+
+// --- Gold exchange (Kintara loop: sell GOLD for the token; buys unlock in Phase 2) ---
+
+export interface GoldListing {
+  id: string;
+  goldAmount: number;
+  usdPrice: number;
+  status: string;
+  mine: boolean;
+  seller: string;
+  createdAt: string;
+}
+
+export async function goldMarketBrowse(token: string): Promise<{ listings: GoldListing[]; mine: GoldListing[] }> {
+  return request<{ listings: GoldListing[]; mine: GoldListing[] }>("/api/goldmarket", { method: "GET" }, token);
+}
+
+export function goldMarketList(token: string, goldAmount: number, usdPrice: number): Promise<{ id: string }> {
+  return request<{ id: string }>("/api/goldmarket/list", { method: "POST", body: JSON.stringify({ goldAmount, usdPrice }) }, token);
+}
+
+export function goldMarketCancel(token: string, listingId: string): Promise<void> {
+  return request<void>("/api/goldmarket/cancel", { method: "POST", body: JSON.stringify({ listingId }) }, token);
+}
+
+/** Server-dictated payment quote: destinations + exact token amounts. */
+export interface GoldQuote {
+  listingId: string;
+  mint: string;
+  decimals: number;
+  buyerWallet: string;
+  sellerWallet: string;
+  treasuryWallet: string;
+  sellerAmountBase: string;
+  treasuryAmountBase: string;
+  goldAmount: number;
+  usdPrice: number;
+}
+
+export function goldMarketQuote(token: string, listingId: string): Promise<GoldQuote> {
+  return request<GoldQuote>("/api/goldmarket/quote", { method: "POST", body: JSON.stringify({ listingId }) }, token);
+}
+
+export function goldMarketBuy(token: string, listingId: string, txSignature: string): Promise<{ goldReceived: number; balance: number }> {
+  return request<{ goldReceived: number; balance: number }>(
+    "/api/goldmarket/buy",
+    { method: "POST", body: JSON.stringify({ listingId, txSignature }) },
+    token,
+  );
+}
+
+// --- SIWS wallet linking (signed message; never a token transfer) ---
+
+export function siwsNonce(token: string): Promise<{ nonce: string; message: string }> {
+  return request<{ nonce: string; message: string }>("/api/auth/siws/nonce", { method: "POST", body: JSON.stringify({}) }, token);
+}
+
+export function siwsLink(token: string, wallet: string, nonce: string, signature: string): Promise<{ wallet: string }> {
+  return request<{ wallet: string }>(
+    "/api/auth/siws/link",
+    { method: "POST", body: JSON.stringify({ wallet, nonce, signature }) },
+    token,
+  );
+}
+
+export function siwsStatus(token: string): Promise<{ wallet: string | null }> {
+  return request<{ wallet: string | null }>("/api/auth/siws/status", { method: "GET" }, token);
+}

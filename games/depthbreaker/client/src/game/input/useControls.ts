@@ -1,0 +1,194 @@
+import { useEffect } from "react";
+import { INPUT_SEND_HZ } from "@depthbreaker/protocol";
+import {
+  controlState,
+  isMoveKey,
+  computeMoveIntent,
+  MIN_ZOOM,
+  MAX_ZOOM,
+  clearClickDestination,
+  resetCameraOrbit,
+} from "./controls";
+import { zoneStore } from "../../net/room";
+import { closeInventory, toggleInventory } from "../../ui/InventoryPanel";
+import { closeSkillBook, toggleSkillBook } from "../../ui/SkillBookPanel";
+import { closeMarket, toggleMarket } from "../../ui/MarketPanel";
+import { closeStash, toggleStash } from "../../ui/StashPanel";
+import { closeDailies, toggleDailies } from "../../ui/DailyQuestPanel";
+import { closeSpinner, toggleSpinner } from "../../ui/SpinnerPanel";
+import { closeTrade, toggleTrade } from "../../ui/TradePanel";
+import { closeCooking, toggleCooking } from "../../ui/CookingPanel";
+import { closeGuide, toggleGuide } from "../../ui/GuidePanel";
+import { closeForge, toggleForge } from "../../ui/ForgePanel";
+import { focusChat } from "../../ui/ChatPanel";
+import { localPlayerPos } from "../entityRefs";
+
+/** Keys 1-9,0 map to hotbar slots 0-9. */
+const HOTBAR_KEY_SLOTS: Record<string, number> = {
+  Digit1: 0,
+  Digit2: 1,
+  Digit3: 2,
+  Digit4: 3,
+  Digit5: 4,
+  Digit6: 5,
+  Digit7: 6,
+  Digit8: 7,
+  Digit9: 8,
+  Digit0: 9,
+};
+
+const TARGET_SELECTION_RANGE = 18;
+
+/** True when a text field (e.g. the chat input) is focused, so game keybinds
+ *  should stand down and let the field receive the keystroke. */
+function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
+}
+
+function targetNextEnemyInRange(): void {
+  const st = zoneStore.state;
+  if (!st) return;
+  const px = localPlayerPos.x;
+  const pz = localPlayerPos.z;
+  const alive: { id: string; d: number }[] = [];
+  st.enemies.forEach((e, id) => {
+    if (!e.alive) return;
+    const d = Math.hypot(e.x - px, e.z - pz);
+    if (d <= TARGET_SELECTION_RANGE) alive.push({ id, d });
+  });
+  if (alive.length === 0) {
+    clearClickDestination();
+    zoneStore.sendTarget("");
+    return;
+  }
+  alive.sort((a, b) => a.d - b.d);
+  const current = st.players.get(zoneStore.selfId)?.targetId ?? "";
+  const idx = alive.findIndex((a) => a.id === current);
+  const next = idx === -1 ? alive[0] : alive[(idx + 1) % alive.length];
+  clearClickDestination();
+  zoneStore.sendTarget(next.id, false);
+}
+
+export function useControls(): void {
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // While typing in a field (chat), the field owns the keyboard. Enter and
+      // Escape are handled by the input itself; everything else is ignored here.
+      if (isTypingTarget(e.target)) return;
+      // Enter (when not already typing) opens the chat input.
+      if (e.code === "Enter") {
+        e.preventDefault();
+        focusChat();
+        return;
+      }
+      if (isMoveKey(e.code)) controlState.keys.add(e.code);
+      if (e.repeat) return;
+      const hotbarSlot = HOTBAR_KEY_SLOTS[e.code];
+      if (hotbarSlot !== undefined) {
+        // Slot 0 is the auto-attack toggle; stop click-to-move so the server's
+        // auto-follow takes over, same as the old Digit1 behavior.
+        if (hotbarSlot === 0) clearClickDestination();
+        zoneStore.sendSkill(hotbarSlot);
+      }
+      if (e.code === "KeyV") {
+        const self = zoneStore.state?.players.get(zoneStore.selfId);
+        if (self) zoneStore.sendToggleWeapon(!self.weaponId);
+      }
+      if (e.code === "KeyB") toggleInventory();
+      if (e.code === "KeyK") toggleSkillBook();
+      if (e.code === "KeyM") toggleMarket();
+      if (e.code === "KeyN") toggleStash();
+      if (e.code === "KeyJ") toggleDailies();
+      if (e.code === "KeyG") toggleSpinner();
+      if (e.code === "KeyT") toggleTrade();
+      if (e.code === "KeyF") toggleCooking();
+      if (e.code === "KeyH") toggleGuide();
+      if (e.code === "KeyO") toggleForge();
+      if (e.code === "Escape") {
+        closeInventory();
+        closeSkillBook();
+        closeMarket();
+        closeStash();
+        closeDailies();
+        closeSpinner();
+        closeTrade();
+        closeCooking();
+        closeGuide();
+        closeForge();
+      }
+      if (e.code === "KeyR") resetCameraOrbit();
+      if (e.code === "Tab") {
+        e.preventDefault();
+        targetNextEnemyInRange();
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (isMoveKey(e.code)) controlState.keys.delete(e.code);
+    };
+    const onBlur = () => controlState.keys.clear();
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.button !== 2) return;
+      e.preventDefault();
+      controlState.dragging = true;
+      controlState.dragPointerId = e.pointerId;
+      const target = e.target instanceof Element ? e.target : null;
+      target?.setPointerCapture?.(e.pointerId);
+    };
+    const onPointerUp = (e: PointerEvent) => {
+      if (e.button !== 2 && e.pointerId !== controlState.dragPointerId) return;
+      controlState.dragging = false;
+      controlState.dragPointerId = undefined;
+      const target = e.target instanceof Element ? e.target : null;
+      target?.releasePointerCapture?.(e.pointerId);
+    };
+    // Fixed Diablo camera: right-drag no longer rotates the view (yaw/pitch are
+    // pinned in CameraRig). The handler stays a no-op so right-click still
+    // suppresses the context menu without moving the camera.
+    const onPointerMove = (e: PointerEvent) => {
+      if (!controlState.dragging) return;
+      if (controlState.dragPointerId !== undefined && e.pointerId !== controlState.dragPointerId) return;
+      e.preventDefault();
+    };
+    const onWheel = (e: WheelEvent) => {
+      const o = controlState.orbit;
+      o.distance += e.deltaY * 0.006;
+      if (o.distance < MIN_ZOOM) o.distance = MIN_ZOOM;
+      if (o.distance > MAX_ZOOM) o.distance = MAX_ZOOM;
+    };
+    const onContextMenu = (e: MouseEvent) => e.preventDefault();
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("contextmenu", onContextMenu);
+
+    let seq = 0;
+    const interval = window.setInterval(() => {
+      const { moveX, moveZ } = computeMoveIntent(localPlayerPos.x, localPlayerPos.z);
+      zoneStore.sendInput({ seq: seq++, moveX, moveZ, yaw: controlState.orbit.yaw });
+    }, 1000 / INPUT_SEND_HZ);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("contextmenu", onContextMenu);
+      window.clearInterval(interval);
+      controlState.keys.clear();
+      controlState.clickDestination = undefined;
+      controlState.dragging = false;
+      controlState.dragPointerId = undefined;
+    };
+  }, []);
+}

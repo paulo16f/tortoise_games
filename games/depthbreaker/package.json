@@ -1,0 +1,33 @@
+{
+  "name": "depthbreaker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Depthbreaker — web 3D multiplayer roguelike. npm workspace: shared sim + protocol, Fastify backend, Colyseus realtime server, React Three Fiber client.",
+  "workspaces": [
+    "packages/*",
+    "backend",
+    "realtime",
+    "client"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "validate:assets": "node tools/validate_synty_runtime.mjs",
+    "budget:assets": "node tools/asset_budget.mjs",
+    "smoke:local": "node tools/smoke_local.mjs",
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:realtime": "npm run dev --workspace realtime",
+    "dev:client": "npm run dev --workspace client",
+    "smoke:skills": "tsx tools/smoke_skills.mjs",
+    "smoke:auth": "node tools/smoke_auth.mjs",
+    "smoke:market": "tsx tools/smoke_market.mjs",
+    "smoke:economy": "tsx tools/smoke_economy.mjs",
+    "smoke:p2p": "node tools/smoke_p2p.mjs",
+    "smoke:combat": "tsx tools/smoke_combat.mjs",
+    "smoke:fishing": "tsx tools/smoke_fishing.mjs",
+    "smoke:weapons": "tsx tools/smoke_weapons.mjs",
+    "smoke:classes": "tsx tools/smoke_classes.mjs",
+    "smoke:duel": "tsx tools/smoke_duel.mjs",
+    "sync:map": "node tools/build_official_map.mjs"
+  }
+}

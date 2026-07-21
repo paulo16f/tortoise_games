@@ -1,0 +1,14 @@
+{
+  "//": "Root transpile settings for tsx/esbuild across all workspaces. @colyseus/schema serves its OWN TS source to tsx, and that source uses @type decorators — so experimentalDecorators MUST be true here (it applies to the library source, whose nearest tsconfig this becomes). useDefineForClassFields:false keeps schema state classes safe. Per-package tsconfig.json files still drive `tsc --noEmit`.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}

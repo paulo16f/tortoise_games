@@ -1,0 +1,77 @@
+{
+  "spec": "GAME_MATH_SPEC.md §3 — DR = armor/(armor+100·level) cap 0.75; crit ×1.5 pre-mitigation; floor(x+0.5); min 1",
+  "cases": [
+    {
+      "armor": 0,
+      "attackerLevel": 1,
+      "raw": 10,
+      "isCrit": false,
+      "damageReduction": 0,
+      "finalDamage": 10
+    },
+    {
+      "armor": 50,
+      "attackerLevel": 1,
+      "raw": 10,
+      "isCrit": false,
+      "damageReduction": 0.3333333333333333,
+      "finalDamage": 7
+    },
+    {
+      "armor": 100,
+      "attackerLevel": 1,
+      "raw": 25,
+      "isCrit": false,
+      "damageReduction": 0.5,
+      "finalDamage": 13
+    },
+    {
+      "armor": 100,
+      "attackerLevel": 1,
+      "raw": 25,
+      "isCrit": true,
+      "damageReduction": 0.5,
+      "finalDamage": 19
+    },
+    {
+      "armor": 300,
+      "attackerLevel": 1,
+      "raw": 100,
+      "isCrit": false,
+      "damageReduction": 0.75,
+      "finalDamage": 25
+    },
+    {
+      "armor": 300,
+      "attackerLevel": 10,
+      "raw": 100,
+      "isCrit": false,
+      "damageReduction": 0.23076923076923078,
+      "finalDamage": 77
+    },
+    {
+      "armor": 1500,
+      "attackerLevel": 30,
+      "raw": 200,
+      "isCrit": true,
+      "damageReduction": 0.3333333333333333,
+      "finalDamage": 200
+    },
+    {
+      "armor": 10000,
+      "attackerLevel": 30,
+      "raw": 4,
+      "isCrit": false,
+      "damageReduction": 0.75,
+      "finalDamage": 1
+    },
+    {
+      "armor": -25,
+      "attackerLevel": 5,
+      "raw": 40,
+      "isCrit": false,
+      "damageReduction": 0,
+      "finalDamage": 40
+    }
+  ]
+}

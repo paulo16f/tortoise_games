@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Depthbreaker — Descend. Plunder. Endure.</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <div class="logo">DEPTHBREAKER<span class="beta">BETA</span></div>
+  <nav>
+    <a href="how-to-play.html">How to Play</a>
+    <a href="docs.html">Docs</a>
+    <a class="btn-play small" id="play-top" href="#">PLAY</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>DEPTHBREAKER</h1>
+  <p class="tag">A browser dungeon MMO where you descend an endless depth, slay the floor boss to break through, gather &amp; craft, and trade everything with other players — gold, gear, and loot.</p>
+  <a class="btn-play" id="play-hero" href="#">⚔ &nbsp;PLAY NOW</a>
+
+  <div class="stats">
+    <div class="stat"><b id="stat-online">—</b><span>players online</span></div>
+    <div class="stat"><b id="stat-monthly">—</b><span>players monthly</span></div>
+  </div>
+
+  <p class="ca">CA: <code id="ca">token not launched yet — follow for the drop</code></p>
+</section>
+
+<footer>Depthbreaker — built by breakers, for breakers.</footer>
+
+<script>
+  // Point these at production before launch.
+  const GAME_URL = "http://localhost:5184";
+  const API_URL = "http://localhost:3100";
+  for (const id of ["play-top", "play-hero"]) document.getElementById(id).href = GAME_URL;
+  fetch(API_URL + "/api/stats").then((r) => r.json()).then((s) => {
+    document.getElementById("stat-online").textContent = s.online.toLocaleString();
+    document.getElementById("stat-monthly").textContent = s.monthly.toLocaleString();
+  }).catch(() => {});
+</script>
+</body>
+</html>

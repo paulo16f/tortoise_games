@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Docs — Depthbreaker</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <div class="logo">DEPTHBREAKER<span class="beta">BETA</span></div>
+  <nav>
+    <a href="how-to-play.html">How to Play</a>
+    <a href="docs.html" class="active">Docs</a>
+    <a class="btn-play small" id="play-top" href="#">PLAY</a>
+  </nav>
+</header>
+
+<main class="doc">
+  <aside class="toc">
+    <h3>Getting Started</h3>
+    <a href="#intro">Introduction</a>
+    <a href="#account">Account &amp; Identity</a>
+    <h3>World</h3>
+    <a href="#world">The Dungeon &amp; Depth</a>
+    <a href="#map">Official Map (coming)</a>
+    <h3>Core Systems</h3>
+    <a href="#classes">Classes &amp; Skills</a>
+    <a href="#combat">Combat Rules</a>
+    <a href="#gathering">Gathering &amp; Life Skills</a>
+    <a href="#quests">Dailies &amp; Streaks</a>
+    <h3>Economy</h3>
+    <a href="#economy">Economy Overview</a>
+    <a href="#trading">Trading Post</a>
+    <a href="#goldexchange">Gold Exchange</a>
+    <a href="#token">The Token</a>
+    <a href="#wheel">Fortune Wheel</a>
+    <a href="#bank">Bank &amp; Storage</a>
+    <h3>Social &amp; Controls</h3>
+    <a href="#chat">World Chat</a>
+    <a href="#keys">Keybindings</a>
+    <h3>Help</h3>
+    <a href="#faq">FAQ</a>
+  </aside>
+
+  <article>
+    <h1>GAME DOCUMENTATION</h1>
+    <p class="muted">Everything in Depthbreaker — systems, numbers, and rules. Use the sidebar to jump.</p>
+
+    <h2 id="intro">Introduction</h2>
+    <p>Depthbreaker is a browser-based multiplayer dungeon RPG. You share one persistent dungeon with everyone on your server: fight, gather, cook, complete dailies, trade on the player market, and push the Depth counter as far as it goes. Progress (level, bank, gold, skins) persists across runs and devices.</p>
+
+    <h2 id="account">Account &amp; Identity</h2>
+    <ul>
+      <li><b>Guest</b> — instant play; progress persists in your browser session.</li>
+      <li><b>Email</b> — upgrade in place anytime; your guest progress carries over.</li>
+      <li><b>Wallet linking (SIWS)</b> — link a Solana wallet by signing a message. Signing is free, moves no funds, and is never required to log in. It will gate the token-side market when the token launches.</li>
+    </ul>
+    <div class="tipbox warn">The game only ever asks your wallet to SIGN a message. It never asks for your seed phrase and never initiates transfers by itself.</div>
+
+    <h2 id="world">The Dungeon &amp; Depth</h2>
+    <ul>
+      <li>Each server room is a seeded dungeon: combat rooms, resource rooms, a market room, and a boss.</li>
+      <li>Killing the floor boss raises <b>Depth</b> for the whole room and announces it in world chat.</li>
+      <li>Per depth: enemies gain ~20% health and ~15% damage, and pay ~25% more XP and ~35% more gold.</li>
+      <li>The minimap (top-right) shows layout, enemies, party, resources, and the market stall.</li>
+    </ul>
+
+    <h2 id="map">Official Map (coming)</h2>
+    <p>The world is expanding into a spawn town surrounded by three leveled areas (Lv 1-10, 10-20, 30-40), each with its own minions, elites, and area boss — plus the <b>Coliseum</b>: a world boss that grows permanently stronger every time it dies, until no lone breaker can face it.</p>
+
+    <h2 id="classes">Classes &amp; Skills</h2>
+    <p>Four classes, 7 skills each, all unlocked automatically by leveling. Two body forms per class, chosen at creation (free, cosmetic).</p>
+    <table>
+      <tr><th>Class</th><th>HP</th><th>Range</th><th>Kit highlights</th></tr>
+      <tr><td>Knight</td><td>170</td><td>melee</td><td>Cleave, Shield Wall (3s immune), Whirlwind, Taunt, Execute, Bulwark (-40% dmg)</td></tr>
+      <tr><td>Reaper</td><td>135</td><td>melee</td><td>Soul Reap (70% lifesteal), Charge, Whirlwind, Execute, Rupture (bleed)</td></tr>
+      <tr><td>Cleric</td><td>130</td><td>ranged</td><td>Smite, Mend (35% heal), Renew (smart ally heal), Holy Nova, Blessing (+35% dmg), Sanctuary</td></tr>
+      <tr><td>Necromancer</td><td>120</td><td>ranged 15</td><td>Fireball, Frost Nova, Corruption (DoT), Drain Life (ranged lifesteal), Bone Spear, Bone Armor</td></tr>
+    </table>
+
+    <h2 id="combat">Combat Rules</h2>
+    <ul>
+      <li>Auto-attack on a swing timer; skills respect a ~1s global cooldown (defensives are off-GCD panic buttons).</li>
+      <li>Skill presses just before a cooldown ends are buffered — mash friendly.</li>
+      <li>Elite/boss ground slams are telegraphed with a ring; leaving the ring avoids all damage.</li>
+      <li>Threat is real: healing draws aggro, taunts force targets, running away leashes enemies.</li>
+    </ul>
+
+    <h2 id="gathering">Gathering &amp; Life Skills</h2>
+    <table>
+      <tr><th>Node</th><th>Yield</th><th>Sell</th></tr>
+      <tr><td>Iron vein</td><td>iron ore (+bonus chance)</td><td>6g</td></tr>
+      <tr><td>Crystal vein</td><td>crystal shard</td><td>18g</td></tr>
+      <tr><td>Fishing spot</td><td>minnow / cavefish</td><td>3g / 9g</td></tr>
+      <tr><td>Deep fishing spot</td><td>cavefish / gilded bass</td><td>9g / 22g</td></tr>
+    </table>
+    <p>Cooking at the stall station converts raw fish into food that heals and sells higher (grilled bass: 34g). Getting hit interrupts the gather cast.</p>
+
+    <h2 id="quests">Dailies &amp; Streaks</h2>
+    <ul>
+      <li>3 quests per day, same set for everyone, rotating deterministically by date.</li>
+      <li>Rewards: 40–70 gold + XP each. Claim in-game (<kbd>J</kbd>).</li>
+      <li>Consecutive-day claims build a streak; the streak multiplies daily gold. Missing a day resets it.</li>
+    </ul>
+
+    <h2 id="economy">Economy Overview</h2>
+    <p><b>Gold in:</b> kills (depth-scaled, capped per run), dailies + streaks, selling loot/resources, wheel prizes.<br/>
+       <b>Gold out:</b> gear and potions at the NPC market, cosmetic skins (200–600g), player trades.<br/>
+       All earnings are validated server-side and capped per account per day — no client can print gold.</p>
+
+    <h2 id="trading">Trading Post</h2>
+    <ul>
+      <li>Open anywhere with <kbd>T</kbd>. Items list OUT of your bank (escrowed) at your price.</li>
+      <li>Buying settles atomically: gold moves buyer → seller, item moves to the buyer's bank.</li>
+      <li>Sales pay a small market fee — the economy's sink.</li>
+    </ul>
+
+    <h2 id="goldexchange">Gold Exchange</h2>
+    <p>The 💰 Gold tab lets you list <b>in-game gold</b> at a USD price. The gold escrows out of your wallet while listed; cancel any time to get it back. Buying a listing settles on-chain in the seller's favor (95% seller / 5% treasury) — this unlocks together with wallet linking when the token launches.</p>
+
+    <h2 id="token">The Token</h2>
+    <ul>
+      <li>The game <b>never mints or pays out tokens</b>. The only way tokens move is player-to-player: buying gold listings, and optional premium spends.</li>
+      <li>Premium spends (like paid wheel spins) split 50% burned / 50% treasury.</li>
+      <li>Treasury funds events, development, and operations.</li>
+      <li>Contract address will be published here at launch. Anything else claiming to be the token is fake.</li>
+    </ul>
+
+    <h2 id="wheel">Fortune Wheel</h2>
+    <ul>
+      <li>One free spin per 24h (<kbd>G</kbd>). 20 segments: gold jackpot (120g, ~1 in 20), crystal shards, potions, food, ore.</li>
+      <li>If your stash is full, item prizes auto-convert to their gold value — a spin never pays nothing.</li>
+      <li>Paid spins arrive with the token (priced in USD, 50% burn / 50% treasury).</li>
+    </ul>
+
+    <h2 id="bank">Bank &amp; Storage</h2>
+    <ul>
+      <li>Bank at the market stall (<kbd>N</kbd>): 24 slots, stacks to 999, persists forever.</li>
+      <li>Your run bag is temporary — bank what matters before you log off.</li>
+      <li>Trading Post listings escrow from the bank, so banked goods are your tradable wealth.</li>
+    </ul>
+
+    <h2 id="chat">World Chat</h2>
+    <p><kbd>C</kbd> focuses chat; everyone in your room sees it. Depth breakthroughs and boss events are announced here. Rate-limited against spam.</p>
+
+    <h2 id="keys">Keybindings</h2>
+    <table>
+      <tr><th>Key</th><th>Action</th></tr>
+      <tr><td><kbd>WASD</kbd> / click</td><td>move</td></tr>
+      <tr><td><kbd>Tab</kbd></td><td>cycle target</td></tr>
+      <tr><td><kbd>1–0</kbd></td><td>skills</td></tr>
+      <tr><td><kbd>B</kbd> <kbd>K</kbd> <kbd>M</kbd> <kbd>T</kbd> <kbd>N</kbd> <kbd>F</kbd> <kbd>J</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>V</kbd></td><td>bag · skills · market · trade · bank · cook · quests · wheel · chat · weapon</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>close top panel</td></tr>
+    </table>
+
+    <h2 id="faq">FAQ</h2>
+    <p><b>Is this pay-to-win?</b> No. Everything that affects power is earned in-game with gold. The token side is trading and cosmetics-adjacent spending, always player-to-player.</p>
+    <p><b>Do I need a wallet to play?</b> No. Guest and email play are full-featured. A wallet only gates the token-side market once it launches.</p>
+    <p><b>I died — did I lose my stuff?</b> Your bank is always safe. You respawn in a few seconds on the same floor.</p>
+    <p><b>The market won't let me sell.</b> Stand next to the market stall for NPC sales; Trading Post (<kbd>T</kbd>) works anywhere but lists from your bank.</p>
+  </article>
+</main>
+
+<footer>Depthbreaker — built by breakers, for breakers.</footer>
+<script>document.getElementById("play-top").href = "http://localhost:5184";</script>
+</body>
+</html>

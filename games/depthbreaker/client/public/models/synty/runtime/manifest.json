@@ -1,0 +1,485 @@
+{
+  "sourcePack": "POLYGON Dungeon Realms + Synty Animation Packs",
+  "runtimePolicy": "Active v1 uses Dungeon Realms characters because they share the Polygon animation-pack rig. Map props may still use the approved Mini World kit until Dungeon Realms room pieces are exported. Gameplay collision remains separate and simple.",
+  "assets": [
+    {
+      "key": "floor",
+      "category": "floor",
+      "url": "/models/synty/mini_world/floor.glb",
+      "bounds": {
+        "size": [
+          5,
+          0.4324,
+          5
+        ],
+        "center": [
+          0,
+          -0.2162,
+          0
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "walkable_tile",
+      "runtimeApproved": true
+    },
+    {
+      "key": "bones",
+      "category": "prop",
+      "url": "/models/synty/mini_world/bones.glb",
+      "bounds": {
+        "size": [
+          0.9793,
+          0.9088,
+          1.1452
+        ],
+        "center": [
+          0.0116,
+          0.4544,
+          -0.0063
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "crystal",
+      "category": "prop",
+      "url": "/models/synty/mini_world/crystal.glb",
+      "bounds": {
+        "size": [
+          0.5624,
+          0.8026,
+          0.5764
+        ],
+        "center": [
+          0.0231,
+          0.2885,
+          0.0003
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "crystal_alt",
+      "category": "prop",
+      "url": "/models/synty/mini_world/crystal_alt.glb",
+      "bounds": {
+        "size": [
+          0.2113,
+          0.5922,
+          0.2222
+        ],
+        "center": [
+          0,
+          0.2961,
+          0
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "mushroom",
+      "category": "prop",
+      "url": "/models/synty/mini_world/mushroom.glb",
+      "bounds": {
+        "size": [
+          0.5193,
+          0.9903,
+          0.4947
+        ],
+        "center": [
+          -0.011,
+          0.208,
+          0.0007
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "mushroom_alt",
+      "category": "prop",
+      "url": "/models/synty/mini_world/mushroom_alt.glb",
+      "bounds": {
+        "size": [
+          0.2759,
+          0.8983,
+          0.2629
+        ],
+        "center": [
+          -0.011,
+          0.1619,
+          0.0007
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "rocks",
+      "category": "prop",
+      "url": "/models/synty/mini_world/rocks.glb",
+      "bounds": {
+        "size": [
+          0.5912,
+          0.4814,
+          0.6288
+        ],
+        "center": [
+          0.03,
+          0.1612,
+          0.0365
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "skull",
+      "category": "prop",
+      "url": "/models/synty/mini_world/skull.glb",
+      "bounds": {
+        "size": [
+          1.3036,
+          1.0633,
+          1.4519
+        ],
+        "center": [
+          0,
+          0.5779,
+          -0.0079
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "stairs",
+      "category": "prop",
+      "url": "/models/synty/mini_world/stairs.glb",
+      "bounds": {
+        "size": [
+          0.5242,
+          0.2229,
+          0.3687
+        ],
+        "center": [
+          0,
+          0.1115,
+          0.1843
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "chest_closed",
+      "category": "prop",
+      "url": "/models/synty/mini_world/chest_closed.glb",
+      "bounds": {
+        "size": [
+          0.6506,
+          0.5402,
+          0.452
+        ],
+        "center": [
+          0,
+          0.2701,
+          0
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "chest_open",
+      "category": "prop",
+      "url": "/models/synty/mini_world/chest_open.glb",
+      "bounds": {
+        "size": [
+          0.6506,
+          0.7237,
+          0.5485
+        ],
+        "center": [
+          0,
+          0.3619,
+          0
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "campfire",
+      "category": "prop",
+      "url": "/models/synty/mini_world/campfire.glb",
+      "bounds": {
+        "size": [
+          0.3514,
+          0.1612,
+          0.3248
+        ],
+        "center": [
+          0,
+          0.0806,
+          0
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    },
+    {
+      "key": "crate",
+      "category": "prop",
+      "url": "/models/synty/mini_world/crate.glb",
+      "bounds": {
+        "size": [
+          0.1667,
+          0.1667,
+          0.1667
+        ],
+        "center": [
+          0,
+          0,
+          0
+        ]
+      },
+      "visualScale": 1,
+      "yOffset": 0,
+      "collisionProxy": "none",
+      "runtimeApproved": true
+    }
+  ],
+  "characters": [
+    {
+      "key": "warrior",
+      "url": "/models/synty/depthbreaker/characters/warrior.glb",
+      "visualHeight": 1.8,
+      "radius": 0.45,
+      "requiredClips": [
+        "idle",
+        "walk",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "attack": "attack",
+        "hit": "hit",
+        "death": "death"
+      },
+      "motionProfile": "humanoidPlayer",
+      "locomotionSet": "humanoid",
+      "walkRuntimeApproved": true,
+      "runtimeApproved": true,
+      "fallback": "/models/kaykit/characters/kaykit_knight.glb",
+      "naturalHeight": 1.88509,
+      "restMinY": -0.01068,
+      "assetVersion": "51e8b93bf93c",
+      "strideNorm": {
+        "walk": 0.83745,
+        "run": 1.01034
+      }
+    },
+    {
+      "key": "warden",
+      "url": "/models/synty/depthbreaker/characters/warden.glb",
+      "visualHeight": 1.8,
+      "radius": 0.45,
+      "requiredClips": [
+        "idle",
+        "walk",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "attack": "attack",
+        "hit": "hit",
+        "death": "death"
+      },
+      "motionProfile": "humanoidPlayer",
+      "locomotionSet": "humanoid",
+      "walkRuntimeApproved": true,
+      "runtimeApproved": true,
+      "fallback": "/models/kaykit/characters/kaykit_knight.glb",
+      "naturalHeight": 1.78303,
+      "restMinY": -0.00298,
+      "assetVersion": "3078dc5773a9",
+      "strideNorm": {
+        "walk": 0.96747,
+        "run": 1.16719
+      }
+    },
+    {
+      "key": "mage",
+      "url": "/models/synty/depthbreaker/characters/mage.glb",
+      "visualHeight": 1.75,
+      "radius": 0.43,
+      "requiredClips": [
+        "idle",
+        "walk",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "attack": "attack",
+        "hit": "hit",
+        "death": "death"
+      },
+      "motionProfile": "humanoidPlayer",
+      "locomotionSet": "caster",
+      "walkRuntimeApproved": true,
+      "runtimeApproved": true,
+      "fallback": "/models/kaykit/characters/kaykit_mage.glb",
+      "naturalHeight": 1.88035,
+      "restMinY": -0.00468,
+      "assetVersion": "0f5db921f746",
+      "strideNorm": {
+        "walk": 0.96108,
+        "run": 1.15949
+      }
+    },
+    {
+      "key": "skeleton",
+      "url": "/models/synty/depthbreaker/characters/skeleton.glb",
+      "visualHeight": 1.7,
+      "radius": 0.42,
+      "requiredClips": [
+        "idle",
+        "walk",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "attack": "attack",
+        "hit": "hit",
+        "death": "death"
+      },
+      "motionProfile": "lightEnemy",
+      "locomotionSet": "lightEnemy",
+      "walkRuntimeApproved": true,
+      "runtimeApproved": true,
+      "fallback": "/models/kaykit/characters/kaykit_skeleton_warrior.glb",
+      "naturalHeight": 1.83556,
+      "restMinY": -0.00033,
+      "assetVersion": "57124eaf886e",
+      "strideNorm": {
+        "walk": 0.96554,
+        "run": 1.16487
+      }
+    },
+    {
+      "key": "undead_knight",
+      "url": "/models/synty/depthbreaker/characters/undead_knight.glb",
+      "visualHeight": 1.95,
+      "radius": 0.55,
+      "requiredClips": [
+        "idle",
+        "walk",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "attack": "attack",
+        "hit": "hit",
+        "death": "death"
+      },
+      "motionProfile": "eliteEnemy",
+      "locomotionSet": "elite",
+      "walkRuntimeApproved": true,
+      "runtimeApproved": true,
+      "fallback": "/models/kaykit/characters/kaykit_skeleton_warrior.glb",
+      "naturalHeight": 1.62796,
+      "restMinY": -0.00797,
+      "assetVersion": "b83ec89ecea5",
+      "strideNorm": {
+        "walk": 0.95481,
+        "run": 1.15192
+      }
+    },
+    {
+      "key": "boss_skeleton",
+      "url": "/models/synty/depthbreaker/characters/boss_skeleton.glb",
+      "visualHeight": 2.35,
+      "radius": 0.78,
+      "requiredClips": [
+        "idle",
+        "walk",
+        "run",
+        "attack",
+        "hit",
+        "death"
+      ],
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "run": "run",
+        "attack": "attack",
+        "hit": "hit",
+        "death": "death"
+      },
+      "motionProfile": "heavyBoss",
+      "locomotionSet": "heavy",
+      "walkRuntimeApproved": true,
+      "runtimeApproved": true,
+      "fallback": "/models/kaykit/characters/kaykit_skeleton_minion.glb",
+      "naturalHeight": 1.82552,
+      "restMinY": -0.00033,
+      "assetVersion": "968a60319853",
+      "strideNorm": {
+        "walk": 0.9655,
+        "run": 1.16482
+      }
+    }
+  ]
+}

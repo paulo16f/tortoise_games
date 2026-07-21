@@ -268,3 +268,24 @@ Incident actions:
 - preserve logs;
 - rotate exposed secrets;
 - publish a clear status update.
+
+## Creator Fees And Treasury Policy (Economy v2 addition)
+
+Pump.fun pays the token creator a share of every trade. For a game token this
+is the PRIMARY treasury revenue faucet — token volume funds the game before
+in-game monetization matters (verified pattern: Kintara's engine claims its
+creator fees every ~30s).
+
+Requirements before enabling any automation (all values TBD at launch):
+
+- Automated fee claiming on a schedule, with `PAYOUT_KILL_SWITCH`-style gating,
+  per-claim caps, and full transaction logging (guardrail #9 applies).
+- Treasury split policy, executed only over ALREADY-RECEIVED revenue:
+  - `TREASURY_BUYBACK_PCT` — market-buys the game token (supportive pressure);
+  - `TREASURY_GOLD_FLOOR_PCT` — programmatically buys players' GOLD listings on
+    the game's own exchange (the buyer of last resort that creates a real gold
+    floor price, per Kintara);
+  - `TREASURY_SEASON_POOL_PCT` — funds the finite seasonal prize pool
+    (guardrail #1: rewards come from a finite pool, never minting).
+- The game never mints or promises tokens; this section is automation over
+  revenue, not emissions. Missing env values fail closed (503 / startup error).
